@@ -1,0 +1,70 @@
+Start to log changes since 2012/4/22 13:09
+2012/4/22 13:09 Add the texts.php to handle texts.xml on the server side. The only function currently is "list_titles"
+2012/4/22 14:20 In getTitles() of index.php, request texts.php?action=list_titles to get titles instead of read the whole texts.xml and parse it
+2012/4/22 14:58 In index.php, change the layout and add the check for all input fields
+2012/4/23 13:59 Add the app Test_yan_dev at 140.112.241.51:8080 (apache virtual host) for latest modification
+2012/4/23 19:49 Fix the path to test_yan_dev
+2012/4/24 20:29 Remove the link to texts.xml from index.php(test_yan_dev)
+2012/4/24 20:48 Change the location of the value of special_wait_time from a named file the database, thus remove the file special_wait_time
+2012/4/24 21:54 Move the appId and appSecret to the file ./.htsecret, move the declaration of $facebook to func.php
+2012/4/24 10:22 rename func.php to common_inc.php
+2012/4/27 10:47 Merge all change from test_yan_dev to test_yan
+2012/4/28 01:14 Modify addText.php to use the mysql database instead of texts.xml, thus delete texts.xml
+2012/4/28 01:52 Add getCount() in common_inc and add the field count_total in the output xml of post.php
+2012/4/28 16:57 Add fb_semantic.php and fb_semantic_handler.php for generating a page with open graph tags
+2012/4/28 18:21 Disable the output for the error CURLE_SSL_CACERT (See base_facebook.php line 878)
+2012/4/28 19:34 Set up a virtual machine for test_yan.
+2012/5/03 01:48 Add google_img_search.php
+2012/5/05 01:49 Show the user name in <title></title>
+2012/5/09 19:03 Check expiry time when obainting access_token. If less than 7201 secs, exchange a new one
+                Remove offline_access
+2012/5/13 01:21 add alternate.php and user.php for 代洗
+2012/5/15 10:30 Start to merge changes in test_yan_dev into test_yan
+	1. In addText.php, use PHP5.4's json_encode with JSON_UNESCAPED_UNICODE instead of my version
+	2. Add config.php to change global parameters in test_yan
+	3. Delete count.php in test_yan_dev
+	4. Change the parameter name from "url" to "param"
+	5. texts.php: 
+		1. text_action() change from direct return value to a varible named $ret_val
+		2. most aactions in text_action return array instead of JSON string
+		3. in action "get_random_text_from_title", add m(title number) and n(setence number) for debugging
+		4. For preventing encodeing errors, use htmlspecialchars() to decode the results
+	6. users.php: 
+		1. add the parameter auto_restart
+		2. the add_user now modify user data when user has been added. Previous version only show the count.
+		3. allow to specify field name in get_data
+		4. move increase_user_count into user_action()
+		5. remove delete_user. Use set_data with status=stopped instead
+		6. in set_user_status, add some code to implement auto restart, including banned time
+		7. add last_count for statistics
+		8. set_user_status returns the whole profile instead a single successful message
+	7. index.php
+		1. add the option of auto_restart
+		2. enable modifying user profile
+		3. use radio buttons instead of normal buttons to switch between 代洗 and 自己洗
+		4. unify the name confusion between goal/count and count/nPosted
+		5. does not reset goal and count when stopping
+		6. because now alternate is only called by start2(), so remove the checking step get_params()
+		7. in alternate(), add_user directly because add_user in users.php can now modify user data
+		8. add alternateOptions() to manipulate user interface of alternate options
+		9. in get_info(), add a parameter bSetTitles because whenever retrieving new profile, titles won't be reset
+		10. not require the permission offline_access anymore because it's deprecated and facebook now provide a two-month token
+		11. rearrange controls, separate parameters and information fields
+	8. post.php
+		1. return JSON instead of XML
+		2. users.php called by post.php instead of alternate.php
+		3. add uid in POST parameters for calling user_action()
+		4. add a copy of user profile in the output, for no increase_user_count call is made in alternate.php
+	9. alternate.php
+		1. For auto_restart feature, add callback function of set_user_status to calculate next unlocked time. Here I assume facebook only lock for 28 hours.
+		2. move error messages from the <textarea> #results to console logs
+		3. because increase_user_count is called in post.php, so delete the call to users.php
+		4. add show_stats() for calculating and displaying post rate and total post count
+		5. add add_user() to add columns in users' profiles
+		6. check whether goal accomplished again whenever update_userlist() called
+		7. change the layout
+2012/9/15 18:20 
+    1. Move to new URL: http://chyen.twbbs.org/fb/test_yan/
+    2. Use jQuery plugin ajaxq to alleviate the problem of too much simultaneous connections to graph.facebook.com
+2102/9/15 Fix a bug in google_img_search.php
+
