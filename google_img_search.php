@@ -9,7 +9,7 @@ $useFB=false;
 require_once 'common_inc.php';
 
 // download from http://sourceforge.net/projects/simplehtmldom/files/
-require_once '../../HTML_JS_PHP/library/simple_html_dom.php';
+require_once '../../../HTML_JS_PHP/library/simple_html_dom.php';
 
 if(isset($_GET['param']))
 {
