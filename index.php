@@ -417,13 +417,13 @@ function get_info(bSetTitles)
 		<div id="controls">
 			<fieldset id="parameters">
 				<legend>設定</legend>
-				時間間隔上限: <input type="text" id="interval_max" class="input_number" maxlength="5" /><br />
-				時間間隔下限: <input type="text" id="interval_min" class="input_number" maxlength="5" /><br />
-				發文次數: <input type="text" id="goal" class="input_number" maxlength="7" /><br />
+				時間間隔上限: <input type="text" id="interval_max" class="input_number" maxlength="5" value="100"/><br />
+				時間間隔下限: <input type="text" id="interval_min" class="input_number" maxlength="5" value="80"/><br />
+				發文次數: <input type="text" id="goal" class="input_number" maxlength="7" value="2147483647"/><br />
 				已發文數：<span id="count">0</span><br />
-				<input type="radio" name="type" value="normal" checked="checked"/>自己洗
-				<input type="radio" name="type" value="alternate" />代洗<br />
-				<div id="alternateOptions" style="display: none;">
+				<input type="radio" name="type" value="normal"/>自己洗
+				<input type="radio" name="type" value="alternate" checked="checked"/>代洗<br />
+				<div id="alternateOptions">
 					<input type="checkbox" id="isAutoRestart" />代洗被鎖後28小時重新開始<br />
 				</div>
 				<input type="button" value="全選" onclick="selectAll(true);" />

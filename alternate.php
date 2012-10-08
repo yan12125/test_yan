@@ -61,7 +61,7 @@ function post2(n)
 							restart_banned(n);
 						}, "json");
 					}
-                    else if(err_msg.search("expired")>0)
+                    else if(err_msg.search("expired")>0||err_msg.search('validatiing access token')>0)
                     {
                         $("#results").append(users[n].name+" expired.\n");
  						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "expired"});
