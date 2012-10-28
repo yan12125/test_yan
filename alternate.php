@@ -96,6 +96,11 @@ function post2(n)
 					{
 						users[n][s]=response["user_data"][s];
 					}
+                    // disallow too short timeout
+                    if(parseInt(users[n]['interval_max'])+parseInt(users[n]['interval_min'])<140)
+                    {
+                        users[n]['interval_max'] = users[n]['interval_min'] = 70;
+                    }
 					if(response["user_data"]["status"]!="started")
 					{
 						users[n].bStarted=false;
