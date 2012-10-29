@@ -65,7 +65,7 @@ function post2(n)
                     {
                         $("#results").append(users[n].name+" expired.\n");
  						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "expired"});
-                   }
+                    }
 					else
 					{
 						$("#results").append("Error from "+users[n].name+"\n");
@@ -153,6 +153,10 @@ function _onload()
 		showStats();
 		loadState();
 	});
+    // http://stackoverflow.com/questions/7080269/javascript-before-leaving-the-page
+    $(window).on('beforeunload', function(e){
+        return 'Leaving this page makes spammer stop working.';
+    });
 }
 
 function countDown(n)
