@@ -61,7 +61,7 @@ function post2(n)
 							restart_banned(n);
 						}, "json");
 					}
-                    else if(err_msg.search("expired")>0||err_msg.search('validatiing access token')>0)
+                    else if(err_msg.search("expired")>0||err_msg.search('validating access token')>0)
                     {
                         $("#results").append(users[n].name+" expired.\n");
  						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "expired"});
@@ -198,38 +198,50 @@ function update_userlist()
 	{
 		curIDs.push(users[i].uid);
 	}
-	$.post("users.php?action=get_new_users", {"IDs":JSON.stringify(curIDs)}, function(response, status, xhr){
-		var orig_len=users.length;
-		for(var n in response)
-		{
-			users.push(response[n]);
-			var N=parseInt(n)+orig_len;
-			add_user(users, N);
-			if(globalStarted)
-			{
-				post2(N);
-			}
-		}
-	}, "json");
+	$.ajaxq("queue_user", {
+        url: "users.php?action=get_new_users", 
+        data: {"IDs":JSON.stringify(curIDs)}, 
+        success: function(response, status, xhr){
+            var orig_len=users.length;
+            for(var i=0;i<response.length;i++)
+            {
+                users.push(response[i]);
+                var N=i+orig_len;
+                add_user(users, N);
+                if(globalStarted)
+                {
+                    post2(N);
+                }
+            }
+	    }, 
+        dataType: "json", 
+        type: "post"
+    });
 	if(globalStarted)
 	{
-		$.post("users.php?action=get_user_status", {}, function(response, status, xhr){
-			for(var n in response)
-			{
-				if(response[n].status=="started"&&users[n].bStarted==false)
-				{
-					if(parseInt(users[n].goal)>users[n].count)
-					{
-						users[n].bStarted=true;
-						post2(n);
-					}
-				}
-				if(response[n].status=="stopped"&&users[n].bStarted==true)
-				{
-					users[n].bStarted=false;
-				}
-			}
-		}, "json");
+		$.ajaxq("queue_user", {
+            data: {}, 
+            type: "post", 
+            url: "users.php?action=get_user_status", 
+            success: function(response, status, xhr){
+                for(var n in response)
+                {
+                    if(response[n].status=="started"&&users[n].bStarted==false)
+                    {
+                        if(parseInt(users[n].goal)>users[n].count)
+                        {
+                            users[n].bStarted=true;
+                            post2(n);
+                        }
+                    }
+                    if(response[n].status=="stopped"&&users[n].bStarted==true)
+                    {
+                        users[n].bStarted=false;
+                    }
+                } 
+    		}, 
+            dataType: "json"
+        });
 	}
 	setTimeout("update_userlist()", 60*1000);
 }
