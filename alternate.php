@@ -72,6 +72,8 @@ function post2(n)
                     {
                         $("#results").append(users[n].name+" timed out.\n");
                         timed_out.push(response.msg);
+						users[n].wait_time=users[n].interval_max;
+						countDown(n);
                     }
 					else
 					{
