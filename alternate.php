@@ -34,8 +34,6 @@ require_once 'common_inc.php';
 var users={};
 var globalStarted=false;
 var errors=[];
-var timed_out = [];
-var success = [];
 
 function post2(n)
 {
@@ -68,13 +66,6 @@ function post2(n)
                         $("#results").append(users[n].name+" expired.\n");
  						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "expired"});
                     }
-                    else if(err_msg.search("Operation timed out")!=-1)
-                    {
-                        $("#results").append(users[n].name+" timed out.\n");
-                        timed_out.push(response.msg);
-						users[n].wait_time=users[n].interval_max;
-						countDown(n);
-                    }
 					else
 					{
 						$("#results").append("Error from "+users[n].name+"\n");
@@ -87,7 +78,6 @@ function post2(n)
 				else
 				{
 					var msg=response["msg"];
-                    success.push(msg);
 					msg=(msg.length>10)?(msg.substring(0, 10)+"..."):msg;
 					$("tr#"+users[n].uid+" td.last_msg").html(msg);
 					var next_wait_time=parseFloat(response["next_wait_time"]);

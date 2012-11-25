@@ -33,6 +33,7 @@ $useFB=true;
 require_once 'common_inc.php';
 require_once 'texts.php';
 require_once 'users.php';
+require_once 'stats.php';
 
 header("Content-type: application/json; charset=UTF-8");
 header("Cache-control: no-cache");
@@ -90,6 +91,7 @@ try
 		$execution_time=microtime(true)-$starttime;
 
 		$arr_user_data=user_action('increase_user_count', array('uid'=>$_POST['uid']));
+        stats('success', mb_strlen($arr_result['msg'], 'UTF-8'));
 
 		$response=array();
 		$response['msg']=$arr_result['msg'];
@@ -118,7 +120,12 @@ try
 }
 catch(Exception $e)
 {
-	$response_error=array(
+    $err_msg = $e->getMessage();
+    if(strpos($err_msg, 'Operation timed out') !== false)
+    {
+        stats('timed_out', mb_strlen($arr_result['msg'], 'UTF-8'));
+    }
+    $response_error=array(
         "error" => $e->getMessage(), 
         "code" => $e->getCode(), 
         "class_name" => get_class($e), 
@@ -126,7 +133,7 @@ catch(Exception $e)
         "msg" => $arr_result['msg'], 
         "time" => date('H:i:s')
     );
-	echo json_encode($response_error);
+    echo json_encode($response_error);
 }
 
 ?>

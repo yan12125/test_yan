@@ -50,12 +50,12 @@ foreach($secrets as $key=>$value)
 	${$key}=$value;
 }
 
-require_once $facebook_path;
 
 if(isset($useFB))
 {
 	if($useFB===true)
 	{
+        require_once $facebook_path;
 		// Disable ssl verify to hide messages in error.log
 		// Reference: http://stackoverflow.com/questions/7374223/invalid-or-no-certificate-authority-found-using-bundled-information
 		Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYPEER]=false;
