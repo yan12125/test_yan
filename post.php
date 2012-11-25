@@ -124,16 +124,20 @@ catch(Exception $e)
     if(strpos($err_msg, 'Operation timed out') !== false)
     {
         stats('timed_out', mb_strlen($arr_result['msg'], 'UTF-8'));
+        echo json_encode(array('error' => 'error processed'));
     }
-    $response_error=array(
-        "error" => $e->getMessage(), 
-        "code" => $e->getCode(), 
-        "class_name" => get_class($e), 
-        "title" => $arr_result['title'], 
-        "msg" => $arr_result['msg'], 
-        "time" => date('H:i:s')
-    );
-    echo json_encode($response_error);
+    else
+    {
+        $response_error=array(
+            "error" => $e->getMessage(), 
+            "code" => $e->getCode(), 
+            "class_name" => get_class($e), 
+            "title" => $arr_result['title'], 
+            "msg" => $arr_result['msg'], 
+            "time" => date('H:i:s')
+        );
+        echo json_encode($response_error);
+    }
 }
 
 ?>

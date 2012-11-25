@@ -68,9 +68,12 @@ function post2(n)
                     }
 					else
 					{
-						$("#results").append("Error from "+users[n].name+"\n");
-						window.errors.push(response);
-						console.dir(window.errors[window.errors.length-1]);
+                        if(err_msg != "error processed")
+                        {
+                            $("#results").append("Error from "+users[n].name+"\n");
+                            window.errors.push(response);
+                            console.dir(window.errors[window.errors.length-1]);
+                        }
 						users[n].wait_time=users[n].interval_max;
 						countDown(n);
 					}
