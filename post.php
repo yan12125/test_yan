@@ -97,7 +97,8 @@ try
 		$response['msg']=$arr_result['msg'];
 		$response['title']=$arr_result['title'];
 		$response['item']=$arr_result['n'].','.$arr_result['m'];
-		$response['ID']=$ret_obj['id'];
+		// $response['ID']=$ret_obj['id'];
+        // sometimes id from facebook is not set, so comment it out. I don't want to handle such errors
 		$response['execution_time']=$execution_time;
 		$response['user_data']=$arr_user_data;
 		if(($special_wait_time=load_params('special_wait_time'))>0)
