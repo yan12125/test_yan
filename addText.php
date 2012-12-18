@@ -17,7 +17,7 @@ try
 	if(isset($_POST['texts'])&&isset($_POST['title']))
 	{
 		$title=$_POST['title'];
-		$query="INSERT INTO texts (title,handler,text) VALUES ('".$title."',NULL,'".json_encode(explode("\r\n", $_POST['texts']), JSON_UNESCAPED_UNICODE)."')";
+		$query="INSERT INTO texts (title,handler,text) VALUES ('".$title."',NULL,'".mysql_real_escape_string(json_encode(explode("\r\n", $_POST['texts'])))."')";
 		if(mysql_query($query)==FALSE)
 		{
 			$msg=$query."<br />\n".mysql_error();
