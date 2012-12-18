@@ -77,6 +77,10 @@ try
 		do
 		{
 			$arr_result=text_action("get_random_text_from_titles", array("titles"=>$titles_json));
+            if(isset($arr_result['error']))
+            {
+                throw new Exception($arr_result['error']);
+            }
 		}while(is_null($msg));
 
 		$pause_time=randND($_POST['interval_max'], $_POST['interval_min'], 6);	// 正負三個標準差

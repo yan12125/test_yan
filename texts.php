@@ -48,28 +48,39 @@ function text_action($verb, $params)
 				{
 					$arr=mysql_fetch_assoc($result);
 					$json_texts=json_decode($arr['text'], true);
-					$m=rand(0, count($json_texts)-1);
-					$ret_val['m']=$m;
-					$ret_val['title']=$params['title'];
-					if(!is_null($arr['handler']))
-					{
-						$url=$GLOBALS['rootUrl'].$arr['handler'].'?param='.(string)$json_texts[$m];
-						$ch=curl_init($url);
-						curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-						curl_setopt($ch, CURLOPT_HEADER, 0);
-						curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
-						$data=curl_exec($ch);
-						curl_close($ch);
-						$ret_val['msg']=htmlspecialchars((string)$data);
-					}
-					else
-					{
-						$ret_val['msg']=htmlspecialchars($json_texts[$m]);
-					}
+                    if(count($json_texts)>=1) // if not valid json, json_decode return null, and count(null) is 0
+                    {
+                        $m=rand(0, count($json_texts)-1);
+                        $ret_val['m']=$m;
+                        $ret_val['title']=$params['title'];
+                        if(!is_null($arr['handler']))
+                        {
+                            $url=$GLOBALS['rootUrl'].$arr['handler'].'?param='.(string)$json_texts[$m];
+                            $ch=curl_init($url);
+                            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                            curl_setopt($ch, CURLOPT_HEADER, 0);
+                            curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
+                            $data=curl_exec($ch);
+                            curl_close($ch);
+                            $ret_val['msg']=htmlspecialchars((string)$data);
+                        }
+                        else
+                        {
+                            $ret_val['msg']=htmlspecialchars($json_texts[$m]);
+                        }
+                    }
+                    else
+                    {
+                        $ret_val['error']='Texts in specified title not valid!';
+                        $ret_val['title']=$params['title'];
+                        $ret_val['msg']=null;
+                    }
 				}
 				else
 				{
 					$ret_val['error']='Error query data!';
+                    $ret_val['title']=$params['title'];
+                    $ret_val['msg']=null;
 				}
 			}
 			break;
