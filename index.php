@@ -1,18 +1,14 @@
 <?php
-header("Content-type: text/html; charset=utf-8");
-if(isset($_GET['source']))
-{
-	highlight_file(__FILE__);
-	exit(0);
-}
-
 $useFB=true;
 require_once 'common_inc.php';
 
 $siteUrl=urlencode($rootUrl);
-$count_total=0;
 $name='';
 $uid=0;
+
+// still return result for http codes other than 200 in file_get_contents
+// http://stackoverflow.com/questions/6718598/download-the-contents-of-a-url-in-php-even-if-it-returns-a-404
+stream_context_set_default(array('http' => array('ignore_errors' => true)));
 
 if(!isset($_GET['code']))
 {
@@ -25,19 +21,23 @@ else
 {
 	$tokenUrl='https://graph.facebook.com/oauth/access_token?client_id='.$appId.
 		'&redirect_uri='.$siteUrl.'&client_secret='.$appSecret.'&code='.$_GET['code'];
-	parse_str(file_get_contents($tokenUrl), $arr_result);
+    $authPage = file_get_contents($tokenUrl);
+	parse_str($authPage, $arr_result);
 	if(isset($arr_result['access_token']))
 	{
 		$token=$arr_result['access_token'];
 		$result=$facebook->api('/me', array('access_token'=>$token)); // get basic information
 		$name=$result['name'];
 		$uid=$result['id'];
-		$count_total=getCount($facebook, $token);
 	}
 	else
 	{
 		echo "<pre>Error occurred when acquire access token!\n";
-		print_r($arr_result);
+		print_r(array(
+            'result' => $authPage, 
+            'result_json' => json_decode($authPage, true), 
+            'tokenUrl' => $tokenUrl
+        ));
 		echo "</pre>";
 		exit(0);
 	}
@@ -108,7 +108,6 @@ else
 <script language="javascript" src="/HTML/library/jquery.js"></script>
 <script language="javascript">
 var started=false;
-var bAlternate=false;
 var count=0;
 var goal=0;
 var interval_max=0, interval_min=0;
@@ -118,6 +117,8 @@ var token=<?php echo "\"".$token."\""; ?>;
 var uid=<?php echo "\"".$uid."\""; ?>;
 
 /* for IE only because IE parse contents in <textarea> as HTML */
+/*
+ * not used anymore
 function alterTexts(_str)
 {
 	if(navigator.userAgent.search("MSIE")!=-1)
@@ -130,13 +131,20 @@ function alterTexts(_str)
 		return _str;
 	}
 }
-
+*/
 function init()
 {
 	getTitles("texts.php?action=list_titles");
 	updateExpiryTime();
 	get_info(true);
-	$("input[name=type]").click(alternateOptions);
+    // disable F5 key because facebook api code is now one time token
+    // http://stackoverflow.com/questions/2482059/disable-f5-and-browser-refresh-using-javascript
+    $(document).bind("keydown", function(e){
+        if(e.which == 116 /*F5*/|| (e.ctrlKey && (e.which == 114 /*Ctrl+r*/|| e.which == 82/*Ctrl+R*/))){
+            location.href = location.href.substring(0, location.href.indexOf('?'));
+            e.preventDefault();
+        }
+    });
 }
 
 function getTitles(filename)
@@ -168,95 +176,6 @@ function parseTitles()
 		titleList.push(checkedTitles[i].value);
 	}
 	return true;
-}
-
-function post2()
-{
-	if(started&&goal>=1)
-	{
-		if(!parseTitles())
-		{
-			return;
-		}
-
-		$.ajax({url: "post.php", 
-			type: "post", 
-			data: {
-				"interval_max":interval_max, 
-				"interval_min":interval_min, 
-				"titles":JSON.stringify(titleList), 
-				"access_token":token, 
-				"uid":uid
-			}, 
-			success: function(response, status, xhr)
-			{
-				try
-				{
-					if((typeof response["error"])!="undefined")
-					{
-						var err_msg=response["error"];
-						$("results").append(alterTexts("Error: "+err_msg+"\n"));
-						if(err_msg.search("banned")!=-1)
-						{
-							countDown(3600);	// wait 1 hour if seem locked
-						}
-						else
-						{
-							countDown(60);
-						}
-					}
-					else
-					{
-						var msg=response["msg"];
-						var next_wait_time=parseInt(response["next_wait_time"]);
-						if(isNaN(next_wait_time))
-						{
-							$("#results").append("Error when parsing time: "+xhr.responseText+"\n");
-							next_wait_time=60;
-						}
-						count++;
-						$("#results").append(alterTexts("Msg: "+msg+"\n"));
-						$("#count").html(count.toString());
-						countDown(next_wait_time);
-					}
-				}
-				catch(e)
-				{
-					$("#results").append("Error! "+e+"\n");
-				}
-			}, 
-			error: function(xhr, status, error){
-				$("#results").append(alterTexts("Error: 500 Internal server error"));
-				countDown(60);	// 一分鐘後再來一遍，雖然不一定每次都修那麼快
-			}, 
-			dataType: "json"});
-		$("#status").html("等待伺服器回應中");
-	}
-	else
-	{
-		started=false;
-	}
-}
-
-function countDown(interval)
-{
-	if(count!=0)
-	{
-		$("#status").html("倒數中");
-		$("#remainingTime").html(Math.floor(interval).toString());
-		if(interval>=1)
-		{
-			setTimeout("countDown("+(interval-1).toString()+");", 1000);
-		}
-		else if(interval>=0)
-		{
-			setTimeout("post2();", interval*1000);
-		}
-	}
-	else
-	{
-		stop2();
-	}
 }
 
 function selectAll(allOrNone)
@@ -296,38 +215,13 @@ function start2()
 		return;
 	}
 
-	switch(alternateOptions())
-	{
-	case "normal":
-		if(!started)
-		{
-			$("#btnStart").attr("disabled", true);
-			$("#btnStop").attr("disabled", false);
-			$("#results").html("");
-			$("#interval_min").html(interval_min.toString());
-			$("#interval_max").html(interval_max.toString());
-			$("#count").html(count.toString());
-			started=true;
-			post2();
-		}
-		break;
-	case "alternate":
-		alternate();
-		break;
-	}
+   alternate();
 }
 
 function stop2()
 {
-	if(started)
-	{
-		started=false;
-	}
-	else if(bAlternate)
-	{
-		$.post("users.php?action=set_user_status", {"uid":uid, "status": "stopped"});
-		bAlternate=false;
-	}
+   $.post("users.php?action=set_user_status", {"uid":uid, "status": "stopped"});
+
 	$("#status").html("未開始發文");
 	$("#btnStart").attr("disabled", false);
 	$("#btnStop").attr("disabled", true);
@@ -335,42 +229,24 @@ function stop2()
 
 function alternate()
 {
-	var bAutoRestart=($("#isAutoRestart")[0].checked)?1:0;
 	$.post("users.php?action=add_user", 
 	{
 		"interval_max":interval_max, 
 		"interval_min":interval_min, 
 		"titles":JSON.stringify(titleList), 
 		"access_token":token, 
-		"goal":goal, 
-		"auto_restart":bAutoRestart
+		"goal":goal
 	});
 	$("#status").html("代洗中");
 	$("#btnStart").attr("disabled", true);
 	$("#btnStop").attr("disabled", false);
-	bAlternate=true;
-}
-
-function alternateOptions()
-{
-	var type=$("input[name=type]:checked").val();
-	switch(type)
-	{
-	case "alternate":
-		$("#alternateOptions").show();
-		break;
-	case "normal":
-		$("#alternateOptions").hide();
-		break;
-	}
-	return type;
 }
 
 function updateExpiryTime()
 {
 	$("#nExpiryTime").html(expiryTime.toString());
 	expiryTime--;
-	window.setTimeout("updateExpiryTime();", 1000);
+	window.setTimeout(updateExpiryTime, 1000);
 }
 
 function get_info(bSetTitles)
@@ -381,7 +257,6 @@ function get_info(bSetTitles)
 		{
 			if(response["status"]=="started")
 			{
-				bAlternate=true;
 				$("#status").html("代洗中");
 				$("#btnStart").attr("disabled", true);
 				$("#btnStop").attr("disabled", false);
@@ -404,7 +279,7 @@ function get_info(bSetTitles)
 						$(".title_checkbox[value=\""+arr_titles[n]+"\"]").attr("checked", true);
 					}
 				}
-				setTimeout("get_info(false);", 30*1000);
+				setTimeout(function(){ get_info(false); }, 30*1000);
 			}
 		}
 	}, "json");
@@ -421,31 +296,21 @@ function get_info(bSetTitles)
 				時間間隔下限: <input type="text" id="interval_min" class="input_number" maxlength="5" value="80"/><br />
 				發文次數: <input type="text" id="goal" class="input_number" maxlength="7" value="2147483647"/><br />
 				已發文數：<span id="count">0</span><br />
-				<input type="radio" name="type" value="normal"/>自己洗
-				<input type="radio" name="type" value="alternate" checked="checked"/>代洗<br />
-				<div id="alternateOptions">
-					<input type="checkbox" id="isAutoRestart" />代洗被鎖後28小時重新開始<br />
-				</div>
-				<input type="button" value="全選" onclick="selectAll(true);" />
-				<input type="button" value="全部不選" onclick="selectAll(false);" /><br />
 				<input type="button" value="開始" id="btnStart" onclick="start2();" />
 				<input type="button" value="停止" id="btnStop" onclick="stop2();" disabled="disabled"/><br />
 			</fieldset>
 			<fieldset id="information">
 				<legend>洗版資訊</legend>
 				狀態：<span id="status">未開始發文</span><br />
-				距離下次發文：<span id="remainingTime">0</span>秒<br />
-				總戰績：<span id="count_total"><? echo $count_total; ?></span><br />
-				Token將在<span id="nExpiryTime">0</span>秒後過期<br />
+				授權碼將在<span id="nExpiryTime">0</span>秒後過期<br />
 			</fieldset>
 			<a href="./addText.php">增加留言內容</a><br />
 		</div>
+      <input type="button" value="全選" onclick="selectAll(true);" />
+      <input type="button" value="全部不選" onclick="selectAll(false);" /><br />
 		<div class="title_choose"></div>
 		<div class="title_choose"></div>
 		<div class="title_choose"></div>
-		<div id="messages">
-			<textarea id="results" cols="90" rows="10" readonly="readonly"></textarea>
-		</div>
 	</div>
 </body>
 </html>

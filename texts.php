@@ -1,11 +1,4 @@
 <?php
-header("Content-type: text/html; charset=utf-8");
-if(isset($_GET['source']))
-{
-	highlight_file(__FILE__);
-	exit(0);
-}
-
 $useFB=false;
 require_once 'common_inc.php';
 

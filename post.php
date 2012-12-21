@@ -22,13 +22,6 @@ function shutdown()
 }
 register_shutdown_function('shutdown');
 
-if(isset($_GET['source']))
-{
-	header("Content-type: text/html; charset=utf-8");
-	highlight_file(__FILE__);
-	exit(0);
-}
-
 $useFB=true;
 require_once 'common_inc.php';
 require_once 'texts.php';
@@ -68,23 +61,28 @@ function randND($max, $min, $nSigma)
 
 try
 {
-	if(isset($_POST['uid'])&&isset($_POST['access_token'])&&isset($_POST['interval_max'])&&isset($_POST['interval_min'])&&isset($_POST['titles']))
+	if(isset($_POST['uid']))
 	{
-		$titles_json=str_replace("\\\"", "\"", $_POST['titles']);	// becuase magic_quotes_gpc is on, all " will become \"
+        $userData = user_action('get_data', array('uid' => $_POST['uid']));
+        if($userData['query_result'] != 'user_found')
+        {
+            throw new Exception("Specified UID not found!");
+        }
+		$titles_json=$userData['titles'];
 
-		$msg='';
-		do
-		{
-			$arr_result=text_action("get_random_text_from_titles", array("titles"=>$titles_json));
-		}while(is_null($msg));
+        $arr_result=text_action("get_random_text_from_titles", array("titles"=>$titles_json));
+        if(isset($arr_result['error']))
+        {
+            throw new Exception($arr_result);
+        }
 
-		$pause_time=randND($_POST['interval_max'], $_POST['interval_min'], 6);	// 正負三個標準差
+		$pause_time=randND($userData['interval_max'], $userData['interval_min'], 6);	// 正負三個標準差
 
 		$starttime=microtime(true);
 		$ret_obj=$facebook->api('/198971170174405_198971283507727/comments', 'POST',
 			array(
 				"message"=> $arr_result['msg'],
-				"access_token"=>$_POST['access_token']
+				"access_token"=>$userData['access_token']
 			)
 		);
 		$execution_time=microtime(true)-$starttime;

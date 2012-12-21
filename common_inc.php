@@ -1,11 +1,21 @@
 <?php
+header("Content-type: text/html; charset=utf-8");
+
+$secrets=json_decode(file_get_contents("./.htsecret"), true);
+foreach($secrets as $key=>$value)
+{
+	${$key}=$value;
+}
+
 if(isset($_GET['source']))
 {
-	highlight_file(__FILE__);
+	header('Location: '.$source_url);
 	exit(0);
 }
 
 // PHP 5.2.6 doesn't support SimpleXMLElement::count(), so write one
+/*
+ * not used anymore
 function xmlCount($xml)
 {
 	$i=0;
@@ -15,7 +25,7 @@ function xmlCount($xml)
 	}
 	return $i;
 }
-
+// not using get total count because it's too slow
 function getCount($facebook, $access_token)
 {
 	$result=$facebook->api(array(
@@ -25,6 +35,7 @@ function getCount($facebook, $access_token)
 		));
 	return (integer)$result[0]['comments']['count'];
 }
+*/
 
 function start_db($host, $username, $password, $dbname)
 {
@@ -44,18 +55,11 @@ function load_params($paramName)
 	return $arr_result[0];
 }
 
-$secrets=json_decode(file_get_contents("./.htsecret"), true);
-foreach($secrets as $key=>$value)
-{
-	${$key}=$value;
-}
-
-require_once $facebook_path;
-
 if(isset($useFB))
 {
 	if($useFB===true)
 	{
+        require_once $facebook_path;
 		// Disable ssl verify to hide messages in error.log
 		// Reference: http://stackoverflow.com/questions/7374223/invalid-or-no-certificate-authority-found-using-bundled-information
 		Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYPEER]=false;

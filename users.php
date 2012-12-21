@@ -1,11 +1,4 @@
 <?php
-if(isset($_GET['source']))
-{
-	header("Content-type: text/html; charset=utf-8");
-	highlight_file(__FILE__);
-	exit(0);
-}
-
 $useFB=true;
 require_once 'common_inc.php';
 
@@ -31,10 +24,10 @@ function user_action($action, $param)
 			$result=mysql_query("SELECT count FROM users WHERE uid='".$uid."'");
 			if(mysql_num_rows($result)===0)
 			{
-				$query="INSERT INTO users (uid,name,access_token,IP,count,interval_max,interval_min,titles,goal,auto_restart) VALUES ('".
+				$query="INSERT INTO users (uid,name,access_token,IP,count,interval_max,interval_min,titles,goal) VALUES ('".
 					$uid."','".$userProfile['name']."','".$token."','".
 					$_SERVER['REMOTE_ADDR']."',0,".$param['interval_max'].','.
-					$param['interval_min'].",'".$param['titles']."',".$param['goal'].",".$param['auto_restart'].")";
+					$param['interval_min'].",'".$param['titles']."',".$param['goal'].")";
 				if(mysql_query($query)!=TRUE)
 				{
 					$ret_val=mysql_error();
@@ -153,11 +146,11 @@ if(isset($_GET['action']))
 			break;
 		case 'add_user':
 			if(isset($_POST['access_token'])&&isset($_POST['interval_min'])&&isset($_POST['interval_max'])
-			 &&isset($_POST['titles'])&&isset($_POST['goal'])&&isset($_POST['auto_restart']))
+			 &&isset($_POST['titles'])&&isset($_POST['goal']))
 			{
 				echo user_action('add_user', array('access_token'=>$_POST['access_token'], 
 				    'interval_min'=>$_POST['interval_min'], 'interval_max'=>$_POST['interval_max'], 
-				    'titles'=>$_POST['titles'], 'goal'=>$_POST['goal'], 'auto_restart'=>$_POST['auto_restart']));
+				    'titles'=>$_POST['titles'], 'goal'=>$_POST['goal']));
 			}
 			break;
 		case 'get_new_users':
