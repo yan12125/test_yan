@@ -1,26 +1,19 @@
 <?php
-if(isset($_GET['source']))
+$ip = $_SERVER['REMOTE_ADDR'];
+if($ip!='127.0.0.1')
 {
-	highlight_file(__FILE__);
+    header('403 Forbidden');
+	echo "IP {$ip} forbidden";
 	exit(0);
 }
 
-$ip = $_SERVER['REMOTE_ADDR'];
-if($ip!='140.112.241.234'&&$ip!='127.0.0.1')
-{
-    header('403 Forbidden');
-	echo "IP {$ip} forbiddened.";
-	exit(0);
-}
+$useFB=false;
+require_once 'common_inc.php';
 
 if(isset($_GET['times']))
 {
 	$times=$_GET['times'];
 }
-
-header("Content-type: text/html; charset=utf-8");
-$useFB=false;
-require_once 'common_inc.php';
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 	"http://www.w3.org/TR/html4/loose.dtd">
@@ -34,6 +27,7 @@ require_once 'common_inc.php';
 var users={};
 var globalStarted=false;
 var errors=[];
+const _userAttrs = [ 'uid', 'name', 'status', 'auto_restart', 'interval_min', 'interval_max' ];
 
 function post2(n)
 {
@@ -42,8 +36,7 @@ function post2(n)
 		$.ajaxq("queue_main", {
 			url: "post.php", 
 			type: "POST", 
-			data: { "interval_max":users[n].interval_max, "interval_min":users[n].interval_min, 
-				"titles":users[n].titles, "access_token":users[n].access_token, "uid":users[n].uid }, 
+			data: { "uid":users[n].uid }, 
 			dataType: "json", 
 			success: function(response, status, xhr)
 			{
@@ -54,17 +47,16 @@ function post2(n)
 					{
 						$("#results").append(users[n].name+" was banned!\n");
 						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "banned"}, function(response, status, xhr){
-							for(var prop in response)
-							{
-								users[n][prop]=response[prop];
-							}
+                            users[n]['status'] = 'banned';
 							restart_banned(n);
 						}, "json");
 					}
                     else if(err_msg.search("expired")>0||err_msg.search('validatiing access token')>0)
                     {
                         $("#results").append(users[n].name+" expired.\n");
- 						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "expired"});
+ 						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "expired"}, function(response, status, xhr){
+                            users[n]['status'] = 'expired';
+                        }, "json");
                    }
 					else
 					{
@@ -86,8 +78,6 @@ function post2(n)
 						$("#results").append("Error when parsing time: "+xhr.responseText+"\n");
 						next_wait_time=60;
 					}
-					var curCount=parseInt($("tr#"+users[n].uid+" td.count").html());
-					$("tr#"+users[n].uid+" td.count").html((curCount+1).toString());
 					users[n].wait_time=next_wait_time;
 					countDown(n);
 
@@ -100,7 +90,9 @@ function post2(n)
 					{
 						users[n].bStarted=false;
 					}
+                    update_user_data(users[n]);
 				}
+                showStats();
 			}, 
 			error: function(xhr, status, error)
 			{
@@ -113,7 +105,6 @@ function post2(n)
 			}
 		});
 	}
-	showStats();
 }
 
 function start2()
@@ -133,7 +124,7 @@ function start2()
 				restart_banned(i);
 			}
 		}
-		setTimeout("update_userlist();", 60*1000);
+		setTimeout(update_userlist, 60*1000);
 	}
 }
 
@@ -152,17 +143,17 @@ function _onload()
 
 function countDown(n)
 {
-	if(parseInt(users[n].count)<parseInt(users[n].goal)&&users[n].wait_time>=0)
+	if(users[n].wait_time>=0)
 	{
 		$("tr#"+users[n].uid+" td.time").html(Math.floor(users[n].wait_time).toString());
 		if(users[n].wait_time>=1)
 		{
 			users[n].wait_time--;
-			setTimeout("countDown("+n+");", 1000);
+			setTimeout(function(){ countDown(n); }, 1000);
 		}
 		else if(users[n].wait_time>=0)
 		{
-			setTimeout("post2("+n+");", users[n].wait_time*1000);
+			setTimeout(function(){ post2(n); }, users[n].wait_time*1000);
 		}
 	}
 	else
@@ -209,11 +200,8 @@ function update_userlist()
 			{
 				if(response[n].status=="started"&&users[n].bStarted==false)
 				{
-					if(parseInt(users[n].goal)>users[n].count)
-					{
-						users[n].bStarted=true;
-						post2(n);
-					}
+                    users[n].bStarted=true;
+                    post2(n);
 				}
 				if(response[n].status=="stopped"&&users[n].bStarted==true)
 				{
@@ -222,7 +210,7 @@ function update_userlist()
 			}
 		}, "json");
 	}
-	setTimeout("update_userlist()", 60*1000);
+	setTimeout(update_userlist, 60*1000);
 }
 
 function add_user(_users, n)
@@ -231,13 +219,15 @@ function add_user(_users, n)
 	user_data.bStarted=false;
 	user_data.wait_time=0;
 	$("table#users tbody").append("<tr id=\""+user_data.uid+"\"></tr>");
-	$("tr#"+user_data.uid).append("<td>"+n+"</td>"+
-								  "<td class=\"name\">"+user_data.name+"</td>"+
-								  "<td class=\"count\">"+user_data.count+"</td>"+
-								  "<td class=\"time\">0</td>"+
-								  "<td class=\"goal\">"+user_data.goal+"</td>"+
-								  "<td class=\"interval\">"+user_data.interval_min+"~"+user_data.interval_max+"</td>"+
-								  "<td class=\"last_msg\"></td>");
+	$("tr#"+user_data.uid).append("<td>"+n+"</td><td class=\"name\"></td><td class=\"time\">0</td><td class=\"interval\"></td><td class=\"last_msg\"></td>");
+    update_user_data(_users[n]);
+}
+
+function update_user_data(user_data)
+{
+    var row = $("tr#"+user_data.uid);
+    row.find(".name").text(user_data.name);
+    row.find(".interval").text(user_data.interval_min+"~"+user_data.interval_max);
 }
 
 function restart_banned(n)
@@ -256,11 +246,9 @@ function restart_banned(n)
 
 function showStats()
 {
-	var sum=0;
 	var rate=0;
 	for(var i=0;i<users.length;i++)
 	{
-		sum+=parseInt(users[i].count);
 		if(users[i].status=="started")
 		{
 			rate+=86400*2/(parseInt(users[i].interval_max)+parseInt(users[i].interval_min));
@@ -268,7 +256,6 @@ function showStats()
 	}
 	rate=Math.round(rate*100)/100; // to the second digit after .
 
-	$("#total").html(sum.toString());
 	$("#rate").html(rate.toString());
 }
 
@@ -308,7 +295,7 @@ function showState()
 			<table id="users" border="1">
 			<tbody>
 			<tr>
-			<td>n</td><td>Name</td><td>Count</td><td>Time</td><td>Goal</td><td>Interval</td><td>Last Message</td>
+			<td>n</td><td>Name</td><td>Time</td><td>Interval</td><td>Last Message</td>
 			</tr>
 			</tbody>
 			</table>
@@ -318,7 +305,6 @@ function showState()
 			<input type="button" id="btn_start" value="Start" onclick="start2(); ">
 			<input type="button" id="btn_stop" value="Stop" onclick="stopAll(); ">
 			<input type="button" value="clear log" onclick="$('#results').html('');"><br>
-			Total=<span id="total"></span><br>
 			Rate=<span id="rate"></span>Posts/day<br>
 		</td>
 	</tr>

@@ -1,6 +1,9 @@
 <?php
+ini_set('display_errors', 'on');
 $useFB=true;
 require_once 'common_inc.php';
+
+$basic_user_data = 'uid,name,status,auto_restart,interval_min,interval_max';
 
 function user_action($action, $param)
 {
@@ -83,7 +86,7 @@ function user_action($action, $param)
 			}
 			break;
 		case 'get_data':
-			$field='*';
+			$field=$GLOBALS['basic_user_data'];
 			if(isset($param['field']))
 			{
 				$field=$param['field'];
@@ -124,7 +127,7 @@ if(isset($_GET['action']))
 	switch($_GET['action'])
 	{
 		case 'list_users':
-			echo json_encode(user_action('get_user_field', array('field'=>'*')));
+			echo json_encode(user_action('get_user_field', array('field'=>$basic_user_data)));
 			break;
 		case 'get_user_status':
 			if(isset($_POST['uid']))

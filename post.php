@@ -63,7 +63,7 @@ try
 {
 	if(isset($_POST['uid']))
 	{
-        $userData = user_action('get_data', array('uid' => $_POST['uid']));
+        $userData = user_action('get_data', array('uid' => $_POST['uid'], 'field'=>'*'));
         if($userData['query_result'] != 'user_found')
         {
             throw new Exception("Specified UID not found!");
@@ -73,7 +73,7 @@ try
         $arr_result=text_action("get_random_text_from_titles", array("titles"=>$titles_json));
         if(isset($arr_result['error']))
         {
-            throw new Exception($arr_result);
+            throw new Exception($arr_result['error']);
         }
 
 		$pause_time=randND($userData['interval_max'], $userData['interval_min'], 6);	// 正負三個標準差
