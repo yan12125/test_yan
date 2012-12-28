@@ -37,7 +37,7 @@ function getCount($facebook, $access_token)
 }
 */
 
-function start_db($host, $username, $password, $dbname)
+/*function start_db($host, $username, $password, $dbname)
 {
 	static $link=null;
 	if(is_null($link))
@@ -46,7 +46,7 @@ function start_db($host, $username, $password, $dbname)
 	}
 	mysql_query("SET NAMES 'utf8'");
 	mysql_select_db($dbname);
-}
+}*/
 
 function load_params($paramName)
 {
@@ -66,5 +66,16 @@ if(isset($useFB))
 		$facebook=new Facebook(array('appId'=>$appId,'secret'=>$appSecret));
 	}
 }
-start_db($sqlhost, $sqlusername, $mysqlPass, $dbname);
+try
+{
+    $dsn = "mysql:host={$sqlhost};dbname={$dbname};port=3306";
+    $db = new PDO($dsn, $sqlusername, $mysqlPass);
+}
+catch(PDOException $e)
+{
+    echo json_encode(array(
+        'error' => 'Fatal: cannot connect to mysql server.'
+    ));
+    exit(0);
+}
 ?>
