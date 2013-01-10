@@ -1,0 +1,5 @@
+1. Use PDO-mysql instead of mysql
+2. Raw text into database, max line length and lines
+3. User account: add my pass phrase
+4. Multi FB query, my queue at alternate.php
+5. Add text, add checking
