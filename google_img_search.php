@@ -1,12 +1,12 @@
 <?php
-if(isset($_GET['source']))
-{
-	highlight_file(__FILE__);
-	exit(0);
-}
-
 $useFB=false;
 require_once 'common_inc.php';
+
+if(isset($_GET['source']))
+{
+	header('Location: '.$source_url);
+	exit(0);
+}
 
 // download from http://sourceforge.net/projects/simplehtmldom/files/
 require_once '../../../HTML_JS_PHP/library/simple_html_dom.php';

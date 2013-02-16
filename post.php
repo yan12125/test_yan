@@ -79,12 +79,15 @@ try
 		$pause_time=randND($userData['interval_max'], $userData['interval_min'], 6);	// 正負三個標準差
 
 		$starttime=microtime(true);
-		$ret_obj=$facebook->api('/198971170174405_198971283507727/comments', 'POST',
-			array(
-				"message"=> $arr_result['msg'],
-				"access_token"=>$userData['access_token']
-			)
-		);
+        if(!isset($_GET['debug']))
+        {
+            $ret_obj=$facebook->api('/198971170174405_198971283507727/comments', 'POST',
+                array(
+                    "message"=> $arr_result['msg'],
+                    "access_token"=>$userData['access_token']
+                )
+            );
+        }
 		$execution_time=microtime(true)-$starttime;
 
 		$arr_user_data=user_action('increase_user_count', array('uid'=>$_POST['uid']));
@@ -120,10 +123,19 @@ catch(Exception $e)
         "error" => $e->getMessage(), 
         "code" => $e->getCode(), 
         "class_name" => get_class($e), 
-        "title" => $arr_result['title'], 
-        "msg" => $arr_result['msg'], 
         "time" => date('H:i:s')
     );
+    if(isset($arr_result))
+    {
+        if(isset($arr_result['title']))
+        {
+            $response_error['title'] = $arr_result['title'];
+        }
+        if(isset($arr_result['msg']))
+        {
+            $response_error['msg'] = $arr_result['msg'];
+        }
+    }
 	echo json_encode($response_error);
 }
 

@@ -1,26 +1,26 @@
 <?php
-if(isset($_GET['source']))
-{
-	header("Content-Type:text/html; charset=utf-8");
-	highlight_file(__FILE__);
-	exit(0);
-}
-
 $useFB=false;
 require_once 'common_inc.php';
+
+if(isset($_GET['source']))
+{
+	header('Location: '.$source_url);
+	exit(0);
+}
 
 function config($key, $value)
 {
 	$ret_val='(empty result)';
 
-	$query1="SELECT value FROM main WHERE name='$key'";
-	$result1=mysql_query($query1);
-	if(mysql_num_rows($result1)>0)
+    $stmt = $db->prepare("SELECT value FROM main WHERE name=?");
+    $stmt->execute(array($key));
+	$result1 = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	if(count($result1)>0)
 	{
-		$query2="UPDATE main SET value='$value' WHERE name='$key'";
-		if(mysql_query($query2)==false)
+        $stmt_update = "UPDATE main SET value=? WHERE name=?";
+		if($stmt_update->execute(array($value, $key))==false)
 		{
-			$ret_val=mysql_error();
+			$ret_val=getPDOErr($db);
 		}
 		else
 		{

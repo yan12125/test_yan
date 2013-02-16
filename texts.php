@@ -4,30 +4,26 @@ require_once 'common_inc.php';
 
 function text_action($verb, $params)
 {
+    global $db;
 	$ret_val='';
 	switch($verb)
 	{
 		case "list_titles":
-			$result=mysql_query("SELECT title FROM texts");
-			$output=array();
-			if($result!=false)
+			if(($stmt = $db->query("SELECT title FROM texts"))!==false)
 			{
-				while(($arr=mysql_fetch_assoc($result))!=FALSE)
-				{
-					$output[]=$arr['title'];
-				}
+                $ret_val = $stmt->fetchAll(PDO::FETCH_ASSOC);
 			}
 			else
 			{
-				$output['error']=mysql_error();
+				$ret_val = array('error' => getPDOErr($db));
 			}
-			$ret_val=$output;
 			break;
 		case "get_texts":
 			if(array_key_exists('title', $params))
 			{
-				$result=mysql_query("SELECT text FROM texts WHERE title='".$params['title']."' ");
-				$arr=mysql_fetch_assoc($result);
+                $stmt = $db->prepare("SELECT text FROM texts WHERE title=?");
+                $stmt->execute(array($params['title']));
+                $arr = $stmt->fetch(PDO::FETCH_ASSOC);
 				$ret_val=$arr['text'];
 			}
 			break;
@@ -35,11 +31,11 @@ function text_action($verb, $params)
 			if(array_key_exists('title', $params))
 			{
 				$ret_val=array();
-				$query="SELECT text,handler FROM texts WHERE title='".$params['title']."'";
-				$result=mysql_query($query);
-				if($result!==false&&mysql_num_rows($result)>0)
+                $stmt = $db->prepare("SELECT text,handler FROM texts WHERE title=?");
+                $stmt->execute(array($params['title']));
+                $arr = $stmt->fetch(PDO::FETCH_ASSOC);
+				if($arr!==false)
 				{
-					$arr=mysql_fetch_assoc($result);
 					$json_texts=json_decode($arr['text'], true);
 					$m=rand(0, count($json_texts)-1);
 					$ret_val['m']=$m;
@@ -63,6 +59,8 @@ function text_action($verb, $params)
 				else
 				{
 					$ret_val['error']='Error query data!';
+                    $ret_val['msg'] = NULL;
+                    $ret_val['title'] = NULL;
 				}
 			}
 			break;
@@ -76,14 +74,13 @@ function text_action($verb, $params)
 			}
 			break;
         case "check":
-            $result = mysql_query('SELECT * FROM texts');
-            while(($arr=mysql_fetch_assoc($result))!==false)
+            $stmt = $db->query('SELECT * FROM texts');
+            while(($arr = $stmt->fetch(PDO::FETCH_ASSOC))!==false)
             {
                 if(($new_text=str_replace(", \"\"", "", $arr['text']))!==$arr['text'])
                 {
-                    $query = 'UPDATE texts SET text="'.str_replace('"', '\"', $new_text).'" WHERE title="'.$arr['title'].'"';
-                    //echo $query.";\n";
-                    mysql_query($query);
+                    $stmt_update = $db->prepare('UPDATE texts SET text=? WHERE title=?');
+                    $stmt_update->execute(array(str_replace('"', '\"', $new_text), $arr['title']));
                 }
             }
             break;

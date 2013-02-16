@@ -27,6 +27,7 @@ if(isset($_GET['times']))
 var users={};
 var globalStarted=false;
 var errors=[];
+var debug = false;
 const _userAttrs = [ 'uid', 'name', 'status', 'auto_restart', 'interval_min', 'interval_max' ];
 
 function post2(n)
@@ -34,7 +35,7 @@ function post2(n)
 	if(users[n].bStarted&&globalStarted)
 	{
 		$.ajaxq("queue_main", {
-			url: "post.php", 
+			url: (debug?"post.php?debug=1":"post.php"), 
 			type: "POST", 
 			data: { "uid":users[n].uid }, 
 			dataType: "json", 

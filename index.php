@@ -153,7 +153,7 @@ function getTitles(filename)
 		for(var i=0;i<textgroups.length;i++)
 		{
 			var titles_div=$(".title_choose");
-			var title_text=textgroups[i];
+			var title_text=textgroups[i]['title'];
 			titles_div[i%titles_div.length].innerHTML+="<input type=\"checkbox\" class=\"title_checkbox\" value=\""+
 				title_text+"\" />"+title_text+"<br />\n";
 		}

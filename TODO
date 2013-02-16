@@ -3,3 +3,8 @@
 3. User account: add my pass phrase
 4. Multi FB query, my queue at alternate.php
 5. Add text, add checking
+6. Status of texts and users
+7. Pause and restart for alternate.php
+8. "loading" in alternate.php
+9. master
+10. move all user status changing to post.php

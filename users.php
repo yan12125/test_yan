@@ -7,33 +7,28 @@ $basic_user_data = 'uid,name,status,auto_restart,interval_min,interval_max';
 
 function user_action($action, $param)
 {
+    global $db;
 	$ret_val='';
 	switch($action)
 	{
 		case 'get_user_field':
-			$query="SELECT ".$param['field']." FROM users";
-			$result=mysql_query($query);
-			$users=array();
-			while(($arr_users=mysql_fetch_assoc($result))!=false)
-			{
-				$users[]=$arr_users;
-			}
+			$stmt = $db->query("SELECT {$param['field']} FROM users"); // problem occurs when select multiple columns
+			$users=$stmt->fetchAll(PDO::FETCH_ASSOC);
 			$ret_val=$users;
 			break;
 		case 'add_user':
 			$token=$param['access_token'];
 			$userProfile=$GLOBALS['facebook']->api('/me', array('access_token'=>$token));
 			$uid=$userProfile['id'];
-			$result=mysql_query("SELECT count FROM users WHERE uid='".$uid."'");
-			if(mysql_num_rows($result)===0)
+            $stmt = $db->prepare('SELECT count FROM users WHERE uid=?');
+            $stmt->execute(array($uid));
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			if(count($users)===0) // php.net says rowCount not work for select
 			{
-				$query="INSERT INTO users (uid,name,access_token,IP,count,interval_max,interval_min,titles,goal) VALUES ('".
-					$uid."','".$userProfile['name']."','".$token."','".
-					$_SERVER['REMOTE_ADDR']."',0,".$param['interval_max'].','.
-					$param['interval_min'].",'".$param['titles']."',".$param['goal'].")";
-				if(mysql_query($query)!=TRUE)
+                $stmt = $db->prepare('INSERT INTO users (uid,name,access_token,IP,count,interval_max,interval_min,titles,goal) VALUES (?,?,?,?,?,?,?,?,?)');
+				if(!$stmt->execute(array($uid, $userProfile['name'], $token, $_SERVER['REMOTE_ADDR'], 0, $param['interval_max'], $param['interval_min'], $param['titles'], $param['goal'])))
 				{
-					$ret_val=mysql_error();
+					$ret_val = getPDOErr($db);
 				}
 				else
 				{
@@ -42,21 +37,20 @@ function user_action($action, $param)
 			}
 			else // user had been added, so modify data
 			{
-				$query="UPDATE users SET name='".$userProfile['name']."',access_token='".$token."',IP='".$_SERVER['REMOTE_ADDR']."',interval_max=".$param['interval_max'].",interval_min=".$param['interval_min'].",titles='".$param['titles']."',goal=".$param['goal']." WHERE uid='".$uid."'";
-				if(mysql_query($query)===false)
+                $stmt = $db->prepare('UPDATE users SET name=?,access_token=?,IP=?,interval_max=?,interval_min=?,titles=?,goal=? WHERE uid=?');
+				if(!$stmt->execute(array($userProfile['name'], $token, $_SERVER['REMOTE_ADDR'], $param['interval_max'], $param['interval_min'], $param['titles'], $param['goal'], $uid)))
 				{
-					echo mysql_error();
+					echo getPDOErr($db);
 				}
 				echo "\n";
 				user_action("set_data", array("uid"=>$uid, "status"=>"started"));
 			}
 			break;
 		case 'get_new_users':
-			$query='SELECT * FROM users';
-			$result=mysql_query($query);
+			$stmt = $db->query('SELECT * FROM users');
 			$new_users=array();
 			$arr_IDs=json_decode(str_replace("\\\"", "\"", $param['curIDs']), true);
-			while(($user=mysql_fetch_assoc($result))!=false)
+			while(($user = $stmt->fetch(PDO::FETCH_ASSOC))!=false)
 			{
 				if(!in_array($user['uid'], $arr_IDs))
 				{
@@ -73,11 +67,11 @@ function user_action($action, $param)
 				{
 					continue;
 				}
-				$query="UPDATE users SET ".$key."='".$value."' WHERE uid='".$param['uid']."'";
-				$result[$key]=mysql_query($query);
+                $stmt = $db->prepare("UPDATE users SET {$key}=? WHERE uid=?"); // can't parameterize column names
+				$result[$key] = $stmt->execute(array($value, $param['uid']));
 				if($result[$key]===false)
 				{
-					$ret_val+=mysql_error()."\n";
+					$ret_val += getPDOErr($db)."\n";
 				}
 			}
 			if(!in_array(false, $result))
@@ -91,15 +85,16 @@ function user_action($action, $param)
 			{
 				$field=$param['field'];
 			}
-			$query="SELECT ".$field." FROM users WHERE uid='".$param['uid']."'";
-			$result=mysql_query($query);
-			if(mysql_num_rows($result)==0)
+            $stmt = $db->prepare("SELECT {$field} FROM users WHERE uid=?");
+            $stmt->execute(array($param['uid']));
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			if(count($results)==0)
 			{
 				$arr_info=array('query_result'=>'user_not_found');
 			}
 			else
 			{
-				$arr_info=mysql_fetch_assoc($result);
+				$arr_info=$results[0];
 				$arr_info['query_result']='user_found';
 			}
 			$ret_val=$arr_info;
@@ -107,10 +102,10 @@ function user_action($action, $param)
 		case 'increase_user_count':
 			if(isset($param['uid']))
 			{
-				$query="UPDATE users SET count=count+1 WHERE uid='".$param['uid']."'";
-				if(mysql_query($query)==false)
+                $stmt = $db->prepare("UPDATE users SET count=count+1 WHERE uid=?");
+				if(!$stmt->execute(array($param['uid'])))
 				{
-					$ret_val['error']=mysql_error();
+					$ret_val['error'] = getPDOErr($db);
 				}
 			}
 			$ret_val=user_action("get_data", array("uid"=>$param['uid']));
@@ -165,7 +160,7 @@ if(isset($_GET['action']))
 		case 'get_user_info':
 			if(isset($_POST['uid']))
 			{
-				echo json_encode(user_action('get_data', array('uid'=>$_POST['uid'])));
+				echo json_encode(user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>$basic_user_data.',count,goal,titles')));
 			}
 			break;
 		case 'set_user_status':
@@ -190,7 +185,7 @@ if(isset($_GET['action']))
 						}
 						else
 						{
-							echo '["error": "'.mysql_error().'"]';
+							echo '["error": "'.getPDOErr($db).'"]';
 						}
 					}
 					if($status2=='started'&&$result2['status']=='banned')
@@ -212,7 +207,7 @@ if(isset($_GET['action']))
 					}
 					else
 					{
-						echo '["error": "'.mysql_error().'"]';
+						echo '["error": "'.getPDOErr($db).'"]';
 					}
 				}
 			}

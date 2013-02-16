@@ -37,22 +37,20 @@ function getCount($facebook, $access_token)
 }
 */
 
-/*function start_db($host, $username, $password, $dbname)
-{
-	static $link=null;
-	if(is_null($link))
-	{
-		$link=mysql_connect($host, $username, $password);
-	}
-	mysql_query("SET NAMES 'utf8'");
-	mysql_select_db($dbname);
-}*/
-
 function load_params($paramName)
 {
-	$result=mysql_query("SELECT value FROM main WHERE name=\"".$paramName."\" ");
-	$arr_result=mysql_fetch_row($result);
-	return $arr_result[0];
+    $stmt = $GLOBALS['db']->prepare("SELECT value FROM main WHERE name=?");
+    $stmt->execute(array($paramName));
+	$arr_result=$stmt->fetch(PDO::FETCH_ASSOC);
+	return $arr_result['value'];
+}
+
+function getPDOErr($db)
+{
+    print_r(debug_backtrace());
+    // using PDO, get text messages
+    $errorInfo = $db->errorInfo();
+    return $errorInfo[2];
 }
 
 if(isset($useFB))
@@ -68,13 +66,13 @@ if(isset($useFB))
 }
 try
 {
-    $dsn = "mysql:host={$sqlhost};dbname={$dbname};port=3306";
+    $dsn = "mysql:host={$sqlhost};dbname={$dbname};port={$sqlPort};charset=utf8";
     $db = new PDO($dsn, $sqlusername, $mysqlPass);
 }
 catch(PDOException $e)
 {
     echo json_encode(array(
-        'error' => 'Fatal: cannot connect to mysql server.'
+        'error' => $e->getMessage()
     ));
     exit(0);
 }
