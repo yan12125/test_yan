@@ -31,11 +31,19 @@ function text_action($verb, $params)
 			if(array_key_exists('title', $params))
 			{
 				$ret_val=array();
-                $stmt = $db->prepare("SELECT text,handler FROM texts WHERE title=?");
+                $stmt = $db->prepare("SELECT text,handler,locked FROM texts WHERE title=?");
                 $stmt->execute(array($params['title']));
                 $arr = $stmt->fetch(PDO::FETCH_ASSOC);
 				if($arr!==false)
 				{
+                    if($arr['locked'])
+                    {
+                        $ret_val['error'] = 'title_locked';
+                        $ret_val['title'] = $params['title'];
+                        $ret_val['msg'] = "(title locked)";
+                        $ret_val['m'] = -1; // used in output in post.php
+                        break;
+                    }
 					$json_texts=json_decode($arr['text'], true);
 					$m=rand(0, count($json_texts)-1);
 					$ret_val['m']=$m;

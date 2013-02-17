@@ -63,6 +63,8 @@ try
 {
 	if(isset($_POST['uid']))
 	{
+        $not_post = false;
+
         $userData = user_action('get_data', array('uid' => $_POST['uid'], 'field'=>'*'));
         if($userData['query_result'] != 'user_found')
         {
@@ -73,13 +75,20 @@ try
         $arr_result=text_action("get_random_text_from_titles", array("titles"=>$titles_json));
         if(isset($arr_result['error']))
         {
-            throw new Exception($arr_result['error']);
+            if($arr_result['error'] == 'title_locked')
+            {
+                $not_post = true;
+            }
+            else
+            {
+                throw new Exception($arr_result['error']);
+            }
         }
 
 		$pause_time=randND($userData['interval_max'], $userData['interval_min'], 6);	// 正負三個標準差
 
 		$starttime=microtime(true);
-        if(!isset($_GET['debug']))
+        if(!isset($_GET['debug']) && !$not_post)
         {
             $ret_obj=$facebook->api('/198971170174405_198971283507727/comments', 'POST',
                 array(
@@ -96,7 +105,6 @@ try
 		$response['msg']=$arr_result['msg'];
 		$response['title']=$arr_result['title'];
 		$response['item']=$arr_result['n'].','.$arr_result['m'];
-		$response['ID']=$ret_obj['id'];
 		$response['execution_time']=$execution_time;
 		$response['user_data']=$arr_user_data;
 		if(($special_wait_time=load_params('special_wait_time'))>0)

@@ -9,11 +9,6 @@ if($ip!='127.0.0.1')
 
 $useFB=false;
 require_once 'common_inc.php';
-
-if(isset($_GET['times']))
-{
-	$times=$_GET['times'];
-}
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 	"http://www.w3.org/TR/html4/loose.dtd">
@@ -49,10 +44,9 @@ function post2(n)
 						$("#results").append(users[n].name+" was banned!\n");
 						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "banned"}, function(response, status, xhr){
                             users[n]['status'] = 'banned';
-							restart_banned(n);
 						}, "json");
 					}
-                    else if(err_msg.search("expired")>0||err_msg.search('validatiing access token')>0)
+                    else if(err_msg.search("expired")>0||err_msg.search('validating access token')>0)
                     {
                         $("#results").append(users[n].name+" expired.\n");
  						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "expired"}, function(response, status, xhr){
@@ -71,7 +65,7 @@ function post2(n)
 				else
 				{
 					var msg=response["msg"];
-					msg=(msg.length>10)?(msg.substring(0, 10)+"..."):msg;
+					msg=(msg.mb_strlen()>20)?(substr(msg, 20)+"..."):msg;
 					$("tr#"+users[n].uid+" td.last_msg").html(msg);
 					var next_wait_time=parseFloat(response["next_wait_time"]);
 					if(isNaN(next_wait_time))
@@ -120,10 +114,6 @@ function start2()
 				users[i].bStarted=true;
                 post2(i);
 			}
-			else if(users[i].status=="banned")
-			{
-				restart_banned(i);
-			}
 		}
 		setTimeout(update_userlist, 60*1000);
 	}
@@ -138,7 +128,6 @@ function _onload()
 			add_user(users, i);
 		}
 		showStats();
-		loadState();
 	});
 }
 
@@ -231,20 +220,6 @@ function update_user_data(user_data)
     row.find(".interval").text(user_data.interval_min+"~"+user_data.interval_max);
 }
 
-function restart_banned(n)
-{
-	if(users[n].auto_restart=="1"&&users[n].status=="banned")
-	{
-		var now=new Date();
-		var banned_time=new Date(users[n].banned_time);
-		var remaining_time=28*3600-(now.getTime()-banned_time.getTime())/1000; // 28 hours
-		$.post("users.php?action=set_user_status", {"status":"started", "uid":users[n].uid});
-		users[n].bStarted=true;
-		users[n].wait_time=(remaining_time>0)?remaining_time:0;
-		countDown(n);
-	}
-}
-
 function showStats()
 {
 	var rate=0;
@@ -260,32 +235,38 @@ function showStats()
 	$("#rate").html(rate.toString());
 }
 
-function loadState()
-{
-	var times=0;
-	<?php
-		if(isset($times))
-		{
-			echo "times=JSON.parse(".json_encode($times).");\n";
-		}
-	?>
-	if(times!==0)
-	{
-		for(var i=0;i<users.length;i++);
-		{
-			users[i].wait_time=(times[i]>=0)?times[i]:0;
-		}
-	}
-}
+String.prototype.mb_strlen = function(){
+    if(!this) {
+        // it's possible that msg is null
+        return 0;
+    }
+    // chinese characters are between 0x1000 and 0xFFFF in unicode
+    var matches = escape(this).match(/%u[0-9a-fA-F]{4}/g);
+    if(!matches) {
+        return 0;
+    } else {
+        return this.length + matches.length;
+    }
+};
 
-function showState()
+// http://www.codebit.cn/javascript/javascript-substr.html
+function substr(str, len)
 {
-	var times=[];
-	for(var i=0;i<users.length;i++)
-	{
-		times.push(users[i].wait_time);
-	}
-	console.log("?times="+JSON.stringify(times));
+    if(!str || !len) { return ''; }
+ 
+    var a = 0, i = 0, temp = '';
+ 
+    for (i=0;i<str.length;i++) {
+        if (str.charCodeAt(i)>255) {
+            a+=2;
+        } else {
+            a++;
+        }
+        if(a > len) { return temp; }
+ 
+        temp += str.charAt(i);
+    }
+    return str;
 }
 </script>
 </head>
