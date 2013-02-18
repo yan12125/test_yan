@@ -57,7 +57,7 @@ if(isset($useFB))
 {
 	if($useFB===true)
 	{
-        require_once $facebook_path;
+        require_once "facebook.php";
 		// Disable ssl verify to hide messages in error.log
 		// Reference: http://stackoverflow.com/questions/7374223/invalid-or-no-certificate-authority-found-using-bundled-information
 		Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYPEER]=false;

@@ -10,19 +10,18 @@ if($ip!='127.0.0.1')
 $useFB=false;
 require_once 'common_inc.php';
 ?>
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-	"http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
 <head>
 <title>alternate.php</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="/HTML/library/jquery.js" type="text/javascript"></script>
-<script src="/HTML/library/jquery.ajaxq.js" type="text/javascript"></script>
-<script type="text/javascript">
+<meta charset="UTF-8">
+<script src="/HTML/library/jquery.js"></script>
+<script src="/HTML/library/jquery.ajaxq.js"></script>
+<script>
 var users={};
 var globalStarted=false;
 var errors=[];
-var debug = false;
+var debug = 0;
 const _userAttrs = [ 'uid', 'name', 'status', 'auto_restart', 'interval_min', 'interval_max' ];
 
 function post2(n)
@@ -30,9 +29,9 @@ function post2(n)
 	if(users[n].bStarted&&globalStarted)
 	{
 		$.ajaxq("queue_main", {
-			url: (debug?"post.php?debug=1":"post.php"), 
+			url: "post.php", 
 			type: "POST", 
-			data: { "uid":users[n].uid }, 
+			data: { "uid":users[n].uid, "debug": debug, "truncated_msg": 1 }, 
 			dataType: "json", 
 			success: function(response, status, xhr)
 			{
@@ -65,7 +64,6 @@ function post2(n)
 				else
 				{
 					var msg=response["msg"];
-					msg=(msg.mb_strlen()>20)?(substr(msg, 20)+"..."):msg;
 					$("tr#"+users[n].uid+" td.last_msg").html(msg);
 					var next_wait_time=parseFloat(response["next_wait_time"]);
 					if(isNaN(next_wait_time))
@@ -119,8 +117,7 @@ function start2()
 	}
 }
 
-function _onload()
-{
+$(document).on('ready', function(e) {
 	$.getJSON("users.php", {"action":"list_users"}, function(response, status, xhr){
 		users=response;
 		for(var i=0;i<users.length;i++)
@@ -129,7 +126,7 @@ function _onload()
 		}
 		showStats();
 	});
-}
+});
 
 function countDown(n)
 {
@@ -234,43 +231,9 @@ function showStats()
 
 	$("#rate").html(rate.toString());
 }
-
-String.prototype.mb_strlen = function(){
-    if(!this) {
-        // it's possible that msg is null
-        return 0;
-    }
-    // chinese characters are between 0x1000 and 0xFFFF in unicode
-    var matches = escape(this).match(/%u[0-9a-fA-F]{4}/g);
-    if(!matches) {
-        return 0;
-    } else {
-        return this.length + matches.length;
-    }
-};
-
-// http://www.codebit.cn/javascript/javascript-substr.html
-function substr(str, len)
-{
-    if(!str || !len) { return ''; }
- 
-    var a = 0, i = 0, temp = '';
- 
-    for (i=0;i<str.length;i++) {
-        if (str.charCodeAt(i)>255) {
-            a+=2;
-        } else {
-            a++;
-        }
-        if(a > len) { return temp; }
- 
-        temp += str.charAt(i);
-    }
-    return str;
-}
 </script>
 </head>
-<body onload="_onload();">
+<body>
 <table border="0">
 	<tr>
 		<td>

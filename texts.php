@@ -78,7 +78,6 @@ function text_action($verb, $params)
 				$arr_titles=json_decode($params['titles']);
 				$n=rand(0, count($arr_titles)-1);
 				$ret_val=text_action("get_random_text_from_title", array("title"=>$arr_titles[$n]));
-				$ret_val['n']=$n;
 			}
 			break;
         case "check":

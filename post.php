@@ -59,6 +59,45 @@ function randND($max, $min, $nSigma)
 	return $nRandom;
 }
 
+/*
+    Truncate $str to the first $len chars
+    * View chinese characters as two characters
+    * Add ... if truncated
+    Reference: http://stackoverflow.com/questions/4601032/php-iterate-on-string-characters
+*/
+function truncate($str, $len)
+{
+    $char_arr = preg_split('/(?<!^)(?!$)/u', $str);
+    $cur_len = 0;
+    $ret_val = '';
+    foreach($char_arr as $char)
+    {
+        $cur_len += mb_strwidth($char, "UTF-8");
+        if($cur_len >= $len)
+        {
+            $ret_val .= '...';
+            break;
+        }
+        $ret_val .= $char;
+    }
+    return $ret_val;
+}
+
+function unicode_conv_impl($matches)
+{
+    $entity = '&#'.hexdec(substr($matches[0], 2)).';'; // $str is \uxxxx
+    return mb_convert_encoding($entity, 'UTF-8', 'HTML-ENTITIES');
+}
+
+/*
+    Replace \uxxxx in $str to utf-8 character
+    Reference: http://stackoverflow.com/questions/2934563/how-to-decode-unicode-escape-sequences-like-u00ed-to-proper-utf-8-encoded-cha
+ */
+function unicode_conv($str)
+{
+    return preg_replace_callback('/\\\\u[0-9a-fA-F]{4}/', 'unicode_conv_impl', $str);
+}
+
 try
 {
 	if(isset($_POST['uid']))
@@ -85,10 +124,18 @@ try
             }
         }
 
-		$pause_time=randND($userData['interval_max'], $userData['interval_min'], 6);	// 正負三個標準差
+		$pause_time=round(randND($userData['interval_max'], $userData['interval_min'], 6), 1); // 正負三個標準差
+        // round to decrease amount of transmission
 
-		$starttime=microtime(true);
-        if(!isset($_GET['debug']) && !$not_post)
+        if(isset($_POST['debug']))
+        {
+            if($_POST['debug'])
+            {
+                $not_post = true;
+            }
+        }
+
+        if(!$not_post)
         {
             $ret_obj=$facebook->api('/198971170174405_198971283507727/comments', 'POST',
                 array(
@@ -97,15 +144,20 @@ try
                 )
             );
         }
-		$execution_time=microtime(true)-$starttime;
 
 		$arr_user_data=user_action('increase_user_count', array('uid'=>$_POST['uid']));
 
 		$response=array();
-		$response['msg']=$arr_result['msg'];
+        if(isset($_POST['truncated_msg']) && $_POST['truncated_msg'])
+        {
+            $response['msg'] = truncate($arr_result['msg'], 20);
+        }
+        else
+        {
+    		$response['msg']=$arr_result['msg'];
+        }
 		$response['title']=$arr_result['title'];
-		$response['item']=$arr_result['n'].','.$arr_result['m'];
-		$response['execution_time']=$execution_time;
+		$response['item']=$arr_result['m'];
 		$response['user_data']=$arr_user_data;
 		if(($special_wait_time=load_params('special_wait_time'))>0)
 		{
@@ -116,7 +168,7 @@ try
 			$response["next_wait_time"]=$pause_time;
 		}
 
-		echo json_encode($response);
+		echo unicode_conv(json_encode($response));
 	}
 	else
 	{
@@ -142,6 +194,10 @@ catch(Exception $e)
         if(isset($arr_result['msg']))
         {
             $response_error['msg'] = $arr_result['msg'];
+        }
+        if(isset($arr_result['m']))
+        {
+            $response_error['item'] = $arr_result['m'];
         }
     }
 	echo json_encode($response_error);

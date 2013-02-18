@@ -3,7 +3,7 @@ ini_set('display_errors', 'on');
 $useFB=true;
 require_once 'common_inc.php';
 
-$basic_user_data = 'uid,name,status,auto_restart,interval_min,interval_max';
+$basic_user_data = 'uid,name,status,interval_min,interval_max';
 
 function user_action($action, $param)
 {
@@ -110,6 +110,52 @@ function user_action($action, $param)
 			}
 			$ret_val=user_action("get_data", array("uid"=>$param['uid']));
 			break;
+        case 'set_user_status':
+            $result=false;
+            $status2=$_POST['status'];
+            $result2=user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>'status'));
+            if($result2['status']!=$status2)
+            {
+                if($status2=='started'||$status2=='stopped'||$status2=='banned'||$status2=='expired')
+                {
+                    $result=user_action('set_data', array('uid'=>$_POST['uid'], 'status'=>$status2));
+                }
+                if($status2=='banned'&&$result2['status']=='started')
+                {
+                    $result=$result&&user_action('set_data', array('uid'=>$_POST['uid'], 'banned_time'=>date("Y-m-d H:i:s")));
+                    if($result===true)
+                    {
+                        $result2['status']=$status2;
+                        $ret_val = $result2;
+                    }
+                    else
+                    {
+                        $ret_val = array("error" => getPDOErr($db));
+                    }
+                }
+                if($status2=='started'&&$result2['status']=='banned')
+                {
+                    $arr_result=user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>'count'));
+                    if($arr_result['query_result']=='user_found')
+                    {
+                        $result=user_action('set_data', array('uid'=>$_POST['uid'], 'last_count'=>$arr_result['count']));
+                    }
+                    else
+                    {
+                        $result=false;
+                    }
+                }
+                if($result===true)
+                {
+                    $result2['status']=$status2;
+                    $ret_val = $result2;
+                }
+                else
+                {
+                    $ret_val = array("error" => getPDOErr($db));
+                }
+            }
+            break;
 		default:
 			$ret_val="Invalid verb!";
 			break;
@@ -166,53 +212,10 @@ if(isset($_GET['action']))
 		case 'set_user_status':
 			if(isset($_POST['status']))
 			{
-				$result=false;
-				$status2=$_POST['status'];
-				$result2=user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>'status'));
-				if($result2['status']!=$status2)
-				{
-					if($status2=='started'||$status2=='stopped'||$status2=='banned'||$status2=='expired')
-					{
-						$result=user_action('set_data', array('uid'=>$_POST['uid'], 'status'=>$status2));
-					}
-					if($status2=='banned'&&$result2['status']=='started')
-					{
-						$result=$result&&user_action('set_data', array('uid'=>$_POST['uid'], 'banned_time'=>date("Y-m-d H:i:s")));
-						if($result===true)
-						{
-							$result2['status']=$status2;
-							echo json_encode($result2);
-						}
-						else
-						{
-							echo '["error": "'.getPDOErr($db).'"]';
-						}
-					}
-					if($status2=='started'&&$result2['status']=='banned')
-					{
-						$arr_result=user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>'count'));
-						if($arr_result['query_result']=='user_found')
-						{
-							$result=user_action('set_data', array('uid'=>$_POST['uid'], 'last_count'=>$arr_result['count']));
-						}
-						else
-						{
-							$result=false;
-						}
-					}
-					if($result===true)
-					{
-						$result2['status']=$status2;
-						echo json_encode($result2);
-					}
-					else
-					{
-						echo '["error": "'.getPDOErr($db).'"]';
-					}
-				}
+                echo json_encode(user_action('set_user_status', array('status'=>$_POST['status'])));
 			}
 		default:
-			$ret_val='Invalid action verb.';
+			echo 'Invalid action verb.';
 	}
 }
 ?>
