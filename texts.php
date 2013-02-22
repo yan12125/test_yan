@@ -100,6 +100,7 @@ function text_action($verb, $params)
 
 if(isset($_GET['action'])&&strpos($_SERVER['REQUEST_URI'], 'texts.php')!==FALSE)
 {
+    header("Content-type: application/json");
 	switch($_GET['action'])
 	{
 		case "list_titles":

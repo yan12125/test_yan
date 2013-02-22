@@ -12,11 +12,7 @@ function shutdown()
 		$output['error']=$err['message'];
 		$output['filename']=basename($err['file']);
 		$output['line']=$err['line'];
-		if(isset($arr_result))
-		{
-			$output['title']=$arr_result['title'];
-			$output['msg']=$arr_result['msg'];
-		}
+        report_arr_result(array('title', 'msg'), $output);
 		echo json_encode($output);
 	}
 }
@@ -33,6 +29,20 @@ header("Cache-control: no-cache");
 $ret_obj=null;
 $titles_json=null;
 
+function report_arr_result($optionalField, &$output)
+{
+    if(!isset($GLOBALS['arr_result']))
+    {
+        return;
+    }
+    foreach($optionalField as $item)
+    {
+        if(isset($GLOBALS['arr_result'][$item]))
+        {
+            $output[$item] = $GLOBALS['arr_result'][$item];
+        }
+    }
+}
 /*
 	Usage: Use Box-Muller method to get a random number with a Normal Distribution (ND)
 	Parameters: $max, $min : the range of result
@@ -102,9 +112,10 @@ try
 {
 	if(isset($_POST['uid']))
 	{
+        $uid = $_POST['uid'];
         $not_post = false;
 
-        $userData = user_action('get_data', array('uid' => $_POST['uid'], 'field'=>'*'));
+        $userData = user_action('get_data', array('uid' => $uid, 'field'=>'*'));
         if($userData['query_result'] != 'user_found')
         {
             throw new Exception("Specified UID not found!");
@@ -127,25 +138,52 @@ try
 		$pause_time=round(randND($userData['interval_max'], $userData['interval_min'], 6), 1); // 正負三個標準差
         // round to decrease amount of transmission
 
-        if(isset($_POST['debug']))
+        if(isset($_POST['debug']) && $_POST['debug'])
         {
-            if($_POST['debug'])
-            {
-                $not_post = true;
-            }
+            $not_post = true;
         }
 
         if(!$not_post)
         {
-            $ret_obj=$facebook->api('/198971170174405_198971283507727/comments', 'POST',
-                array(
-                    "message"=> $arr_result['msg'],
-                    "access_token"=>$userData['access_token']
-                )
-            );
+            try
+            {
+                $ret_obj=$facebook->api('/198971170174405_198971283507727/comments', 'POST',
+                    array(
+                        "message"=> $arr_result['msg'],
+                        "access_token"=>$userData['access_token']
+                    )
+                );
+            }
+            catch(FacebookApiException $e)
+            {
+                $msg = $e->getMessage();
+                $newStatus = '';
+                if(strpos($msg, 'banned') !== false)
+                {
+                    $newStatus = 'banned';
+                    $arr_result['next_wait_time'] = -1;
+                }
+                else if(strpos($msg, 'expired') !== false || strpos($msg, 'validating access_token') !== false)
+                {
+                    $newStatus = 'expired';
+                    $arr_result['next_wait_time'] = -1;
+                }
+
+                if($newStatus !== '')
+                {
+                    user_action('set_user_status', array('uid'=>$uid, 'status'=>$newStatus));
+                    $arr_result['processed'] = 1;
+                    $arr_result['new_status'] = $newStatus;
+                    throw new Exception($userData['name'].': '.$newStatus);
+                }
+                else
+                {
+                    throw $e;
+                }
+            }
         }
 
-		$arr_user_data=user_action('increase_user_count', array('uid'=>$_POST['uid']));
+		$arr_user_data=user_action('increase_user_count', array('uid'=>$uid));
 
 		$response=array();
         if(isset($_POST['truncated_msg']) && $_POST['truncated_msg'])
@@ -183,23 +221,10 @@ catch(Exception $e)
         "error" => $e->getMessage(), 
         "code" => $e->getCode(), 
         "class_name" => get_class($e), 
-        "time" => date('H:i:s')
+        "time" => date('H:i:s'), 
+        "next_wait_time"=>$userData["interval_max"] // overwritten if expired, banned, etc
     );
-    if(isset($arr_result))
-    {
-        if(isset($arr_result['title']))
-        {
-            $response_error['title'] = $arr_result['title'];
-        }
-        if(isset($arr_result['msg']))
-        {
-            $response_error['msg'] = $arr_result['msg'];
-        }
-        if(isset($arr_result['m']))
-        {
-            $response_error['item'] = $arr_result['m'];
-        }
-    }
+    report_arr_result(array('title', 'msg', 'm', 'processed', 'new_status', 'next_wait_time'), $response_error);
 	echo json_encode($response_error);
 }
 

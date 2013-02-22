@@ -38,28 +38,22 @@ function post2(n)
 				if((typeof response["error"])!="undefined")
 				{
 					var err_msg=response["error"];
-					if(err_msg.search("banned")>0)
-					{
-						$("#results").append(users[n].name+" was banned!\n");
-						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "banned"}, function(response, status, xhr){
-                            users[n]['status'] = 'banned';
-						}, "json");
-					}
-                    else if(err_msg.search("expired")>0||err_msg.search('validating access token')>0)
+                    if(typeof response["processed"] != "undefined")
                     {
-                        $("#results").append(users[n].name+" expired.\n");
- 						$.post("users.php?action=set_user_status", {"uid":users[n].uid, "status": "expired"}, function(response, status, xhr){
-                            users[n]['status'] = 'expired';
-                        }, "json");
-                   }
+						$("#results").append(err_msg);
+                        users[n]['status'] = response["new_status"];
+                    }
 					else
 					{
 						$("#results").append("Error from "+users[n].name+"\n");
 						window.errors.push(response);
 						console.dir(window.errors[window.errors.length-1]);
-						users[n].wait_time=users[n].interval_max;
-						countDown(n);
 					}
+                    users[n].wait_time = response["next_wait_time"];
+                    if(users[n].wait_time > 0)
+                    {
+                        countDown(n);
+                    }
 				}
 				else
 				{
@@ -206,7 +200,7 @@ function add_user(_users, n)
 	user_data.bStarted=false;
 	user_data.wait_time=0;
 	$("table#users tbody").append("<tr id=\""+user_data.uid+"\"></tr>");
-	$("tr#"+user_data.uid).append("<td>"+n+"</td><td class=\"name\"></td><td class=\"time\">0</td><td class=\"interval\"></td><td class=\"last_msg\"></td>");
+	$("tr#"+user_data.uid).append("<td>"+n+"</td><td class=\"name\"></td><td class=\"time\">0</td><td class=\"last_msg\"></td>");
     update_user_data(_users[n]);
 }
 
@@ -214,7 +208,6 @@ function update_user_data(user_data)
 {
     var row = $("tr#"+user_data.uid);
     row.find(".name").text(user_data.name);
-    row.find(".interval").text(user_data.interval_min+"~"+user_data.interval_max);
 }
 
 function showStats()
@@ -240,7 +233,7 @@ function showStats()
 			<table id="users" border="1">
 			<tbody>
 			<tr>
-			<td>n</td><td>Name</td><td>Time</td><td>Interval</td><td>Last Message</td>
+			<td>n</td><td>Name</td><td>Time</td><td>Last Message</td>
 			</tr>
 			</tbody>
 			</table>

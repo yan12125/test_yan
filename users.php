@@ -1,5 +1,4 @@
 <?php
-ini_set('display_errors', 'on');
 $useFB=true;
 require_once 'common_inc.php';
 
@@ -112,17 +111,17 @@ function user_action($action, $param)
 			break;
         case 'set_user_status':
             $result=false;
-            $status2=$_POST['status'];
-            $result2=user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>'status'));
+            $status2=$param['status'];
+            $result2=user_action('get_data', array('uid'=>$param['uid'], 'field'=>'status'));
             if($result2['status']!=$status2)
             {
                 if($status2=='started'||$status2=='stopped'||$status2=='banned'||$status2=='expired')
                 {
-                    $result=user_action('set_data', array('uid'=>$_POST['uid'], 'status'=>$status2));
+                    $result=user_action('set_data', array('uid'=>$param['uid'], 'status'=>$status2));
                 }
                 if($status2=='banned'&&$result2['status']=='started')
                 {
-                    $result=$result&&user_action('set_data', array('uid'=>$_POST['uid'], 'banned_time'=>date("Y-m-d H:i:s")));
+                    $result=$result&&user_action('set_data', array('uid'=>$param['uid'], 'banned_time'=>date("Y-m-d H:i:s")));
                     if($result===true)
                     {
                         $result2['status']=$status2;
@@ -135,10 +134,10 @@ function user_action($action, $param)
                 }
                 if($status2=='started'&&$result2['status']=='banned')
                 {
-                    $arr_result=user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>'count'));
+                    $arr_result=user_action('get_data', array('uid'=>$param['uid'], 'field'=>'count'));
                     if($arr_result['query_result']=='user_found')
                     {
-                        $result=user_action('set_data', array('uid'=>$_POST['uid'], 'last_count'=>$arr_result['count']));
+                        $result=user_action('set_data', array('uid'=>$param['uid'], 'last_count'=>$arr_result['count']));
                     }
                     else
                     {
@@ -165,6 +164,7 @@ function user_action($action, $param)
 
 if(isset($_GET['action']))
 {
+    header("Content-type: application/json");
 	switch($_GET['action'])
 	{
 		case 'list_users':
@@ -210,10 +210,11 @@ if(isset($_GET['action']))
 			}
 			break;
 		case 'set_user_status':
-			if(isset($_POST['status']))
+			if(isset($_POST['uid']) && isset($_POST['status']))
 			{
-                echo json_encode(user_action('set_user_status', array('status'=>$_POST['status'])));
+                echo json_encode(user_action('set_user_status', array('uid'=>$_POST['uid'], 'status'=>$_POST['status'])));
 			}
+            break;
 		default:
 			echo 'Invalid action verb.';
 	}
