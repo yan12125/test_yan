@@ -22,16 +22,20 @@ var users={};
 var globalStarted=false;
 var errors=[];
 var debug = 0;
-const _userAttrs = [ 'uid', 'name', 'status', 'auto_restart', 'interval_min', 'interval_max' ];
 
-function post2(n)
+function post2(uid)
 {
-	if(users[n].bStarted&&globalStarted)
+	if(users[uid].bStarted&&globalStarted)
 	{
+        var _data = { "uid":users[uid].uid, "truncated_msg": 1 };
+        if(debug)
+        {
+            _data["debug"] = 1;
+        }
 		$.ajaxq("queue_main", {
 			url: "post.php", 
 			type: "POST", 
-			data: { "uid":users[n].uid, "debug": debug, "truncated_msg": 1 }, 
+			data: _data, 
 			dataType: "json", 
 			success: function(response, status, xhr)
 			{
@@ -41,43 +45,43 @@ function post2(n)
                     if(typeof response["processed"] != "undefined")
                     {
 						$("#results").append(err_msg);
-                        users[n]['status'] = response["new_status"];
+                        users[uid]['status'] = response["new_status"];
                     }
 					else
 					{
-						$("#results").append("Error from "+users[n].name+"\n");
+						$("#results").append("Error from "+users[uid].name+"\n");
 						window.errors.push(response);
 						console.dir(window.errors[window.errors.length-1]);
 					}
-                    users[n].wait_time = response["next_wait_time"];
-                    if(users[n].wait_time > 0)
+                    users[uid].wait_time = response["next_wait_time"];
+                    if(users[uid].wait_time > 0)
                     {
-                        countDown(n);
+                        countDown(uid);
                     }
 				}
 				else
 				{
 					var msg=response["msg"];
-					$("tr#"+users[n].uid+" td.last_msg").html(msg);
+					$("tr#u_"+users[uid].uid+" td.last_msg").html(msg);
 					var next_wait_time=parseFloat(response["next_wait_time"]);
 					if(isNaN(next_wait_time))
 					{
 						$("#results").append("Error when parsing time: "+xhr.responseText+"\n");
 						next_wait_time=60;
 					}
-					users[n].wait_time=next_wait_time;
-					countDown(n);
+					users[uid].wait_time=next_wait_time;
+					countDown(uid);
 
 					// update user data
 					for(var s in response["user_data"])
 					{
-						users[n][s]=response["user_data"][s];
+						users[uid][s]=response["user_data"][s];
 					}
 					if(response["user_data"]["status"]!="started")
 					{
-						users[n].bStarted=false;
+						users[uid].bStarted=false;
 					}
-                    update_user_data(users[n]);
+                    update_user_data(users[uid]);
 				}
                 showStats();
 			}, 
@@ -87,8 +91,8 @@ function post2(n)
 				var now=new Date();
 				console.log(now.toLocaleTimeString());
 				console.log(xhr.responseText);
-				users[n].wait_time=600;
-				countDown(n);
+				users[uid].wait_time=600;
+				countDown(uid);
 			}
 		});
 	}
@@ -98,13 +102,13 @@ function start2()
 {
 	if(!globalStarted)
 	{
-		for(var i=0;i<users.length;i++)
+		for(var uid in users)
 		{
-			if(users[i].status=="started")
+			if(users[uid].status=="started")
 			{
 				globalStarted=true;
-				users[i].bStarted=true;
-                post2(i);
+				users[uid].bStarted=true;
+                post2(uid);
 			}
 		}
 		setTimeout(update_userlist, 60*1000);
@@ -113,35 +117,37 @@ function start2()
 
 $(document).on('ready', function(e) {
 	$.getJSON("users.php", {"action":"list_users"}, function(response, status, xhr){
-		users=response;
-		for(var i=0;i<users.length;i++)
-		{
-			add_user(users, i);
-		}
+        for(var i = 0;i < response.length;i++)
+        {
+            var uid = response[i].uid;
+            users[uid] = response[i];
+			add_user(users, uid);
+            $("tr#u_"+uid+" td:first").html(i.toString());
+        }
 		showStats();
 	});
 });
 
-function countDown(n)
+function countDown(uid)
 {
-	if(users[n].wait_time>=0)
+	if(users[uid].wait_time>=0)
 	{
-		$("tr#"+users[n].uid+" td.time").html(Math.floor(users[n].wait_time).toString());
-		if(users[n].wait_time>=1)
+		$("tr#u_"+uid+" td.time").html(Math.floor(users[uid].wait_time).toString());
+		if(users[uid].wait_time>=1)
 		{
-			users[n].wait_time--;
-			setTimeout(function(){ countDown(n); }, 1000);
+			users[uid].wait_time--;
+			setTimeout(function(){ countDown(uid); }, 1000);
 		}
-		else if(users[n].wait_time>=0)
+		else if(users[uid].wait_time>=0)
 		{
-			setTimeout(function(){ post2(n); }, users[n].wait_time*1000);
+			setTimeout(function(){ post2(uid); }, users[uid].wait_time*1000);
 		}
 	}
 	else
 	{
-		users[n].wait_time=0;
-		users[n].bStarted=false;
-		$.post("users.php?action=set_user_status", {"status": "stopped", "uid": users[n].uid});
+		users[uid].wait_time=0;
+		users[uid].bStarted=false;
+		$.post("users.php?action=set_user_status", {"status": "stopped", "uid": users[uid].uid});
 	}
 }
 
@@ -157,36 +163,36 @@ function stopAll()
 function update_userlist()
 {
 	var curIDs=[];
-	for(var i=0;i<users.length;i++)
+	for(var uid in users)
 	{
-		curIDs.push(users[i].uid);
+		curIDs.push(uid);
 	}
 	$.post("users.php?action=get_new_users", {"IDs":JSON.stringify(curIDs)}, function(response, status, xhr){
-		var orig_len=users.length;
-		for(var n in response)
+		for(var i = 0;i < response.length;i++)
 		{
-			users.push(response[n]);
-			var N=parseInt(n)+orig_len;
-			add_user(users, N);
+            var uid = response[i].uid;
+			users[uid] = response[i];
+			add_user(users, uid);
 			if(globalStarted)
 			{
-				post2(N);
+				post2(uid);
 			}
 		}
 	}, "json");
 	if(globalStarted)
 	{
 		$.post("users.php?action=get_user_status", {}, function(response, status, xhr){
-			for(var n in response)
+			for(var i = 0;i < response.length;i++)
 			{
-				if(response[n].status=="started"&&users[n].bStarted==false)
+                var uid = response[i].uid;
+				if(response[i].status=="started"&&users[uid].bStarted==false)
 				{
-                    users[n].bStarted=true;
-                    post2(n);
+                    users[uid].bStarted=true;
+                    post2(uid);
 				}
-				if(response[n].status=="stopped"&&users[n].bStarted==true)
+				if(response[i].status=="stopped"&&users[uid].bStarted==true)
 				{
-					users[n].bStarted=false;
+					users[uid].bStarted=false;
 				}
 			}
 		}, "json");
@@ -194,35 +200,42 @@ function update_userlist()
 	setTimeout(update_userlist, 60*1000);
 }
 
-function add_user(_users, n)
+function add_user(_users, uid)
 {
-	var user_data=_users[n];
+	var user_data=_users[uid];
 	user_data.bStarted=false;
 	user_data.wait_time=0;
-	$("table#users tbody").append("<tr id=\""+user_data.uid+"\"></tr>");
-	$("tr#"+user_data.uid).append("<td>"+n+"</td><td class=\"name\"></td><td class=\"time\">0</td><td class=\"last_msg\"></td>");
-    update_user_data(_users[n]);
+	$("table#users tbody").append("<tr id=\"u_"+user_data.uid+"\"></tr>");
+	$("tr#u_"+user_data.uid).append("<td></td><td class=\"name\"></td><td class=\"time\">0</td><td class=\"last_msg\"></td>");
+    update_user_data(_users[uid]);
 }
 
 function update_user_data(user_data)
 {
-    var row = $("tr#"+user_data.uid);
+    var row = $("tr#u_"+user_data.uid);
     row.find(".name").text(user_data.name);
 }
 
 function showStats()
 {
 	var rate=0;
-	for(var i=0;i<users.length;i++)
+	for(var uid in users)
 	{
-		if(users[i].status=="started")
+        var user = users[uid];
+		if(user.status=="started")
 		{
-			rate+=86400*2/(parseInt(users[i].interval_max)+parseInt(users[i].interval_min));
+			rate+=86400*2/(parseInt(user.interval_max)+parseInt(user.interval_min));
 		}
 	}
 	rate=Math.round(rate*100)/100; // to the second digit after .
 
 	$("#rate").html(rate.toString());
+}
+
+function get_user(n)
+{
+    var row = $("tr").filter(function(){return /^u_\d+$/.test(this.id);}).eq(n);
+    return users[row[0].id.substr(2)]; // id is u_xxxx...xxxx
 }
 </script>
 </head>

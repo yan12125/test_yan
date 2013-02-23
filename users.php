@@ -185,7 +185,7 @@ if(isset($_GET['action']))
 			}
 			else
 			{
-				echo json_encode(user_action('get_user_field', array('field'=>'status')));
+				echo json_encode(user_action('get_user_field', array('field'=>'uid,status')));
 			}
 			break;
 		case 'add_user':
