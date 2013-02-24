@@ -1,14 +1,7 @@
 <?php
-$ip = $_SERVER['REMOTE_ADDR'];
-if($ip!='127.0.0.1')
-{
-    header('403 Forbidden');
-	echo "IP {$ip} forbidden";
-	exit(0);
-}
-
 $useFB=false;
 require_once 'common_inc.php';
+ip_only('127.0.0.1');
 ?>
 <!DOCTYPE html>
 <html>

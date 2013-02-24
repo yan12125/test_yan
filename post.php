@@ -23,6 +23,8 @@ require_once 'common_inc.php';
 require_once 'texts.php';
 require_once 'users.php';
 
+ip_only('127.0.0.1');
+
 header("Content-type: application/json; charset=UTF-8");
 header("Cache-control: no-cache");
 

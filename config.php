@@ -8,6 +8,8 @@ if(isset($_GET['source']))
 	exit(0);
 }
 
+ip_only('127.0.0.1');
+
 function config($key, $value)
 {
 	$ret_val='(empty result)';
@@ -38,19 +40,11 @@ function config($key, $value)
 $mess='';
 $name='';
 $value='';
-if($_SERVER['REMOTE_ADDR']=='140.112.241.51')
+if(isset($_POST['name'])&&isset($_POST['value']))
 {
-	if(isset($_POST['name'])&&isset($_POST['value']))
-	{
-		$name=$_POST['name'];
-		$value=$_POST['value'];
-		$mess=config($name, $value);
-	}
-}
-else
-{
-	echo "Only 140.112.241.51 can run this script!";
-	exit(0);
+    $name=$_POST['name'];
+    $value=$_POST['value'];
+    $mess=config($name, $value);
 }
 ?>
 <html>
