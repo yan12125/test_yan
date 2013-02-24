@@ -12,13 +12,12 @@ ip_only('127.0.0.1');
 <script src="/HTML/library/jquery.ajaxq.js"></script>
 <script>
 var users={};
-var globalStarted=false;
 var errors=[];
 var debug = 0;
 
 function post2(uid)
 {
-	if(users[uid].bStarted&&globalStarted)
+	if(users[uid].bStarted)
 	{
         var _data = { "uid":users[uid].uid, "truncated_msg": 1 };
         if(debug)
@@ -89,53 +88,18 @@ function post2(uid)
 	}
 }
 
-function start2()
-{
-	if(!globalStarted)
-	{
-		for(var uid in users)
-		{
-			if(users[uid].status=="started")
-			{
-				globalStarted=true;
-				users[uid].bStarted=true;
-                post2(uid);
-			}
-		}
-	}
-}
-
-
 function countDown(uid)
 {
-	if(users[uid].wait_time>=0)
-	{
-		$("tr#u_"+uid+" td.time").html(Math.floor(users[uid].wait_time).toString());
-		if(users[uid].wait_time>=1)
-		{
-			users[uid].wait_time--;
-			setTimeout(function(){ countDown(uid); }, 1000);
-		}
-		else if(users[uid].wait_time>=0)
-		{
-			setTimeout(function(){ post2(uid); }, users[uid].wait_time*1000);
-		}
-	}
-	else
-	{
-		users[uid].wait_time=0;
-		users[uid].bStarted=false;
-		$.post("users.php?action=set_user_status", {"status": "stopped", "uid": users[uid].uid});
-	}
-}
-
-function stopAll()
-{
-	globalStarted=false;
-	for(var i=0;i<users.length;i++)
-	{
-		users[i].bStarted=false;
-	}
+    $("tr#u_"+uid+" td.time").html(Math.floor(users[uid].wait_time).toString());
+    if(users[uid].wait_time>=1)
+    {
+        users[uid].wait_time--;
+        setTimeout(function(){ countDown(uid); }, 1000);
+    }
+    else if(users[uid].wait_time>=0) // if users[uid].wait_time < 0, just ignore
+    {
+        setTimeout(function(){ post2(uid); }, users[uid].wait_time*1000);
+    }
 }
 
 function update_userList()
@@ -182,7 +146,6 @@ function update_userList()
             rows.eq(i).find("td:first").html(i);
         }
 	}, "json");
-    setTimeout(update_userList, 60*1000);
 }
 
 function add_user(_users, uid)
@@ -208,11 +171,26 @@ function get_user_rows()
 
 function get_user(n)
 {
-    var row = get_user_rows().eq(n);
-    return users[row[0].id.substr(2)]; // id is u_xxxx...xxxx
+    return users[get_user_rows()[n].id.substr(2)]; // id is u_xxxx...xxxx
 }
 
 $(document).on('ready', function(e){
+    var timer_updateUserList = null;
+    $("#btn_start").on('click', function(e) {
+        update_userList();
+        timer_updateUserList = setInterval(update_userList, 60*1000);
+    });
+    $("#btn_stop").on('click', function(e){
+        clearTimeout(timer_updateUserList);
+        timer_updateUserList = null;
+        for(var uid in users)
+        {
+            users[uid].bStarted=false;
+        }
+    });
+    $("#btn_clearLog").on('click', function(e){
+        $("#results").html('');
+    });
     update_userList();
 });
 </script>
@@ -231,9 +209,9 @@ $(document).on('ready', function(e){
 		</td>
 		<td align="left" valign="top">
 			<textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="40"></textarea><br>
-			<input type="button" id="btn_start" value="Start" onclick="start2(); ">
-			<input type="button" id="btn_stop" value="Stop" onclick="stopAll(); ">
-			<input type="button" value="clear log" onclick="$('#results').html('');"><br>
+			<input type="button" id="btn_start" value="Start">
+			<input type="button" id="btn_stop" value="Stop">
+			<input type="button" id="btn_clearLog" value="clear log"><br>
 			Rate=<span id="rate"></span>Posts/day<br>
 		</td>
 	</tr>
