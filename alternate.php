@@ -51,7 +51,6 @@ function post2(uid)
 					{
 						$("#results").append("Error from "+users[uid].name+"\n");
 						window.errors.push(response);
-						console.dir(window.errors[window.errors.length-1]);
 					}
                     users[uid].wait_time = response["next_wait_time"];
                     if(users[uid].wait_time > 0)
@@ -83,7 +82,6 @@ function post2(uid)
 					}
                     update_user_data(users[uid]);
 				}
-                showStats();
 			}, 
 			error: function(xhr, status, error)
 			{
@@ -111,22 +109,9 @@ function start2()
                 post2(uid);
 			}
 		}
-		setTimeout(update_userlist, 60*1000);
 	}
 }
 
-$(document).on('ready', function(e) {
-	$.getJSON("users.php", {"action":"list_users"}, function(response, status, xhr){
-        for(var i = 0;i < response.length;i++)
-        {
-            var uid = response[i].uid;
-            users[uid] = response[i];
-			add_user(users, uid);
-            $("tr#u_"+uid+" td:first").html(i.toString());
-        }
-		showStats();
-	});
-});
 
 function countDown(uid)
 {
@@ -160,44 +145,51 @@ function stopAll()
 	}
 }
 
-function update_userlist()
+function update_userList()
 {
 	var curIDs=[];
 	for(var uid in users)
 	{
 		curIDs.push(uid);
 	}
-	$.post("users.php?action=get_new_users", {"IDs":JSON.stringify(curIDs)}, function(response, status, xhr){
-		for(var i = 0;i < response.length;i++)
-		{
+	$.post("users.php?action=list_users", {"IDs":JSON.stringify(curIDs)}, function(response, status, xhr){
+        for(var i = 0;i < response.length;i++)
+        {
+            if(typeof response[i].uid == "undefined")
+            {
+                if(typeof response[i].rate != "undefined")
+                {
+                    $("#rate").html(response[i].rate);
+                }
+                continue;
+            }
             var uid = response[i].uid;
-			users[uid] = response[i];
-			add_user(users, uid);
-			if(globalStarted)
-			{
-				post2(uid);
-			}
-		}
-	}, "json");
-	if(globalStarted)
-	{
-		$.post("users.php?action=get_user_status", {}, function(response, status, xhr){
-			for(var i = 0;i < response.length;i++)
-			{
-                var uid = response[i].uid;
-				if(response[i].status=="started"&&users[uid].bStarted==false)
-				{
+            if(typeof response[i].name == "undefined") // not new users, only process status
+            {
+                if(response[i].status=="started"&&users[uid].bStarted==false)
+                {
                     users[uid].bStarted=true;
                     post2(uid);
-				}
-				if(response[i].status=="stopped"&&users[uid].bStarted==true)
-				{
-					users[uid].bStarted=false;
-				}
-			}
-		}, "json");
-	}
-	setTimeout(update_userlist, 60*1000);
+                }
+                if(response[i].status=="stopped"&&users[uid].bStarted==true)
+                {
+                    users[uid].bStarted=false;
+                }
+            }
+            else
+            {
+                users[uid] = response[i];
+                add_user(users, uid);
+            }
+        }
+        // update N
+        var rows = get_user_rows();
+        for(var i = 0;i < rows.length;i++)
+        {
+            rows.eq(i).find("td:first").html(i);
+        }
+	}, "json");
+    setTimeout(update_userList, 60*1000);
 }
 
 function add_user(_users, uid)
@@ -216,27 +208,20 @@ function update_user_data(user_data)
     row.find(".name").text(user_data.name);
 }
 
-function showStats()
+function get_user_rows()
 {
-	var rate=0;
-	for(var uid in users)
-	{
-        var user = users[uid];
-		if(user.status=="started")
-		{
-			rate+=86400*2/(parseInt(user.interval_max)+parseInt(user.interval_min));
-		}
-	}
-	rate=Math.round(rate*100)/100; // to the second digit after .
-
-	$("#rate").html(rate.toString());
+    return $("tr").filter(function(){return /^u_\d+$/.test(this.id);});
 }
 
 function get_user(n)
 {
-    var row = $("tr").filter(function(){return /^u_\d+$/.test(this.id);}).eq(n);
+    var row = get_user_rows().eq(n);
     return users[row[0].id.substr(2)]; // id is u_xxxx...xxxx
 }
+
+$(document).on('ready', function(e){
+    update_userList();
+});
 </script>
 </head>
 <body>

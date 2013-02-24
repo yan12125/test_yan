@@ -1,8 +1,9 @@
 <?php
 $useFB=true;
 require_once 'common_inc.php';
+require_once 'stats.php';
 
-$basic_user_data = 'uid,name,status,interval_min,interval_max';
+$basic_user_data = 'uid,name,status';
 
 function user_action($action, $param)
 {
@@ -13,6 +14,16 @@ function user_action($action, $param)
 		case 'get_user_field':
 			$stmt = $db->query("SELECT {$param['field']} FROM users"); // problem occurs when select multiple columns
 			$users=$stmt->fetchAll(PDO::FETCH_ASSOC);
+            if(isset($param['curIDs']))
+            {
+                foreach($users as &$user)
+                {
+                    if(in_array($user['uid'], $param['curIDs']))
+                    {
+                        unset($user['name']);
+                    }
+                }
+            }
 			$ret_val=$users;
 			break;
 		case 'add_user':
@@ -44,19 +55,6 @@ function user_action($action, $param)
 				echo "\n";
 				user_action("set_data", array("uid"=>$uid, "status"=>"started"));
 			}
-			break;
-		case 'get_new_users':
-			$stmt = $db->query('SELECT * FROM users');
-			$new_users=array();
-			$arr_IDs=json_decode(str_replace("\\\"", "\"", $param['curIDs']), true);
-			while(($user = $stmt->fetch(PDO::FETCH_ASSOC))!=false)
-			{
-				if(!in_array($user['uid'], $arr_IDs))
-				{
-					$new_users[]=$user;
-				}
-			}
-			$ret_val=json_encode($new_users);
 			break;
 		case 'set_data':
 			$result=array();
@@ -168,25 +166,14 @@ if(isset($_GET['action']))
 	switch($_GET['action'])
 	{
 		case 'list_users':
-			echo json_encode(user_action('get_user_field', array('field'=>$basic_user_data)));
-			break;
-		case 'get_user_status':
-			if(isset($_POST['uid']))
-			{
-				$arr_result=user_action('get_data', array('uid'=>$_POST['uid']));
-				if($arr_result['query_result']!="user_not_found")
-				{
-					echo $arr_result['status'];
-				}
-				else
-				{
-					echo 'user_not_found';
-				}
-			}
-			else
-			{
-				echo json_encode(user_action('get_user_field', array('field'=>'uid,status')));
-			}
+            $param = array('field'=>$basic_user_data);
+            if(isset($_POST['IDs']))
+            {
+                $param['curIDs'] = json_decode($_POST['IDs'], true);
+            }
+            $arr_users = user_action('get_user_field', $param);
+            array_unshift($arr_users, array("rate"=>postRate()));
+			echo json_encode($arr_users);
 			break;
 		case 'add_user':
 			if(isset($_POST['access_token'])&&isset($_POST['interval_min'])&&isset($_POST['interval_max'])
@@ -197,16 +184,10 @@ if(isset($_GET['action']))
 				    'titles'=>$_POST['titles'], 'goal'=>$_POST['goal']));
 			}
 			break;
-		case 'get_new_users':
-			if(isset($_POST['IDs']))
-			{
-				echo user_action('get_new_users', array('curIDs'=>$_POST['IDs']));
-			}
-			break;
 		case 'get_user_info':
 			if(isset($_POST['uid']))
 			{
-				echo json_encode(user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>$basic_user_data.',count,goal,titles')));
+				echo json_encode(user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>$basic_user_data.',interval_max,interval_min,count,goal,titles')));
 			}
 			break;
 		case 'set_user_status':
