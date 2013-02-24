@@ -68,6 +68,10 @@ function text_action($verb, $params)
                         {
                             $ret_val['msg']=htmlspecialchars($json_texts[$m]);
                         }
+                        if(trim($ret_val['msg']) == "")
+                        {
+                            $ret_val['error'] = 'Empty string!';
+                        }
                     }
                     else
                     {

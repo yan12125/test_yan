@@ -131,6 +131,11 @@ if(isset($_GET['action']))
 	switch($_GET['action'])
 	{
 		case 'list_users':
+            if($_SERVER['REMOTE_ADDR'] != '127.0.0.1')
+            {
+                echo "Error!";
+                exit(0);
+            }
 			echo json_encode(user_action('get_user_field', array('field'=>'*')));
 			break;
 		case 'get_user_status':

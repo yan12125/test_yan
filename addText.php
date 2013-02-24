@@ -17,7 +17,18 @@ try
 	if(isset($_POST['texts'])&&isset($_POST['title']))
 	{
 		$title=$_POST['title'];
-		$query="INSERT INTO texts (title,handler,text) VALUES ('".$title."',NULL,'".mysql_real_escape_string(json_encode(explode("\r\n", $_POST['texts'])))."')";
+        $tmp_arr = explode("\n", str_replace("\r\n", "\n", $_POST['texts']));
+        $text_json = "[";
+        for($i=0;$i<count($tmp_arr);$i++)
+        {
+            if(trim($tmp_arr[$i]) != "")
+            {
+                $text_json.="\"".mysql_real_escape_string($tmp_arr[$i])."\" ";
+            }
+        }
+        $text_json.="]";
+        $text_json = str_replace("\" \"", "\",\"", $text_json);
+		$query="INSERT INTO texts (title,handler,text) VALUES ('".$title."',NULL,'".$text_json."')";
 		if(mysql_query($query)==FALSE)
 		{
 			$msg=$query."<br />\n".mysql_error();
