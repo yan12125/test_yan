@@ -12,6 +12,7 @@ try
         $textArr = explode("\n", str_replace("\r\n", "\n", $texts));
         $maxLength = 0;
         $tmpLen = 0;
+        // TODO: check empty lines
         foreach($textArr as $line)
         {
             if(($tmpLen = strlen($line)) > $maxLength)

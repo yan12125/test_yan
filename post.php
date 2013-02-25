@@ -22,6 +22,7 @@ $useFB=true;
 require_once 'common_inc.php';
 require_once 'texts.php';
 require_once 'users.php';
+require_once 'stats.php';
 
 ip_only('127.0.0.1');
 
@@ -137,7 +138,16 @@ try
             }
         }
 
-		$pause_time=round(randND($userData['interval_max'], $userData['interval_min'], 6), 1); // 正負三個標準差
+        // disallow too short timeout
+        $interval = array(
+            'min' => (integer)$userData['interval_min'], 
+            'max' => (integer)$userData['interval_max']
+        );
+        if($interval['min']+$interval['max'] < 140)
+        {
+            $interval['min'] = $interval['max'] = 70;
+        }
+		$pause_time=round(randND($interval['max'], $interval['min'], 6), 1); // 正負三個標準差
         // round to decrease amount of transmission
 
         if(isset($_POST['debug']) && $_POST['debug'])
@@ -162,21 +172,34 @@ try
                 $newStatus = '';
                 if(strpos($msg, 'banned') !== false)
                 {
-                    $newStatus = 'banned';
+                    $arr_result['new_status'] = 'banned';
                     $arr_result['next_wait_time'] = -1;
+                    $arr_result['processed'] = 1;
                 }
                 else if(strpos($msg, 'expired') !== false || strpos($msg, 'validating access_token') !== false)
                 {
-                    $newStatus = 'expired';
+                    $arr_result['new_status'] = 'expired';
                     $arr_result['next_wait_time'] = -1;
+                    $arr_result['processed'] = 1;
+                }
+                else if(strpos($msg, 'Operation timed out') !== false)
+                {
+                    stats('timed_out', mb_strlen($arr_result['msg'], 'UTF-8'));
+                    $arr_result['processed'] = 1;
+                    $arr_result['next_wait_time'] = $userData['interval_max'];
                 }
 
-                if($newStatus !== '')
+                if(isset($arr_result['processed']) && $arr_result['processed'] === 1)
                 {
-                    user_action('set_user_status', array('uid'=>$uid, 'status'=>$newStatus));
-                    $arr_result['processed'] = 1;
-                    $arr_result['new_status'] = $newStatus;
-                    throw new Exception($userData['name'].': '.$newStatus);
+                    if(isset($arr_result['new_status']))
+                    {
+                        user_action('set_user_status', array('uid'=>$uid, 'status'=>$newStatus));
+                        throw new Exception($userData['name'].': '.$newStatus);
+                    }
+                    else
+                    {
+                        throw new Exception("Error processed.");
+                    }
                 }
                 else
                 {
@@ -186,6 +209,7 @@ try
         }
 
 		$arr_user_data=user_action('increase_user_count', array('uid'=>$uid));
+        stats('success', mb_strlen($arr_result['msg'], 'UTF-8'));
 
 		$response=array();
         if(isset($_POST['truncated_msg']) && $_POST['truncated_msg'])
@@ -231,3 +255,4 @@ catch(Exception $e)
 }
 
 ?>
+

@@ -37,7 +37,10 @@ function post2(uid)
                     if(typeof response["processed"] != "undefined")
                     {
 						$("#results").append(err_msg);
-                        users[uid]['status'] = response["new_status"];
+                        if(typeof response['new_status'] != "undefined")
+                        {   // no new status when "Timed out"
+                            users[uid]['status'] = response["new_status"];
+                        }
                     }
 					else
 					{
@@ -191,6 +194,11 @@ $(document).on('ready', function(e){
     $("#btn_clearLog").on('click', function(e){
         $("#results").html('');
     });
+    // confirm when closing page
+    // http://stackoverflow.com/questions/7080269/javascript-before-leaving-the-page
+    $(window).on('beforeunload', function(e){
+        return 'Leaving this page makes spammer stop working.';
+    });
     update_userList();
 });
 </script>
@@ -218,3 +226,4 @@ $(document).on('ready', function(e){
 </table>
 </body>
 </html>
+

@@ -166,6 +166,7 @@ if(isset($_GET['action']))
 	switch($_GET['action'])
 	{
 		case 'list_users':
+            ip_only('127.0.0.1');
             $param = array('field'=>$basic_user_data);
             if(isset($_POST['IDs']))
             {
@@ -201,3 +202,4 @@ if(isset($_GET['action']))
 	}
 }
 ?>
+

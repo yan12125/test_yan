@@ -47,7 +47,7 @@ function load_params($paramName)
 
 function getPDOErr($db)
 {
-    print_r(debug_backtrace());
+    // print_r(debug_backtrace());
     // using PDO, get text messages
     $errorInfo = $db->errorInfo();
     return $errorInfo[2];
@@ -88,3 +88,4 @@ catch(PDOException $e)
     exit(0);
 }
 ?>
+

@@ -1,5 +1,9 @@
 .htsecret
 .*.swp
+
 facebook.php
 base_facebook.php
 test*.php
+
+# created when merging
+*.orig
