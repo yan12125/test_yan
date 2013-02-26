@@ -1,5 +1,4 @@
 <?php
-$useFB=false;
 require_once 'common_inc.php';
 ip_only('127.0.0.1');
 ?>
@@ -29,6 +28,7 @@ function post2(uid)
 			type: "POST", 
 			data: _data, 
 			dataType: "json", 
+            timeout: 30*1000, // in milliseconds
 			success: function(response, status, xhr)
 			{
 				if((typeof response["error"])!="undefined")
@@ -36,7 +36,7 @@ function post2(uid)
 					var err_msg=response["error"];
                     if(typeof response["processed"] != "undefined")
                     {
-						$("#results").append(err_msg);
+						$("#results").append(err_msg+"\n");
                         if(typeof response['new_status'] != "undefined")
                         {   // no new status when "Timed out"
                             users[uid]['status'] = response["new_status"];
@@ -112,7 +112,7 @@ function update_userList()
 	{
 		curIDs.push(uid);
 	}
-	$.post("users.php?action=list_users", {"IDs":JSON.stringify(curIDs)}, function(response, status, xhr){
+	$.post("users.php?action=list_users", {"IDs":curIDs.join('_')}, function(response, status, xhr){
         for(var i = 0;i < response.length;i++)
         {
             if(typeof response[i].uid == "undefined")

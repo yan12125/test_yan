@@ -1,5 +1,4 @@
 <?php
-$useFB=true;
 require_once 'common_inc.php';
 require_once 'stats.php';
 
@@ -27,6 +26,7 @@ function user_action($action, $param)
 			$ret_val=$users;
 			break;
 		case 'add_user':
+            loadFB();
 			$token=$param['access_token'];
 			$userProfile=$GLOBALS['facebook']->api('/me', array('access_token'=>$token));
 			$uid=$userProfile['id'];
@@ -105,7 +105,7 @@ function user_action($action, $param)
 					$ret_val['error'] = getPDOErr($db);
 				}
 			}
-			$ret_val=user_action("get_data", array("uid"=>$param['uid']));
+			$ret_val = true;
 			break;
         case 'set_user_status':
             $result=false;
@@ -170,7 +170,7 @@ if(isset($_GET['action']))
             $param = array('field'=>$basic_user_data);
             if(isset($_POST['IDs']))
             {
-                $param['curIDs'] = json_decode($_POST['IDs'], true);
+                $param['curIDs'] = explode('_', $_POST['IDs']);
             }
             $arr_users = user_action('get_user_field', $param);
             array_unshift($arr_users, array("rate"=>postRate()));
@@ -202,4 +202,3 @@ if(isset($_GET['action']))
 	}
 }
 ?>
-

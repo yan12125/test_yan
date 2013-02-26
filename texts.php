@@ -1,5 +1,4 @@
 <?php
-$useFB=false;
 require_once 'common_inc.php';
 
 function text_action($verb, $params)
@@ -122,4 +121,3 @@ if(isset($_GET['action'])&&strpos($_SERVER['REQUEST_URI'], 'texts.php')!==FALSE)
 	}
 }
 ?>
-

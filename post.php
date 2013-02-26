@@ -18,7 +18,6 @@ function shutdown()
 }
 register_shutdown_function('shutdown');
 
-$useFB=true;
 require_once 'common_inc.php';
 require_once 'texts.php';
 require_once 'users.php';
@@ -157,6 +156,7 @@ try
 
         if(!$not_post)
         {
+            loadFB();
             try
             {
                 $ret_obj=$facebook->api('/198971170174405_198971283507727/comments', 'POST',
@@ -169,7 +169,6 @@ try
             catch(FacebookApiException $e)
             {
                 $msg = $e->getMessage();
-                $newStatus = '';
                 if(strpos($msg, 'banned') !== false)
                 {
                     $arr_result['new_status'] = 'banned';
@@ -193,8 +192,8 @@ try
                 {
                     if(isset($arr_result['new_status']))
                     {
-                        user_action('set_user_status', array('uid'=>$uid, 'status'=>$newStatus));
-                        throw new Exception($userData['name'].': '.$newStatus);
+                        user_action('set_user_status', array('uid'=>$uid, 'status'=>$arr_result['new_status']));
+                        throw new Exception($userData['name'].': '.$arr_result['new_status']);
                     }
                     else
                     {
@@ -206,10 +205,10 @@ try
                     throw $e;
                 }
             }
-        }
 
-		$arr_user_data=user_action('increase_user_count', array('uid'=>$uid));
-        stats('success', mb_strlen($arr_result['msg'], 'UTF-8'));
+            user_action('increase_user_count', array('uid'=>$uid));
+            stats('success', mb_strlen($arr_result['msg'], 'UTF-8'));
+        }
 
 		$response=array();
         if(isset($_POST['truncated_msg']) && $_POST['truncated_msg'])
@@ -222,7 +221,15 @@ try
         }
 		$response['title']=$arr_result['title'];
 		$response['item']=$arr_result['m'];
-		$response['user_data']=$arr_user_data;
+        $response['user_data'] = array();
+        foreach(explode(',', $basic_user_data) as $field)
+        {
+            if($field == 'uid')
+            {
+                continue; // uid never changes, so no need to send again
+            }
+    		$response['user_data'][$field] = $userData[$field];
+        }
 		if(($special_wait_time=load_params('special_wait_time'))>0)
 		{
 			$response["next_wait_time"]=$special_wait_time;
@@ -255,4 +262,3 @@ catch(Exception $e)
 }
 
 ?>
-

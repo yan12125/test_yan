@@ -1,6 +1,6 @@
 <?php
-$useFB=true;
 require_once 'common_inc.php';
+loadFB();
 
 $siteUrl=urlencode($rootUrl);
 $name='';

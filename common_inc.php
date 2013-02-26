@@ -1,6 +1,4 @@
 <?php
-header("Content-type: text/html; charset=utf-8");
-
 $secrets=json_decode(file_get_contents("./.htsecret"), true);
 foreach($secrets as $key=>$value)
 {
@@ -64,16 +62,18 @@ function ip_only($ip)
     }
 }
 
-if(isset($useFB))
+$facebook = null;
+function loadFB()
 {
-	if($useFB===true)
-	{
+    global $facebook;
+    if(is_null($facebook))
+    {
         require_once "facebook.php";
-		// Disable ssl verify to hide messages in error.log
-		// Reference: http://stackoverflow.com/questions/7374223/invalid-or-no-certificate-authority-found-using-bundled-information
-		Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYPEER]=false;
-		$facebook=new Facebook(array('appId'=>$appId,'secret'=>$appSecret));
-	}
+        // Disable ssl verify to hide messages in error.log
+        // Reference: http://stackoverflow.com/questions/7374223/invalid-or-no-certificate-authority-found-using-bundled-information
+        Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYPEER]=false;
+        $facebook=new Facebook(array('appId'=>$GLOBALS['appId'],'secret'=>$GLOBALS['appSecret']));
+    }
 }
 try
 {
@@ -88,4 +88,3 @@ catch(PDOException $e)
     exit(0);
 }
 ?>
-

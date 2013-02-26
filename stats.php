@@ -1,5 +1,4 @@
 <?php
-$useFB = false;
 require_once 'common_inc.php';
 
 function postRate()
