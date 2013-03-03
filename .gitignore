@@ -3,7 +3,7 @@
 
 facebook.php
 base_facebook.php
-test*.php
+test*
 
 # created when merging
 *.orig

@@ -26,7 +26,7 @@ function text_action($verb, $params)
 				$ret_val=$arr['text'];
 			}
 			break;
-		case "get_random_text_from_title":
+		case "get_text_from_title":
 			if(array_key_exists('title', $params))
 			{
 				$ret_val=array();
@@ -46,7 +46,22 @@ function text_action($verb, $params)
 					$json_texts=json_decode($arr['text'], true);
                     if(count($json_texts)>=1) // if not valid json, json_decode return null, and count(null) is 0
                     {
-                        $m=rand(0, count($json_texts)-1);
+                        if(isset($params['m'])) // for debugging purpose
+                        {
+                            if($params['m'] < count($json_texts))
+                            {
+                                $m = $params['m'];
+                            }
+                            else
+                            {
+                                $ret_val['error'] = 'invalid_m';
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            $m=rand(0, count($json_texts)-1);
+                        }
                         $ret_val['m']=$m;
                         $ret_val['title']=$params['title'];
                         if(!is_null($arr['handler']))
@@ -89,7 +104,7 @@ function text_action($verb, $params)
 			{
 				$arr_titles=json_decode($params['titles']);
 				$n=rand(0, count($arr_titles)-1);
-				$ret_val=text_action("get_random_text_from_title", array("title"=>$arr_titles[$n]));
+				$ret_val=text_action("get_text_from_title", array("title"=>$arr_titles[$n]));
 			}
 			break;
         case "check":
