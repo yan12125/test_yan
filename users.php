@@ -201,4 +201,19 @@ if(isset($_GET['action']))
 			echo 'Invalid action verb.';
 	}
 }
+
+function adjustedInterval($userData)
+{
+    // disallow too short timeout
+    $interval = array(
+        'min' => (integer)$userData['interval_min'], 
+        'max' => (integer)$userData['interval_max']
+    );
+    if($interval['min']+$interval['max'] < 140)
+    {
+        $interval['min'] = $interval['max'] = 70;
+    }
+    return $interval;
+}
+
 ?>

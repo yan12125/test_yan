@@ -1,5 +1,6 @@
 <?php
 require_once 'common_inc.php';
+require_once 'users.php';
 
 function postRate()
 {
@@ -10,7 +11,8 @@ function postRate()
     $rate = 0;
     for($i = 0;$i < count($result);$i++)
     {
-        $rate += 86400*2/((float)$result[$i]["interval_max"]+(float)$result[$i]["interval_min"]);
+        $interval = adjustedInterval($result[$i]);
+        $rate += 86400*2/((float)$interval['max']+(float)$interval['min']);
     }
     return round($rate, 2);
 }

@@ -137,15 +137,7 @@ try
             }
         }
 
-        // disallow too short timeout
-        $interval = array(
-            'min' => (integer)$userData['interval_min'], 
-            'max' => (integer)$userData['interval_max']
-        );
-        if($interval['min']+$interval['max'] < 140)
-        {
-            $interval['min'] = $interval['max'] = 70;
-        }
+        $interval = adjustedInterval($userData);
 		$pause_time=round(randND($interval['max'], $interval['min'], 6), 1); // 正負三個標準差
         // round to decrease amount of transmission
 
