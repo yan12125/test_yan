@@ -66,7 +66,7 @@ function text_action($verb, $params)
                         $ret_val['title']=$params['title'];
                         if(!is_null($arr['handler']))
                         {
-                            $url=$GLOBALS['rootUrl'].$arr['handler'].'?param='.(string)$json_texts[$m];
+                            $url=$GLOBALS['rootUrl'].'plugins/'.$arr['handler'].'?param='.(string)$json_texts[$m];
                             $ch=curl_init($url);
                             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                             curl_setopt($ch, CURLOPT_HEADER, 0);

@@ -1,4 +1,5 @@
 <?php
+chdir('..');
 require_once 'common_inc.php';
 
 try
