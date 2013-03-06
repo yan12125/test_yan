@@ -83,7 +83,8 @@ try
 catch(PDOException $e)
 {
     echo json_encode(array(
-        'error' => $e->getMessage()
+        'error' => $e->getMessage(), 
+        'next_wait_time' => 600
     ));
     exit(0);
 }
