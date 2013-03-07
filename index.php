@@ -10,12 +10,18 @@ $uid=0;
 // http://stackoverflow.com/questions/6718598/download-the-contents-of-a-url-in-php-even-if-it-returns-a-404
 stream_context_set_default(array('http' => array('ignore_errors' => true)));
 
-if(!isset($_GET['code']))
+function authenticate()
 {
+    global $appId, $siteUrl;
 	$authUrl='https://graph.facebook.com/oauth/authorize?client_id='.$appId.
 		'&scope=publish_stream,user_groups&redirect_uri='.$siteUrl;
 	Header("Location: ".$authUrl);
 	exit(0);
+}
+
+if(!isset($_GET['code']))
+{
+    authenticate();
 }
 else
 {
@@ -32,10 +38,25 @@ else
 	}
 	else
 	{
+        $arr_result = json_decode($authPage, true);
+        try
+        {
+            // occurs when web page reloaded
+            if(strpos($arr_result['error']['message'], 'This authorization code has been used') !== false
+            || strpos($arr_result['error']['message'], 'This authorization code has expired') !== false)
+            {
+                // occurs if press F5
+                authenticate();
+                exit(0);
+            }
+        }
+        catch(Exception $e)
+        {
+        }
 		echo "<pre>Error occurred when acquire access token!\n";
 		print_r(array(
             'result' => $authPage, 
-            'result_json' => json_decode($authPage, true), 
+            'result_json' => $arr_result, 
             'tokenUrl' => $tokenUrl
         ));
 		echo "</pre>";
@@ -116,35 +137,11 @@ var expiryTime=<?php echo $expiryTime; ?>;
 var token=<?php echo "\"".$token."\""; ?>;
 var uid=<?php echo "\"".$uid."\""; ?>;
 
-/* for IE only because IE parse contents in <textarea> as HTML */
-/*
- * not used anymore
-function alterTexts(_str)
-{
-	if(navigator.userAgent.search("MSIE")!=-1)
-	{
-		return _str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;').replace(/\n/g, "<br />");
-	}
-	else
-	{
-		return _str;
-	}
-}
-*/
 function init()
 {
 	getTitles("texts.php?action=list_titles");
 	updateExpiryTime();
 	get_info(true);
-    // disable F5 key because facebook api code is now one time token
-    // http://stackoverflow.com/questions/2482059/disable-f5-and-browser-refresh-using-javascript
-    $(document).bind("keydown", function(e){
-        if(e.which == 116 /*F5*/|| (e.ctrlKey && (e.which == 114 /*Ctrl+r*/|| e.which == 82/*Ctrl+R*/))){
-            location.href = location.href.substring(0, location.href.indexOf('?'));
-            e.preventDefault();
-        }
-    });
 }
 
 function getTitles(filename)

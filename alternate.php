@@ -40,6 +40,7 @@ function post2(uid)
                         if(typeof response['new_status'] != "undefined")
                         {   // no new status when "Timed out"
                             users[uid]['status'] = response["new_status"];
+                            users[uid].bStarted = false; // "started" won't appear here
                         }
                     }
 					else
