@@ -209,9 +209,9 @@ function adjustedInterval($userData)
         'min' => (integer)$userData['interval_min'], 
         'max' => (integer)$userData['interval_max']
     );
-    if($interval['min']+$interval['max'] < 140)
+    if($interval['min']+$interval['max'] < 150)
     {
-        $interval['min'] = $interval['max'] = 70;
+        $interval['min'] = $interval['max'] = 75;
     }
     return $interval;
 }

@@ -1,13 +1,15 @@
 <?php
+ error_reporting(E_ALL|E_STRICT); // suppress all error outputs
 chdir('..');
 require_once 'common_inc.php';
+
+libxml_use_internal_errors(true); // handle errors manually
 
 try
 {
 	if(isset($_GET['param']))
 	{
-		$data=file_get_contents($_GET['param']);
-		$feed=new SimpleXMLElement($data);
+		$feed=new SimpleXMLElement($_GET['param'], 0, true/*indicate 1st param is url*/);
 		$n=rand(0, $feed->channel->item->count()-1);
 		header("Content-Type:text/plain; charset=utf-8");
 		echo $feed->channel->item[$n]->title."\n".$feed->channel->item[$n]->link;
@@ -15,6 +17,15 @@ try
 }
 catch(Exception $e)
 {
-	echo 'Unexpected error occurred: '.$e->getMessage();
+    header("HTTP/1.1 500 Internal Server Error");
+    $xmlErr = libxml_get_errors();
+    if(count($xmlErr) != 0)
+    {
+        echo 'LibXML: Error '.$xmlErr[0]->code.' '.$xmlErr[0]->message;
+    }
+    else
+    {
+        echo 'Uncaught error: '.$e->getMessage();
+    }
 }
 ?>

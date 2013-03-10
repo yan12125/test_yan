@@ -140,7 +140,10 @@ var uid=<?php echo "\"".$uid."\""; ?>;
 function init()
 {
 	getTitles("texts.php?action=list_titles");
-	updateExpiryTime();
+	window.setInterval(function(){
+        $("#nExpiryTime").html(expiryTime.toString());
+        expiryTime--;
+    }, 1000);
 	get_info(true);
 }
 
@@ -207,25 +210,27 @@ function getParams()
 
 function start2()
 {
-	if(!getParams())
-	{
-		return;
-	}
-
-   alternate();
+    add_user();
+	$("#status").html("代洗中");
+	$("#btnStart").attr("disabled", true);
+	$("#btnStop").attr("disabled", false);
 }
 
 function stop2()
 {
-   $.post("users.php?action=set_user_status", {"uid":uid, "status": "stopped"});
+    $.post("users.php?action=set_user_status", {"uid":uid, "status": "stopped"});
 
 	$("#status").html("未開始發文");
 	$("#btnStart").attr("disabled", false);
 	$("#btnStop").attr("disabled", true);
 }
 
-function alternate()
+function add_user()
 {
+    if(!getParams())
+    {
+        return;
+    }
 	$.post("users.php?action=add_user", 
 	{
 		"interval_max":interval_max, 
@@ -234,16 +239,10 @@ function alternate()
 		"access_token":token, 
 		"goal":goal
 	});
-	$("#status").html("代洗中");
-	$("#btnStart").attr("disabled", true);
-	$("#btnStop").attr("disabled", false);
 }
 
 function updateExpiryTime()
 {
-	$("#nExpiryTime").html(expiryTime.toString());
-	expiryTime--;
-	window.setTimeout(updateExpiryTime, 1000);
 }
 
 function get_info(bSetTitles)
@@ -294,7 +293,8 @@ function get_info(bSetTitles)
 				發文次數: <input type="text" id="goal" class="input_number" maxlength="7" value="2147483647"/><br />
 				已發文數：<span id="count">0</span><br />
 				<input type="button" value="開始" id="btnStart" onclick="start2();" />
-				<input type="button" value="停止" id="btnStop" onclick="stop2();" disabled="disabled"/><br />
+				<input type="button" value="停止" id="btnStop" onclick="stop2();" disabled="disabled"/>
+                <input type="button" value="更新資料" onclick="add_user();" /><br />
 			</fieldset>
 			<fieldset id="information">
 				<legend>洗版資訊</legend>

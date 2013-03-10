@@ -72,14 +72,22 @@ function text_action($verb, $params)
                             curl_setopt($ch, CURLOPT_HEADER, 0);
                             curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
                             $data=curl_exec($ch);
+                            $status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                             curl_close($ch);
-                            $ret_val['msg']=htmlspecialchars((string)$data);
+                            if($status_code == 200)
+                            {
+                                $ret_val['msg']=htmlspecialchars((string)$data);
+                            }
+                            else
+                            {
+                                $ret_val['error'] = (string)$data;
+                            }
                         }
                         else
                         {
                             $ret_val['msg']=htmlspecialchars($json_texts[$m]);
                         }
-                        if(trim($ret_val['msg']) == "")
+                        if(isset($ret_val['msg']) && trim($ret_val['msg']) == "")
                         {
                             $ret_val['error'] = 'Empty string!';
                         }
