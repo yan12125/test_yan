@@ -1,5 +1,5 @@
 <?php
- error_reporting(E_ALL|E_STRICT); // suppress all error outputs
+error_reporting(E_ALL|E_STRICT); // suppress all error outputs
 chdir('..');
 require_once 'common_inc.php';
 
@@ -18,10 +18,10 @@ try
 catch(Exception $e)
 {
     header("HTTP/1.1 500 Internal Server Error");
-    $xmlErr = libxml_get_errors();
-    if(count($xmlErr) != 0)
+    $xmlErr = libxml_get_last_error();
+    if($xmlErr != FALSE)
     {
-        echo 'LibXML: Error '.$xmlErr[0]->code.' '.$xmlErr[0]->message;
+        echo 'LibXML: Error '.$xmlErr->code.' '.$xmlErr->message;
     }
     else
     {

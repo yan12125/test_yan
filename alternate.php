@@ -181,8 +181,11 @@ function get_user(n)
 $(document).on('ready', function(e){
     var timer_updateUserList = null;
     $("#btn_start").on('click', function(e) {
-        update_userList();
-        timer_updateUserList = setInterval(update_userList, 60*1000);
+        if(timer_updateUserList == null)
+        {
+            update_userList();
+            timer_updateUserList = setInterval(update_userList, 60*1000);
+        }
     });
     $("#btn_stop").on('click', function(e){
         clearTimeout(timer_updateUserList);
@@ -195,10 +198,31 @@ $(document).on('ready', function(e){
     $("#btn_clearLog").on('click', function(e){
         $("#results").html('');
     });
+    $("#btn_print_error").on('click', function(e){
+        for(var i = 0;i < errors.length;i++)
+        {
+            console.log(errors[i].error);
+        }
+    });
     // confirm when closing page
     // http://stackoverflow.com/questions/7080269/javascript-before-leaving-the-page
     $(window).on('beforeunload', function(e){
-        return 'Leaving this page makes spammer stop working.';
+        var still_running = false;
+        if(timer_updateUserList)
+        {
+            still_running = true;
+        }
+        for(var uid in users)
+        {
+            if(users[uid].bStarted || users[uid].wait_time > 1)
+            {   // wait_time might be like 0.7xxx... when stopped
+                still_running = true;
+            }
+        }
+        if(still_running)
+        {
+            return 'Leaving this page makes spammer stop working.';
+        }
     });
     update_userList();
 });
@@ -220,8 +244,10 @@ $(document).on('ready', function(e){
 			<textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="40"></textarea><br>
 			<input type="button" id="btn_start" value="Start">
 			<input type="button" id="btn_stop" value="Stop">
-			<input type="button" id="btn_clearLog" value="clear log"><br>
+			<input type="button" id="btn_clearLog" value="clear log">
+            <input type="button" id="btn_print_error" value="Print errors"><br>
 			Rate=<span id="rate"></span>Posts/day<br>
+            <a href="sql.php" target="_blank">execute SQL</a><br>
 		</td>
 	</tr>
 </table>

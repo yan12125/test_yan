@@ -167,7 +167,7 @@ try
                     $arr_result['next_wait_time'] = -1;
                     $arr_result['processed'] = 1;
                 }
-                else if(strpos($msg, 'expired') !== false || strpos($msg, 'validating access_token') !== false)
+                else if(strpos($msg, 'expired') !== false || strpos($msg, 'validating access token') !== false)
                 {
                     $arr_result['new_status'] = 'expired';
                     $arr_result['next_wait_time'] = -1;

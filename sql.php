@@ -15,10 +15,6 @@ if(isset($_POST['q']))
         exit(0);
     }
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if(isset($_POST['pre']))
-    {
-        $pre = true;
-    }
 }
 ?>
 <!DOCTYPE html>
@@ -28,35 +24,54 @@ if(isset($_POST['q']))
 <title>sql.php</title>
 <script src="/HTML/library/jquery.js"></script>
 <script>
-<?php
-if($pre)
-{
-?>
-$(document).on('ready', function(e) {
-    $('[name="pre"]')[0].checked = true;
-});
-<?php
-}
-?>
 </script>
+<style>
+.result
+{
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.result td
+{
+    border-width: 1px;
+    border-style: solid;
+    border-color: black;
+    word-break: break-all;
+}
+</style>
 </head>
 <body>
     <form action="#" method="POST">
         Query: <input type="text" name="q" value="<?php echo $q; ?>">
-        <input type="checkbox" name="pre">Pre
         <input type="submit" value="Submit">
     </form>
     <?php
         if(!is_null($result))
         {
-            if($pre)
+            if(count($result) == 0)
             {
-                echo "<pre>\n";
+                echo 'No results.<br>';
             }
-            print_r($result);
-            if($pre)
+            else
             {
-                echo "\n</pre>\n";
+                $columns = array_keys($result[0]);
+                echo '<table class="result"><tr>';
+                for($i = 0;$i < count($columns);$i++)
+                {
+                    echo '<td>'.$columns[$i]."</td>\n";
+                }
+                echo "</tr>\n";
+                for($i = 0;$i < count($result);$i++)
+                {
+                    echo '<tr>';
+                    foreach($result[$i] as $value)
+                    {
+                        echo '<td>'.$value.'</td>';
+                    }
+                    echo "</tr>\n";
+                }
+                echo '</table>';
             }
         }
     ?>
