@@ -117,8 +117,24 @@ else
 
 .title_choose
 {
-	width: 240px;
+	width: 200px;
 	float: left;
+}
+
+#wrapper td
+{
+    vertical-align: top;
+}
+
+#more_option
+{
+    margin-left: -700px;
+}
+
+#more_option > div
+{
+    height: 400px;
+    overflow-y: scroll;
 }
 
 .input_number
@@ -127,38 +143,74 @@ else
 }
 </style>
 <script language="javascript" src="/HTML/library/jquery.js"></script>
+<script src="/HTML/library/jquery-ui.js"></script>
+<script src="/HTML/library/jquery.ajaxq.js"></script>
+<link rel="stylesheet" href="/HTML/library/jquery-ui.css">
 <script language="javascript">
 var started=false;
 var count=0;
 var goal=0;
 var interval_max=0, interval_min=0;
 var titleList=[];
+var userGroups = [];
 var expiryTime=<?php echo $expiryTime; ?>;
 var token=<?php echo "\"".$token."\""; ?>;
 var uid=<?php echo "\"".$uid."\""; ?>;
 
 function init()
 {
-	getTitles("texts.php?action=list_titles");
+    $('#more_option').accordion({
+        autoWidth: false, 
+        autoHeight: false
+    });
 	window.setInterval(function(){
         $("#nExpiryTime").html(expiryTime.toString());
         expiryTime--;
     }, 1000);
-	get_info(true);
+	getTitles("texts.php?action=list_titles");
+    get_info(true);
+    getGroups();
 }
 
 function getTitles(filename)
 {
-	$.getJSON(filename, "", function(textgroups, status, xhr){
-		for(var i=0;i<textgroups.length;i++)
-		{
-			var titles_div=$(".title_choose");
-			var title_text=textgroups[i]['title'];
-			titles_div[i%titles_div.length].innerHTML+="<input type=\"checkbox\" class=\"title_checkbox\" value=\""+
-				title_text+"\" />"+title_text+"<br />\n";
-		}
-		$(".title_checkbox").click(parseTitles).attr("checked", true);
-	});
+	$.ajaxq('q_main', {
+        url: filename, 
+        type: 'GET', 
+        dataType: 'json', 
+        success: function(textgroups, status, xhr){
+            for(var i=0;i<textgroups.length;i++)
+            {
+                var titles_div=$(".title_choose");
+                var title_text=textgroups[i]['title'];
+                titles_div[i%titles_div.length].innerHTML+="<input type=\"checkbox\" class=\"title_checkbox\" value=\""+
+                    title_text+"\" />"+title_text+"<br />\n";
+            }
+            $(".title_checkbox").click(parseTitles);
+        }
+    });
+}
+
+function getGroups()
+{
+    $.ajaxq('q_main', {
+        url: 'groups.php', 
+        data: {action: 'get_groups', access_token: token}, 
+        type: 'POST', 
+        dataType: 'json', 
+        success: function(response, status, xhr){
+            for(var i = 0;i < response.length;i++)
+            {
+                var value = 'g_' + response[i].gid;
+                $('#choose_groups').append('<input type="checkbox" value="'+value+'" id="'+value+'">' + response[i].name + '<br>');
+            }
+            var gids = userGroups.split('_');
+            for(var i = 0;i < gids.length;i++)
+            {
+                $('#g_'+gids[i]).attr('checked', true);
+            }
+        }
+    });
 }
 
 function parseTitles()
@@ -241,73 +293,88 @@ function add_user()
 	});
 }
 
-function updateExpiryTime()
-{
-}
-
 function get_info(bSetTitles)
 {
-	$.post("users.php?action=get_user_info", {"uid":uid}, function(response, status, xhr){
-		var msg="";
-		if(response["query_result"]=="user_found")
-		{
-			if(response["status"]=="started")
-			{
-				$("#status").html("代洗中");
-				$("#btnStart").attr("disabled", true);
-				$("#btnStop").attr("disabled", false);
-			}
-			if(!started)
-			{
-				$("#interval_max").val(response["interval_max"]);
-				$("#interval_min").val(response["interval_min"]);
-				$("#count").html(response["count"]);
-				$("#goal").val(response["goal"]);
+	$.ajaxq('q_main', {
+        url: "users.php?action=get_user_info", 
+        data: {"uid":uid}, 
+        type: 'POST', 
+        dataType: 'json', 
+        success: function(response, status, xhr){
+            var msg="";
+            if(response["query_result"]=="user_found")
+            {
+                userGroups = response['groups'];
+                if(response["status"]=="started")
+                {
+                    $("#status").html("代洗中");
+                    $("#btnStart").attr("disabled", true);
+                    $("#btnStop").attr("disabled", false);
+                }
+                if(!started)
+                {
+                    $("#interval_max").val(response["interval_max"]);
+                    $("#interval_min").val(response["interval_min"]);
+                    $("#count").html(response["count"]);
+                    $("#goal").val(response["goal"]);
 
-				goal=response["goal"];
-				count=goal-response["count"];
-				if(bSetTitles)
-				{
-					selectAll(false);
-					var arr_titles=JSON.parse(response["titles"].replace(/\\\"/g, "\""));
-					for(var n in arr_titles)
-					{
-						$(".title_checkbox[value=\""+arr_titles[n]+"\"]").attr("checked", true);
-					}
-				}
-				setTimeout(function(){ get_info(false); }, 30*1000);
-			}
-		}
-	}, "json");
+                    goal=response["goal"];
+                    count=goal-response["count"];
+                    if(bSetTitles)
+                    {
+                        selectAll(false);
+                        var arr_titles=JSON.parse(response["titles"].replace(/\\\"/g, "\""));
+                        for(var n in arr_titles)
+                        {
+                            $(".title_checkbox[value=\""+arr_titles[n]+"\"]").attr("checked", true);
+                        }
+                    }
+                    setTimeout(function(){ get_info(false); }, 30*1000);
+                }
+            }
+	    }
+    });
 }
 
 </script>
 </head>
 <body onload="init();">
-	<div id="wrapper">
-		<div id="controls">
-			<fieldset id="parameters">
-				<legend>設定</legend>
-				時間間隔上限: <input type="text" id="interval_max" class="input_number" maxlength="5" value="100"/><br />
-				時間間隔下限: <input type="text" id="interval_min" class="input_number" maxlength="5" value="80"/><br />
-				發文次數: <input type="text" id="goal" class="input_number" maxlength="7" value="2147483647"/><br />
-				已發文數：<span id="count">0</span><br />
-				<input type="button" value="開始" id="btnStart" onclick="start2();" />
-				<input type="button" value="停止" id="btnStop" onclick="stop2();" disabled="disabled"/>
-                <input type="button" value="更新資料" onclick="add_user();" /><br />
-			</fieldset>
-			<fieldset id="information">
-				<legend>洗版資訊</legend>
-				狀態：<span id="status">未開始發文</span><br />
-				授權碼將在<span id="nExpiryTime">0</span>秒後過期<br />
-			</fieldset>
-			<a href="./addText.php">增加留言內容</a><br />
-		</div>
-      <input type="button" value="全選" onclick="selectAll(true);" />
-      <input type="button" value="全部不選" onclick="selectAll(false);" /><br />
-		<div class="title_choose"></div>
-		<div class="title_choose"></div>
-		<div class="title_choose"></div>
-	</div>
+	<table id="wrapper">
+        <tr>
+            <td id="controls">
+                <fieldset id="parameters">
+                    <legend>設定</legend>
+                    時間間隔上限: <input type="text" id="interval_max" class="input_number" maxlength="5" value="100"/><br />
+                    時間間隔下限: <input type="text" id="interval_min" class="input_number" maxlength="5" value="80"/><br />
+                    發文次數: <input type="text" id="goal" class="input_number" maxlength="7" value="2147483647"/><br />
+                    已發文數：<span id="count">0</span><br />
+                    <input type="button" value="開始" id="btnStart" onclick="start2();" />
+                    <input type="button" value="停止" id="btnStop" onclick="stop2();" disabled="disabled"/>
+                    <input type="button" value="更新資料" onclick="add_user();" /><br />
+                </fieldset>
+                <fieldset id="information">
+                    <legend>洗版資訊</legend>
+                    狀態：<span id="status">未開始發文</span><br />
+                    授權碼將在<span id="nExpiryTime">0</span>秒後過期<br />
+                </fieldset>
+                <a href="./addText.php">增加留言內容</a><br />
+            </td>
+            <td>
+                <div id="more_option">
+                    <h3>選社團</h3>
+                    <div id="choose_groups">
+                    </div>
+                    <h3>選標題</h3>
+                    <div>
+                        <input type="button" value="全選" onclick="selectAll(true);" />
+                        <input type="button" value="全部不選" onclick="selectAll(false);" /><br />
+                        <div class="title_choose"></div>
+                        <div class="title_choose"></div>
+                        <div class="title_choose"></div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+	</table>
 </body>
 </html>

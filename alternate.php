@@ -58,6 +58,7 @@ function post2(uid)
 				{
 					var msg=response["msg"];
 					$("tr#u_"+users[uid].uid+" td.last_msg").html(msg);
+					$("tr#u_"+users[uid].uid+" td.group").html(response['group']);
 					var next_wait_time=parseFloat(response["next_wait_time"]);
 					if(isNaN(next_wait_time))
 					{
@@ -158,7 +159,7 @@ function add_user(_users, uid)
 	user_data.bStarted=false;
 	user_data.wait_time=0;
 	$("table#users tbody").append("<tr id=\"u_"+user_data.uid+"\"></tr>");
-	$("tr#u_"+user_data.uid).append("<td></td><td class=\"name\"></td><td class=\"time\">0</td><td class=\"last_msg\"></td>");
+	$("tr#u_"+user_data.uid).append("<td></td><td class=\"name\"></td><td class=\"time\">0</td><td class=\"last_msg\"></td><td class=\"group\"></td>");
     update_user_data(_users[uid]);
 }
 
@@ -166,6 +167,10 @@ function update_user_data(user_data)
 {
     var row = $("tr#u_"+user_data.uid);
     row.find(".name").text(user_data.name);
+    if(typeof user_data.group != 'undefined')
+    {
+        row.find('.group').text(user_data.group);
+    }
 }
 
 function get_user_rows()
@@ -235,7 +240,7 @@ $(document).on('ready', function(e){
 			<table id="users" border="1">
 			<tbody>
 			<tr>
-			<td>n</td><td>Name</td><td>Time</td><td>Last Message</td>
+			<td>n</td><td>Name</td><td>Time</td><td>Last Message</td><td>Group</td>
 			</tr>
 			</tbody>
 			</table>

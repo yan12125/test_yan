@@ -19,9 +19,11 @@ function shutdown()
 register_shutdown_function('shutdown');
 
 require_once 'common_inc.php';
+require_once 'util.php';
 require_once 'texts.php';
 require_once 'users.php';
 require_once 'stats.php';
+require_once 'groups.php';
 
 ip_only('127.0.0.1');
 
@@ -44,70 +46,6 @@ function report_arr_result($optionalField, &$output)
             $output[$item] = $GLOBALS['arr_result'][$item];
         }
     }
-}
-/*
-	Usage: Use Box-Muller method to get a random number with a Normal Distribution (ND)
-	Parameters: $max, $min : the range of result
-				$nSigma : the number of standard deviation in range
-	Reference: http://maupig.blogspot.com/2010/02/blog-post.html
-*/
-function randND($max, $min, $nSigma)
-{
-	if($max<$min)
-	{
-		$temp=$max;
-		$max=$min;
-		$min=$temp;
-	}
-	$U=rand()/getrandmax();		// uniformly distributed random variables
-	$V=rand()/getrandmax();
-	$sgd=sqrt(-2*log($U))*cos(2*M_PI*$V);	// random number with standard gaussian distribution
-	$nRandom=$sgd*($max-$min)/$nSigma+($min+$max)/2;
-
-	// restrict the result in the range
-	if($nRandom>$max) $nRandom=$max;
-	if($nRandom<$min) $nRandom=$min;
-		
-	return $nRandom;
-}
-
-/*
-    Truncate $str to the first $len chars
-    * View chinese characters as two characters
-    * Add ... if truncated
-    Reference: http://stackoverflow.com/questions/4601032/php-iterate-on-string-characters
-*/
-function truncate($str, $len)
-{
-    $char_arr = preg_split('/(?<!^)(?!$)/u', $str);
-    $cur_len = 0;
-    $ret_val = '';
-    foreach($char_arr as $char)
-    {
-        $cur_len += mb_strwidth($char, "UTF-8");
-        if($cur_len >= $len)
-        {
-            $ret_val .= '...';
-            break;
-        }
-        $ret_val .= $char;
-    }
-    return $ret_val;
-}
-
-function unicode_conv_impl($matches)
-{
-    $entity = '&#'.hexdec(substr($matches[0], 2)).';'; // $str is \uxxxx
-    return mb_convert_encoding($entity, 'UTF-8', 'HTML-ENTITIES');
-}
-
-/*
-    Replace \uxxxx in $str to utf-8 character
-    Reference: http://stackoverflow.com/questions/2934563/how-to-decode-unicode-escape-sequences-like-u00ed-to-proper-utf-8-encoded-cha
- */
-function unicode_conv($str)
-{
-    return preg_replace_callback('/\\\\u[0-9a-fA-F]{4}/', 'unicode_conv_impl', $str);
 }
 
 try
@@ -146,12 +84,16 @@ try
             $not_post = true;
         }
 
+		$response=array();
+
         if(!$not_post)
         {
             loadFB();
             try
             {
-                $ret_obj=$facebook->api('/198971170174405_198971283507727/comments', 'POST',
+                $group = Groups::getFromGroups($userData['groups'], $userData['access_token']);
+                $arr_result['group'] = $group['name'];
+                $ret_obj=$facebook->api('/'.$group['post_id'].'/comments', 'POST',
                     array(
                         "message"=> $arr_result['msg'],
                         "access_token"=>$userData['access_token']
@@ -200,9 +142,9 @@ try
 
             user_action('increase_user_count', array('uid'=>$uid));
             stats('success', mb_strlen($arr_result['msg'], 'UTF-8'));
+            $response['group'] = $arr_result['group'];
         }
 
-		$response=array();
         if(isset($_POST['truncated_msg']) && $_POST['truncated_msg'])
         {
             $response['msg'] = truncate($arr_result['msg'], 20);
@@ -249,7 +191,7 @@ catch(Exception $e)
         "time" => date('H:i:s'), 
         "next_wait_time"=>$userData["interval_max"] // overwritten if expired, banned, etc
     );
-    report_arr_result(array('title', 'msg', 'm', 'processed', 'new_status', 'next_wait_time'), $response_error);
+    report_arr_result(array('title', 'msg', 'm', 'processed', 'new_status', 'next_wait_time', 'group'), $response_error);
 	echo json_encode($response_error);
 }
 

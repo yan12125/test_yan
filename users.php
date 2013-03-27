@@ -186,9 +186,9 @@ if(isset($_GET['action']))
 			}
 			break;
 		case 'get_user_info':
-			if(isset($_POST['uid']))
+			if(isset($_POST['uid'])) // in index.php
 			{
-				echo json_encode(user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>$basic_user_data.',interval_max,interval_min,count,goal,titles')));
+				echo json_encode(user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>$basic_user_data.',interval_max,interval_min,count,goal,titles,groups')));
 			}
 			break;
 		case 'set_user_status':
