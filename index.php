@@ -1,101 +1,45 @@
 <?php
+session_start();
 require_once 'common_inc.php';
+
+if(!isset($_SESSION['access_token']) || !isset($_SESSION['expiry']))
+{
+    Header('Location: '.$rootUrl.'auth.php');
+    exit(0);
+}
+
+// get basic user information from facebook
 loadFB();
-
-$siteUrl=urlencode($rootUrl);
-$name='';
-$uid=0;
-
-// still return result for http codes other than 200 in file_get_contents
-// http://stackoverflow.com/questions/6718598/download-the-contents-of-a-url-in-php-even-if-it-returns-a-404
-stream_context_set_default(array('http' => array('ignore_errors' => true)));
-
-function authenticate()
+try
 {
-    global $appId, $siteUrl;
-	$authUrl='https://graph.facebook.com/oauth/authorize?client_id='.$appId.
-		'&scope=publish_stream,user_groups&redirect_uri='.$siteUrl;
-	Header("Location: ".$authUrl);
-	exit(0);
+    $result=$facebook->api('/me', array('access_token'=>$_SESSION['access_token']));
+    if(!isset($result['name']) || !isset($result['id']))
+    {
+        print_r($result);
+        exit(0);
+    }
 }
-
-if(!isset($_GET['code']))
+catch(Exception $e)
 {
-    authenticate();
-}
-else
-{
-	$tokenUrl='https://graph.facebook.com/oauth/access_token?client_id='.$appId.
-		'&redirect_uri='.$siteUrl.'&client_secret='.$appSecret.'&code='.$_GET['code'];
-    $authPage = file_get_contents($tokenUrl);
-	parse_str($authPage, $arr_result);
-	if(isset($arr_result['access_token']))
-	{
-		$token=$arr_result['access_token'];
-		$result=$facebook->api('/me', array('access_token'=>$token)); // get basic information
-		$name=$result['name'];
-		$uid=$result['id'];
-	}
-	else
-	{
-        $arr_result = json_decode($authPage, true);
-        try
-        {
-            // occurs when web page reloaded
-            if(strpos($arr_result['error']['message'], 'This authorization code has been used') !== false
-            || strpos($arr_result['error']['message'], 'This authorization code has expired') !== false)
-            {
-                // occurs if press F5
-                authenticate();
-                exit(0);
-            }
-        }
-        catch(Exception $e)
-        {
-        }
-		echo "<pre>Error occurred when acquire access token!\n";
-		print_r(array(
-            'result' => $authPage, 
-            'result_json' => $arr_result, 
-            'tokenUrl' => $tokenUrl
-        ));
-		echo "</pre>";
-		exit(0);
-	}
-
-	$expiryTime=60*86400; // default expiry time is 60 days
-	if(isset($arr_result['expires']))
-	{
-		$expiryTime=$arr_result['expires'];
-	}
-	if($expiryTime<7201)
-	{
-		// exchange the access token
-		$url_newToken='https://graph.facebook.com/oauth/access_token?client_id='.$appId.'&client_secret='.$appSecret.
-			'&grant_type=fb_exchange_token&fb_exchange_token='.$token;
-		parse_str(file_get_contents($url_newToken), $arr_result);
-		if($arr_result['expires']<7201)
-		{
-			echo 'token將在'.$arr_result['expires'].'秒後過期，請重新登入！';
-			exit(0);
-		}
-		else
-		{
-			$token=$arr_result['access_token'];
-		}
-	}
+    echo 'Error: '.$e->getMessage();
+    exit(0);
 }
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-<title><?php echo $name; ?></title>
+<title><?php echo $result['name']; ?></title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <style type="text/css">
+body
+{
+    overflow-y: scroll;
+}
+
 #wrapper
 {
 	position: relative;
-	width: 900px;
+	width: 1000px;
 	height: auto;
 	margin-left: auto;
 	margin-right: auto;
@@ -117,8 +61,14 @@ else
 
 .title_choose
 {
-	width: 200px;
+	width: 220px;
 	float: left;
+}
+
+
+#choose_groups img
+{
+    margin-left: 10px;
 }
 
 #wrapper td
@@ -128,13 +78,18 @@ else
 
 #more_option
 {
-    margin-left: -700px;
+    margin-left: -800px;
 }
 
 #more_option > div
 {
     height: 400px;
     overflow-y: scroll;
+}
+
+.selected_item /* <span> in more_options */
+{
+    font-weight: bold;
 }
 
 .input_number
@@ -147,15 +102,15 @@ else
 <script src="/HTML/library/jquery.ajaxq.js"></script>
 <link rel="stylesheet" href="/HTML/library/jquery-ui.css">
 <script language="javascript">
-var started=false;
 var count=0;
 var goal=0;
 var interval_max=0, interval_min=0;
 var titleList=[];
 var userGroups = [];
-var expiryTime=<?php echo $expiryTime; ?>;
-var token=<?php echo "\"".$token."\""; ?>;
-var uid=<?php echo "\"".$uid."\""; ?>;
+var expiry=<?php echo $_SESSION['expiry']; ?>;
+var token='<?php echo $_SESSION['access_token']; ?>';
+var uid='<?php echo $result['id']; ?>';
+var busy_img = '<img src="images/fb_busy.gif"></img>';
 
 function init()
 {
@@ -164,12 +119,20 @@ function init()
         autoHeight: false
     });
 	window.setInterval(function(){
-        $("#nExpiryTime").html(expiryTime.toString());
-        expiryTime--;
+        $("#nExpiry").html(expiry.toString());
+        expiry--;
     }, 1000);
+    get_info();
 	getTitles("texts.php?action=list_titles");
-    get_info(true);
     getGroups();
+    $('#selectAll').on('click', function(e){
+    	$('.title_choose :checkbox').attr("checked", true);
+        $('.title_choose span').addClass('selected_item');
+    });
+    $('#selectNone').on('click', function(e){
+    	$('.title_choose :checkbox').attr("checked", false);
+        $('.title_choose span').removeClass('selected_item');
+    });
 }
 
 function getTitles(filename)
@@ -181,12 +144,21 @@ function getTitles(filename)
         success: function(textgroups, status, xhr){
             for(var i=0;i<textgroups.length;i++)
             {
-                var titles_div=$(".title_choose");
+                var titles_div = $('.title_choose');
                 var title_text=textgroups[i]['title'];
-                titles_div[i%titles_div.length].innerHTML+="<input type=\"checkbox\" class=\"title_checkbox\" value=\""+
-                    title_text+"\" />"+title_text+"<br />\n";
+                titles_div.eq(i%titles_div.length).append("<input type=\"checkbox\" value=\""+
+                    title_text+"\" /><span>"+title_text+"</span><br />\n");
             }
-            $(".title_checkbox").click(parseTitles);
+            for(var n in titleList)
+            {
+                var curTitle = $(".title_choose input[value=\""+titleList[n]+"\"]");
+                curTitle.attr("checked", true);
+                curTitle.next().addClass('selected_item');
+            }
+            $('.title_choose :checkbox').click(function(e){
+                $(this).next().toggleClass('selected_item');
+                return parseTitles();
+            });
         }
     });
 }
@@ -202,37 +174,56 @@ function getGroups()
             for(var i = 0;i < response.length;i++)
             {
                 var value = 'g_' + response[i].gid;
-                $('#choose_groups').append('<input type="checkbox" value="'+value+'" id="'+value+'">' + response[i].name + '<br>');
+                $('#choose_groups').append('<input type="checkbox" value="'+value+'" id="'+value+'"><span>' + response[i].name + '</span><span></span><br>');
+                $('#' + value).on('click', function(e){
+                    $(this).next().toggleClass('selected_item');
+                    if($(this).attr('checked'))
+                    {
+                        var $statusText = $(this).next().next();
+                        $statusText.html(busy_img);
+                        $.post('groups.php', { action: 'get_group_info', gid: this.id, access_token: token }, function(response, status, xhr){
+                            $statusText.html('');
+                        }, 'json');
+                    }
+                });
             }
             var gids = userGroups.split('_');
             for(var i = 0;i < gids.length;i++)
             {
                 $('#g_'+gids[i]).attr('checked', true);
             }
+            // make labels of checked items bold
+            $('#choose_groups :checkbox').each(function(index, element){
+                if($(this).attr('checked'))
+                {
+                    $(this).next().addClass('selected_item');
+                }
+            });
         }
     });
 }
 
-function parseTitles()
+function parseOptions(selector, msg)
 {
-	var checkedTitles=$(".title_checkbox:checked");
-	titleList=[];
-	var n=checkedTitles.length;
+	var checkedItems = $(selector + ":checked");
+	var outputObj = [];
+	var n=checkedItems.length;
 	if(n==0)
 	{
-		alert("至少要選一個標題！");
-		return false;
+		alert(msg);
+		return [];
 	}
 	for(var i=0;i<n;i++)
 	{
-		titleList.push(checkedTitles[i].value);
+		outputObj.push(checkedItems[i].value);
 	}
-	return true;
+	return outputObj;
 }
 
-function selectAll(allOrNone)
+function parseTitles()
 {
-	$(".title_checkbox").attr("checked", allOrNone);
+    titleList = parseOptions('.title_choose :checkbox', '至少要選一個標題！');
+    return (titleList.length > 0);
 }
 
 function getParams()
@@ -305,32 +296,22 @@ function get_info(bSetTitles)
             if(response["query_result"]=="user_found")
             {
                 userGroups = response['groups'];
+                titleList = JSON.parse(response['titles']);
                 if(response["status"]=="started")
                 {
                     $("#status").html("代洗中");
                     $("#btnStart").attr("disabled", true);
                     $("#btnStop").attr("disabled", false);
                 }
-                if(!started)
-                {
-                    $("#interval_max").val(response["interval_max"]);
-                    $("#interval_min").val(response["interval_min"]);
-                    $("#count").html(response["count"]);
-                    $("#goal").val(response["goal"]);
+                $("#interval_max").val(response["interval_max"]);
+                $("#interval_min").val(response["interval_min"]);
+                $("#count").html(response["count"]);
+                $("#goal").val(response["goal"]);
 
-                    goal=response["goal"];
-                    count=goal-response["count"];
-                    if(bSetTitles)
-                    {
-                        selectAll(false);
-                        var arr_titles=JSON.parse(response["titles"].replace(/\\\"/g, "\""));
-                        for(var n in arr_titles)
-                        {
-                            $(".title_checkbox[value=\""+arr_titles[n]+"\"]").attr("checked", true);
-                        }
-                    }
-                    setTimeout(function(){ get_info(false); }, 30*1000);
-                }
+                goal=response["goal"];
+                count=goal-response["count"];
+
+                setTimeout(function(){ get_info(); }, 30*1000);
             }
 	    }
     });
@@ -355,7 +336,7 @@ function get_info(bSetTitles)
                 <fieldset id="information">
                     <legend>洗版資訊</legend>
                     狀態：<span id="status">未開始發文</span><br />
-                    授權碼將在<span id="nExpiryTime">0</span>秒後過期<br />
+                    授權碼將在<span id="nExpiry">0</span>秒後過期<br />
                 </fieldset>
                 <a href="./addText.php">增加留言內容</a><br />
             </td>
@@ -364,10 +345,10 @@ function get_info(bSetTitles)
                     <h3>選社團</h3>
                     <div id="choose_groups">
                     </div>
-                    <h3>選標題</h3>
+                    <h3>選留言內容</h3>
                     <div>
-                        <input type="button" value="全選" onclick="selectAll(true);" />
-                        <input type="button" value="全部不選" onclick="selectAll(false);" /><br />
+                        <input type="button" value="全選" id="selectAll">
+                        <input type="button" value="全部不選" id="selectNone"><br />
                         <div class="title_choose"></div>
                         <div class="title_choose"></div>
                         <div class="title_choose"></div>

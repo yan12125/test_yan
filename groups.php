@@ -1,12 +1,11 @@
 <?php
-ini_set('display_errors', 'on');
 require_once 'common_inc.php';
 require_once 'users.php';
 require_once 'util.php';
 
 class Groups
 {
-    public static function updateGroupFeed($gid, $access_token)
+    public static function updateGroupFeed($gid, $access_token, $newAdded)
     {
         global $facebook, $db;
         loadFB();
@@ -32,23 +31,43 @@ class Groups
         }
         $IDstr = implode('_', $IDs);
 
-        $stmt = $db->prepare('update groups set feed_id=?,title=?,last_update=? where gid=?');
-        $stmt->execute(array($IDstr, $groupTitle, time(), $gid));
+        if($newAdded)
+        {
+            $stmt = $db->prepare('insert into groups (gid,title,feed_id,persistent,last_update) values (?,?,?,?,?)');
+            $stmt->execute(array($gid, $groupTitle, $IDstr, 0, date('Y-m-d H:i:s')));
+            // persistent groups should be added manually
+        }
+        else
+        {
+            $stmt = $db->prepare('update groups set feed_id=?,title=?,last_update=? where gid=?');
+            $stmt->execute(array($IDstr, $groupTitle, date('Y-m-d H:i:s'), $gid));
+        }
         return array(
             'feed_id' => $IDstr, 
             'title' => $groupTitle, 
         ); // keys here should be consistent with column names in the database
     }
 
+    /*
+     * $gid: group id in numeric form or prefixed with g_
+     * */
     public static function getFromGroup($gid, $access_token)
     {
         global $db;
+        if(preg_match('/g_\d+/', $gid))
+        {
+            $gid = substr($gid, 2);
+        }
+        if(!preg_match('/\d+/', $gid))
+        {
+            throw new Exception('invalid_group_id');
+        }
         $stmt = $db->prepare('select * from groups where gid=?');
         $stmt->execute(array($gid));
         $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if(count($groups) == 0) // newly added group
         {
-            $curGroup = self::updateGroupFeed($gid, $access_token);
+            $curGroup = self::updateGroupFeed($gid, $access_token, true);
         }
         else
         {
@@ -56,7 +75,7 @@ class Groups
             $difference = abs(time() - strtotime($curGroup['last_update']));
             if($difference > 60*10 && $curGroup['persistent'] != 1) // 10 minutes
             {
-                self::updateGroupFeed($gid, $access_token);
+                self::updateGroupFeed($gid, $access_token, false);
             }
         }
         $IDs = explode('_', $curGroup['feed_id']);
@@ -93,21 +112,26 @@ class Groups
 
 if(isset($_POST['action']))
 {
-    switch($_POST['action'])
+    try
     {
-        case 'get_groups':
-            if(isset($_POST['access_token']))
-            {
-                echo unicode_conv(json_encode(Groups::getUserGroups($_POST['access_token'])));
-            }
-            else
-            {
-                echo json_encode(array('error' => 'accesss_token not found'));
-            }
-            break;
-        default;
-            echo json_encode(array('error' => 'invalid action'));
-            break;
+        switch($_POST['action'])
+        {
+            case 'get_groups':
+                checkPOST(array('access_token'));
+                echo json_unicode(Groups::getUserGroups($_POST['access_token']));
+                break;
+            case 'get_group_info':
+                checkPOST(array('access_token', 'gid'));
+                echo json_unicode(Groups::getFromGroup($_POST['gid'], $_POST['access_token']));
+                break;
+            default;
+                throw new Exception('invalid action');
+                break;
+        }
+    }
+    catch(Exception $e)
+    {
+        json_unicode(array('error' => $e->getMessage()));
     }
 }
 ?>

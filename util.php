@@ -63,4 +63,25 @@ function unicode_conv($str)
 {
     return preg_replace_callback('/\\\\u[0-9a-fA-F]{4}/', 'unicode_conv_impl', $str);
 }
+
+function json_unicode($obj)
+{
+    return unicode_conv(json_encode($obj));
+}
+
+/*
+ * check required arguments in $_POST
+ * $params: array of field names of required arguments
+ */
+function checkPOST($params)
+{
+    for($i = 0;$i < count($params);$i++)
+    {
+        $paramName = $params[$i];
+        if(!isset($_POST[$paramName]))
+        {
+            throw new Exception('Insufficient POST argument: '.$paramName);
+        }
+    }
+}
 ?>
