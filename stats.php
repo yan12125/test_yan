@@ -11,7 +11,7 @@ function postRate()
     $rate = 0;
     for($i = 0;$i < count($result);$i++)
     {
-        $interval = adjustedInterval($result[$i]);
+        $interval = User::adjustedInterval($result[$i]);
         $rate += 86400*2/((float)$interval['max']+(float)$interval['min']);
     }
     return round($rate, 2);

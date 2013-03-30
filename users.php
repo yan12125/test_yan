@@ -1,219 +1,188 @@
 <?php
 require_once 'common_inc.php';
 require_once 'stats.php';
+require_once 'util.php';
 
-$basic_user_data = 'uid,name,status';
 
-function user_action($action, $param)
+class User
 {
-    global $db;
-	$ret_val='';
-	switch($action)
-	{
-		case 'get_user_field':
-			$stmt = $db->query("SELECT {$param['field']} FROM users"); // problem occurs when select multiple columns
-			$users=$stmt->fetchAll(PDO::FETCH_ASSOC);
-            if(isset($param['curIDs']))
+    // used in SQL SELECT
+    const basic_user_data = 'uid,name,status';
+    const detailed_user_data = 'uid,name,status,interval_max,interval_min,count,goal,titles,groups';
+
+    static $db;
+
+    public static function listUsers($field, $IDs)
+    {
+        $curIDs = explode('_', $IDs);
+        $stmt = self::$db->query("SELECT {$field} FROM users"); // problem occurs when select multiple columns
+        $users=$stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach($users as &$user)
+        {
+            if(in_array($user['uid'], $curIDs))
             {
-                foreach($users as &$user)
-                {
-                    if(in_array($user['uid'], $param['curIDs']))
-                    {
-                        unset($user['name']);
-                    }
-                }
+                unset($user['name']);
             }
-			$ret_val=$users;
-			break;
-		case 'add_user':
-            loadFB();
-			$token=$param['access_token'];
-			$userProfile=$GLOBALS['facebook']->api('/me', array('access_token'=>$token));
-			$uid=$userProfile['id'];
-            $stmt = $db->prepare('SELECT count FROM users WHERE uid=?');
-            $stmt->execute(array($uid));
-            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-			if(count($users)===0) // php.net says rowCount not work for select
-			{
-                $stmt = $db->prepare('INSERT INTO users (uid,name,access_token,IP,count,interval_max,interval_min,titles,goal) VALUES (?,?,?,?,?,?,?,?,?)');
-				if(!$stmt->execute(array($uid, $userProfile['name'], $token, $_SERVER['REMOTE_ADDR'], 0, $param['interval_max'], $param['interval_min'], $param['titles'], $param['goal'])))
-				{
-					$ret_val = getPDOErr($db);
-				}
-				else
-				{
-					$ret_val='User added successfully';
-				}
-			}
-			else // user had been added, so modify data
-			{
-                $stmt = $db->prepare('UPDATE users SET name=?,access_token=?,IP=?,interval_max=?,interval_min=?,titles=?,goal=? WHERE uid=?');
-				if(!$stmt->execute(array($userProfile['name'], $token, $_SERVER['REMOTE_ADDR'], $param['interval_max'], $param['interval_min'], $param['titles'], $param['goal'], $uid)))
-				{
-					echo getPDOErr($db);
-				}
-				echo "\n";
-				user_action("set_data", array("uid"=>$uid, "status"=>"started"));
-			}
-			break;
-		case 'set_data':
-			$result=array();
-			foreach($param as $key=>$value)
-			{
-				if($key=='uid')
-				{
-					continue;
-				}
-                $stmt = $db->prepare("UPDATE users SET {$key}=? WHERE uid=?"); // can't parameterize column names
-				$result[$key] = $stmt->execute(array($value, $param['uid']));
-				if($result[$key]===false)
-				{
-					$ret_val += getPDOErr($db)."\n";
-				}
-			}
-			if(!in_array(false, $result))
-			{
-				$ret_val=true;
-			}
-			break;
-		case 'get_data':
-			$field=$GLOBALS['basic_user_data'];
-			if(isset($param['field']))
-			{
-				$field=$param['field'];
-			}
-            $stmt = $db->prepare("SELECT {$field} FROM users WHERE uid=?");
-            $stmt->execute(array($param['uid']));
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-			if(count($results)==0)
-			{
-				$arr_info=array('query_result'=>'user_not_found');
-			}
-			else
-			{
-				$arr_info=$results[0];
-				$arr_info['query_result']='user_found';
-			}
-			$ret_val=$arr_info;
-			break;
-		case 'increase_user_count':
-			if(isset($param['uid']))
-			{
-                $stmt = $db->prepare("UPDATE users SET count=count+1 WHERE uid=?");
-				if(!$stmt->execute(array($param['uid'])))
-				{
-					$ret_val['error'] = getPDOErr($db);
-				}
-			}
-			$ret_val = true;
-			break;
-        case 'set_user_status':
-            $result=false;
-            $status2=$param['status'];
-            $result2=user_action('get_data', array('uid'=>$param['uid'], 'field'=>'status'));
-            if($result2['status']!=$status2)
+        }
+        array_unshift($users, array("rate"=>postRate()));
+        return $users;
+    }
+
+    public static function addUser($userData)
+    {
+        loadFB();
+        // get user id
+        $token=$userData['access_token'];
+        $userProfile=$GLOBALS['facebook']->api('/me', array('access_token'=>$token));
+        $uid=$userProfile['id'];
+        // check user exist or not
+        $stmt = self::$db->prepare('SELECT count FROM users WHERE uid=?');
+        $stmt->execute(array($uid));
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if(count($users)===0) // php.net says rowCount not work for select
+        {
+            $stmt = self::$db->prepare('INSERT INTO users (count,name,access_token,IP,interval_max,interval_min,titles,goal,groups,uid) VALUES (0,?,?,?,?,?,?,?,?)');
+        }
+        else // user had been added, so modify data
+        {
+            User::setData(array("uid"=>$uid, "status"=>"started"));
+            $stmt = self::$db->prepare('UPDATE users SET name=?,access_token=?,IP=?,interval_max=?,interval_min=?,titles=?,goal=?,groups=? WHERE uid=?');
+        }
+        if(!$stmt->execute(array($userProfile['name'], $token, $_SERVER['REMOTE_ADDR'], $userData['interval_max'], $userData['interval_min'], $userData['titles'], $userData['goal'], $userData['groups'], $uid)))
+        {
+            throw new Exception(getPDOErr(self::$db));
+        }
+        return array('message' => 'User added successfully');
+    }
+
+    public static function getData($uid, $field)
+    {
+        $stmt = self::$db->prepare("SELECT {$field} FROM users WHERE uid=?");
+        $stmt->execute(array($uid));
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if(count($results)==0)
+        {
+            $arr_info=array('query_result'=>'user_not_found');
+        }
+        else
+        {
+            $arr_info=$results[0];
+            $arr_info['query_result']='user_found';
+        }
+        return $arr_info;
+    }
+
+    public static function setData($param)
+    {
+        foreach($param as $key=>$value)
+        {
+            if($key=='uid')
             {
-                if($status2=='started'||$status2=='stopped'||$status2=='banned'||$status2=='expired')
+                continue;
+            }
+            $stmt = self::$db->prepare("UPDATE users SET {$key}=? WHERE uid=?"); // can't parameterize column names
+            if(!$stmt->execute(array($value, $param['uid'])))
+            {
+                throw new Exception(getPDOErr(self::$db));
+            }
+        }
+        return true;
+    }
+
+    public static function setUserStatus($uid, $newStatus)
+    {
+        $userData = self::getData($uid, 'status');
+        if($userData['status']!=$newStatus)
+        {
+            // general action: set user data
+            if($newStatus=='started'||$newStatus=='stopped'||$newStatus=='banned'||$newStatus=='expired')
+            {
+                User::setData(array('uid'=>$uid, 'status'=>$newStatus));
+            }
+            else
+            {
+                throw new Exception('invalid_status');
+            }
+
+            // if from started to banned...
+            if($newStatus=='banned'&&$userData['status']=='started')
+            {
+                User::setData(array('uid'=>$uid, 'banned_time'=>date("Y-m-d H:i:s")));
+            }
+            if($newStatus=='started'&&$userData['status']=='banned')
+            {
+                $arr_result=self::getData($uid, 'count');
+                if($arr_result['query_result']=='user_found')
                 {
-                    $result=user_action('set_data', array('uid'=>$param['uid'], 'status'=>$status2));
-                }
-                if($status2=='banned'&&$result2['status']=='started')
-                {
-                    $result=$result&&user_action('set_data', array('uid'=>$param['uid'], 'banned_time'=>date("Y-m-d H:i:s")));
-                    if($result===true)
-                    {
-                        $result2['status']=$status2;
-                        $ret_val = $result2;
-                    }
-                    else
-                    {
-                        $ret_val = array("error" => getPDOErr($db));
-                    }
-                }
-                if($status2=='started'&&$result2['status']=='banned')
-                {
-                    $arr_result=user_action('get_data', array('uid'=>$param['uid'], 'field'=>'count'));
-                    if($arr_result['query_result']=='user_found')
-                    {
-                        $result=user_action('set_data', array('uid'=>$param['uid'], 'last_count'=>$arr_result['count']));
-                    }
-                    else
-                    {
-                        $result=false;
-                    }
-                }
-                if($result===true)
-                {
-                    $result2['status']=$status2;
-                    $ret_val = $result2;
+                    User::setData(array('uid'=>$uid, 'last_count'=>$arr_result['count']));
                 }
                 else
                 {
-                    $ret_val = array("error" => getPDOErr($db));
+                    throw new Exception('user_not_found');
                 }
             }
-            break;
-		default:
-			$ret_val="Invalid verb!";
-			break;
-	}
-	return $ret_val;
+            $userData['status']=$newStatus;
+            return $userData;
+        }
+    }
+
+    public static function increaseUserCount($uid)
+    {
+        $stmt = self::$db->prepare("UPDATE users SET count=count+1 WHERE uid=?");
+        if(!$stmt->execute(array($uid)))
+        {
+            throw new Exception(getPDOErr(self::$db));
+        }
+    }
+
+    public static function adjustedInterval($userData)
+    {
+        // disallow too short timeout
+        $interval = array(
+            'min' => (integer)$userData['interval_min'], 
+            'max' => (integer)$userData['interval_max']
+        );
+        if($interval['min']+$interval['max'] < 150)
+        {
+            $interval['min'] = $interval['max'] = 75;
+        }
+        return $interval;
+    }
 }
 
-if(isset($_GET['action']))
+User::$db = $db;
+
+if(isset($_POST['action']) && strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!==FALSE)
 {
     header("Content-type: application/json");
-	switch($_GET['action'])
-	{
-		case 'list_users':
-            ip_only('127.0.0.1');
-            $param = array('field'=>$basic_user_data);
-            if(isset($_POST['IDs']))
-            {
-                $param['curIDs'] = explode('_', $_POST['IDs']);
-            }
-            $arr_users = user_action('get_user_field', $param);
-            array_unshift($arr_users, array("rate"=>postRate()));
-			echo json_encode($arr_users);
-			break;
-		case 'add_user':
-			if(isset($_POST['access_token'])&&isset($_POST['interval_min'])&&isset($_POST['interval_max'])
-			 &&isset($_POST['titles'])&&isset($_POST['goal']))
-			{
-				echo user_action('add_user', array('access_token'=>$_POST['access_token'], 
-				    'interval_min'=>$_POST['interval_min'], 'interval_max'=>$_POST['interval_max'], 
-				    'titles'=>$_POST['titles'], 'goal'=>$_POST['goal']));
-			}
-			break;
-		case 'get_user_info':
-			if(isset($_POST['uid'])) // in index.php
-			{
-				echo json_encode(user_action('get_data', array('uid'=>$_POST['uid'], 'field'=>$basic_user_data.',interval_max,interval_min,count,goal,titles,groups')));
-			}
-			break;
-		case 'set_user_status':
-			if(isset($_POST['uid']) && isset($_POST['status']))
-			{
-                echo json_encode(user_action('set_user_status', array('uid'=>$_POST['uid'], 'status'=>$_POST['status'])));
-			}
-            break;
-		default:
-			echo 'Invalid action verb.';
-	}
-}
-
-function adjustedInterval($userData)
-{
-    // disallow too short timeout
-    $interval = array(
-        'min' => (integer)$userData['interval_min'], 
-        'max' => (integer)$userData['interval_max']
-    );
-    if($interval['min']+$interval['max'] < 150)
+    try
     {
-        $interval['min'] = $interval['max'] = 75;
+        switch($_POST['action'])
+        {
+            case 'list_users':
+                ip_only('127.0.0.1');
+                checkPOST(array('IDs'));
+                echo json_encode(User::listUsers(User::basic_user_data, $_POST['IDs']));
+                break;
+            case 'add_user':
+                checkPOST(array('access_token', 'interval_min', 'interval_max', 'titles', 'goal', 'groups'));
+                echo json_encode(User::addUser($_POST)); // $_POST contains all needed fields
+                break;
+            case 'get_user_info': // used in index.php
+                checkPOST(array('uid'));
+                echo json_encode(User::getData($_POST['uid'], User::detailed_user_data));
+                break;
+            case 'set_user_status':
+                checkPOST(array('uid', 'status'));
+                echo json_encode(User::setUserStatus($_POST['uid'], $_POST['status']));
+                break;
+            default:
+                throw new Exception('invalid_action_verb');
+        }
     }
-    return $interval;
+    catch(Exception $e)
+    {
+        echo json_encode(array('error' => $e->getMessage()));
+    }
 }
-
 ?>

@@ -84,4 +84,16 @@ function checkPOST($params)
         }
     }
 }
+
+// PHP 5.2.6 doesn't support SimpleXMLElement::count(), so write one
+// but not used since PHP 5.3
+function xmlCount($xml)
+{
+	$i=0;
+	foreach($xml as $child)
+	{
+		$i++;
+	}
+	return $i;
+}
 ?>

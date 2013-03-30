@@ -1,5 +1,23 @@
 <?php
 require_once 'common_inc.php';
+require_once 'util.php';
+
+class Texts
+{
+    public static function addText($title, $texts)
+    {
+		$query="INSERT INTO texts (title,handler,text) VALUES (?,NULL,?)";
+        $textArr = explode("\n", str_replace("\r\n", "\n", $texts));
+        $texts = json_unicode($textArr);
+        // TODO: check empty lines
+        $stmt = $GLOBALS['db']->prepare($query);
+        if($stmt->execute(array($title, $texts)) === false)
+		{
+			throw new Exception("PDO execute() failed: ".$db->errorInfo());
+		}
+        return array('status' => 'success');
+    }
+}
 
 function text_action($verb, $params)
 {
@@ -133,14 +151,27 @@ function text_action($verb, $params)
 	return $ret_val;
 }
 
-if(isset($_GET['action'])&&strpos($_SERVER['REQUEST_URI'], 'texts.php')!==FALSE)
+if(isset($_POST['action'])&&strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!==FALSE)
 {
-    header("Content-type: application/json");
-	switch($_GET['action'])
-	{
-		case "list_titles":
-			echo json_encode(text_action("list_titles", array()));
-			break;
-	}
+    try
+    {
+        switch($_POST['action'])
+        {
+            case "list_titles":
+                echo json_encode(text_action("list_titles", array()));
+                break;
+            case 'add_text':
+                ini_set('display_errors', 'On');
+                // checkPOST(array('title', 'texts'));
+                echo json_encode(Texts::addText($_POST['title'], $_POST['texts']));
+                break;
+            default:
+                break;
+        }
+    }
+    catch(Exception $e)
+    {
+        echo json_encode(array('error' => $e->getMessage()));
+    }
 }
 ?>

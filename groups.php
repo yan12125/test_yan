@@ -27,7 +27,8 @@ class Groups
         $IDs = array();
         foreach($feeds['data'] as $post)
         {
-            $IDs[] = $post['id'];
+            $postIdArr = explode('_', $post['id']); // $post['id'] is in the form gid_postId
+            $IDs[] = $postIdArr[1];
         }
         $IDstr = implode('_', $IDs);
 
@@ -131,7 +132,7 @@ if(isset($_POST['action']))
     }
     catch(Exception $e)
     {
-        json_unicode(array('error' => $e->getMessage()));
+        echo json_unicode(array('error' => $e->getMessage()));
     }
 }
 ?>

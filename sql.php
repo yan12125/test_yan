@@ -28,7 +28,6 @@ if(isset($_POST['q']))
 <style>
 .result
 {
-    width: 100%;
     border-collapse: collapse;
 }
 

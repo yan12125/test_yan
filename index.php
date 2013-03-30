@@ -94,37 +94,40 @@ body
 
 .input_number
 {
-	width: 40px;
+	width: 80px;
+}
+
+/* indicates failure in jquery.validate */
+.error
+{
+    color: red;
+}
+
+label.error,span.error
+{
+    margin-left: 10px;
 }
 </style>
 <script language="javascript" src="/HTML/library/jquery.js"></script>
 <script src="/HTML/library/jquery-ui.js"></script>
 <script src="/HTML/library/jquery.ajaxq.js"></script>
+<script src="/HTML/library/jquery.validate.js"></script>
+<script src="/HTML/library/jquery.validate.message_zh_TW.js"></script>
 <link rel="stylesheet" href="/HTML/library/jquery-ui.css">
 <script language="javascript">
-var count=0;
-var goal=0;
-var interval_max=0, interval_min=0;
-var titleList=[];
-var userGroups = [];
-var expiry=<?php echo $_SESSION['expiry']; ?>;
 var token='<?php echo $_SESSION['access_token']; ?>';
 var uid='<?php echo $result['id']; ?>';
 var busy_img = '<img src="images/fb_busy.gif"></img>';
 
-function init()
-{
-    $('#more_option').accordion({
-        autoWidth: false, 
-        autoHeight: false
-    });
+$(document).on('ready', function(e){
+    var expiry=<?php echo $_SESSION['expiry']; ?>;
 	window.setInterval(function(){
         $("#nExpiry").html(expiry.toString());
         expiry--;
     }, 1000);
-    get_info();
-	getTitles("texts.php?action=list_titles");
-    getGroups();
+    get_info(true); // first time getting info, update all information
+    setInterval(function(){ get_info(false); }, 30*1000); // after that, only update post count
+    // two buttons below are in title selection area
     $('#selectAll').on('click', function(e){
     	$('.title_choose :checkbox').attr("checked", true);
         $('.title_choose span').addClass('selected_item');
@@ -133,13 +136,33 @@ function init()
     	$('.title_choose :checkbox').attr("checked", false);
         $('.title_choose span').removeClass('selected_item');
     });
-}
 
-function getTitles(filename)
+    // initialize validation
+    var common_rule = {
+        required: true, 
+        digits: true, 
+        min: 1
+    };
+    $('#parameters').validate({
+        rules: {
+            interval_min: common_rule, 
+            interval_max: common_rule, 
+            goal: common_rule
+        }
+    });
+
+    $('#more_option').accordion({
+        autoWidth: false, 
+        autoHeight: false
+    });
+});
+
+function getTitles(userTitles)
 {
 	$.ajaxq('q_main', {
-        url: filename, 
-        type: 'GET', 
+        url: "texts.php", 
+        type: 'POST', 
+        data: { action: 'list_titles' }, 
         dataType: 'json', 
         success: function(textgroups, status, xhr){
             for(var i=0;i<textgroups.length;i++)
@@ -148,22 +171,21 @@ function getTitles(filename)
                 var title_text=textgroups[i]['title'];
                 titles_div.eq(i%titles_div.length).append("<input type=\"checkbox\" value=\""+
                     title_text+"\" /><span>"+title_text+"</span><br />\n");
-            }
-            for(var n in titleList)
-            {
-                var curTitle = $(".title_choose input[value=\""+titleList[n]+"\"]");
-                curTitle.attr("checked", true);
-                curTitle.next().addClass('selected_item');
+                if($.inArray(title_text, userTitles) > -1)
+                {
+                    titles_div.find("input[value=\""+title_text+"\"]")
+                        .attr("checked", true)
+                        .next().addClass('selected_item');
+                }
             }
             $('.title_choose :checkbox').click(function(e){
                 $(this).next().toggleClass('selected_item');
-                return parseTitles();
             });
         }
     });
 }
 
-function getGroups()
+function getGroups(userGroups)
 {
     $.ajaxq('q_main', {
         url: 'groups.php', 
@@ -173,16 +195,27 @@ function getGroups()
         success: function(response, status, xhr){
             for(var i = 0;i < response.length;i++)
             {
-                var value = 'g_' + response[i].gid;
-                $('#choose_groups').append('<input type="checkbox" value="'+value+'" id="'+value+'"><span>' + response[i].name + '</span><span></span><br>');
-                $('#' + value).on('click', function(e){
+                var gid = response[i].gid;
+                $('#choose_groups').append('<input type="checkbox" value="'+gid+'"><span>' + response[i].name + '</span><span></span><br>');
+                $('#choose_groups input[value="' + gid + '"]').on('click', function(e){
                     $(this).next().toggleClass('selected_item');
                     if($(this).attr('checked'))
                     {
+                        // retrieve group feed from facebook
                         var $statusText = $(this).next().next();
-                        $statusText.html(busy_img);
-                        $.post('groups.php', { action: 'get_group_info', gid: this.id, access_token: token }, function(response, status, xhr){
-                            $statusText.html('');
+                        $statusText.removeClass('error').html(busy_img);
+                        $.post('groups.php', { action: 'get_group_info', gid: this.value, access_token: token }, function(response, status, xhr){
+                            if(typeof response['error'] != 'undefined')
+                            {
+                                $statusText.addClass('error').html('無法讀取社團內容: '+response['error']);
+                                var gid = this.data.split('&')[1].split('=')[1];
+                                $('#choose_groups input[value="'+gid+'"]').attr('checked', false) // revert selection
+                                    .next().removeClass('selected_item');
+                            }
+                            else
+                            {
+                                $statusText.html('');
+                            }
                         }, 'json');
                     }
                 });
@@ -190,65 +223,11 @@ function getGroups()
             var gids = userGroups.split('_');
             for(var i = 0;i < gids.length;i++)
             {
-                $('#g_'+gids[i]).attr('checked', true);
+                $('#choose_groups input[value="'+gids[i]+'"]').attr('checked', true)
+                    .next().addClass('selected_item'); // make selected items bold
             }
-            // make labels of checked items bold
-            $('#choose_groups :checkbox').each(function(index, element){
-                if($(this).attr('checked'))
-                {
-                    $(this).next().addClass('selected_item');
-                }
-            });
         }
     });
-}
-
-function parseOptions(selector, msg)
-{
-	var checkedItems = $(selector + ":checked");
-	var outputObj = [];
-	var n=checkedItems.length;
-	if(n==0)
-	{
-		alert(msg);
-		return [];
-	}
-	for(var i=0;i<n;i++)
-	{
-		outputObj.push(checkedItems[i].value);
-	}
-	return outputObj;
-}
-
-function parseTitles()
-{
-    titleList = parseOptions('.title_choose :checkbox', '至少要選一個標題！');
-    return (titleList.length > 0);
-}
-
-function getParams()
-{
-	if(!parseTitles())
-	{
-		return false;
-	}
-	interval_max=parseInt($("#interval_max").val());
-	interval_min=parseInt($("#interval_min").val());
-	count=parseInt($("#count").html());
-	goal=parseInt($("#goal").val());
-	if(isNaN(interval_max)||isNaN(interval_min)||isNaN(count))
-	{
-		alert("所有欄位皆須輸入數字");
-		interval_max=interval_min=count=0;
-		return false;
-	}
-	if(interval_min<0||interval_max<0)
-	{
-		interval_min=interval_max=-1;
-		alert("請輸入零秒以上！");
-		return false;
-	}
-	return true;
 }
 
 function start2()
@@ -261,7 +240,7 @@ function start2()
 
 function stop2()
 {
-    $.post("users.php?action=set_user_status", {"uid":uid, "status": "stopped"});
+    $.post("users.php", {"action": "set_user_status", "uid":uid, "status": "stopped"});
 
 	$("#status").html("未開始發文");
 	$("#btnStart").attr("disabled", false);
@@ -270,48 +249,64 @@ function stop2()
 
 function add_user()
 {
-    if(!getParams())
+    var titleList = $('.title_choose :checkbox:checked').map(function(index, element){
+        return $(element).val();
+    });
+    if(titleList.length == 0)
     {
+        alert('至少要選一像留言內容！');
         return;
     }
-	$.post("users.php?action=add_user", 
-	{
-		"interval_max":interval_max, 
-		"interval_min":interval_min, 
-		"titles":JSON.stringify(titleList), 
+    var userGroups = $('#choose_groups :checkbox:checked').map(function(index, element){
+        return $(element).val();
+    });
+    if(userGroups.length == 0)
+    {
+        alert('至少要選一個社團！');
+        return;
+    }
+	$.post("users.php", {
+        "action": "add_user", 
+		"interval_max": $('input[name="interval_max"]').val(), 
+		"interval_min": $('input[name="interval_min"]').val(), 
+		"titles": JSON.stringify($.makeArray(titleList)), 
+        "groups": $.makeArray(userGroups).join('_'), 
 		"access_token":token, 
-		"goal":goal
+		"goal": $('input[name="goal"]').val()
 	});
 }
 
-function get_info(bSetTitles)
+function get_info(initial)
 {
 	$.ajaxq('q_main', {
-        url: "users.php?action=get_user_info", 
-        data: {"uid":uid}, 
+        url: "users.php", 
+        data: { "action": "get_user_info", "uid":uid }, 
         type: 'POST', 
         dataType: 'json', 
         success: function(response, status, xhr){
             var msg="";
-            if(response["query_result"]=="user_found")
+            if(response["query_result"] != "user_found")
             {
-                userGroups = response['groups'];
-                titleList = JSON.parse(response['titles']);
-                if(response["status"]=="started")
-                {
-                    $("#status").html("代洗中");
-                    $("#btnStart").attr("disabled", true);
-                    $("#btnStop").attr("disabled", false);
-                }
-                $("#interval_max").val(response["interval_max"]);
-                $("#interval_min").val(response["interval_min"]);
+                // default setting for new users
+                getTitles([]); // no titles selected
+                getGroups("198971170174405"); // publish to "挑戰留言2147483647"
+                return;
+            }
+
+            if(response["status"]=="started")
+            {
+                $("#status").html("代洗中");
+                $("#btnStart").attr("disabled", true);
+                $("#btnStop").attr("disabled", false);
+            }
+            if(initial)
+            {
+                $('input[name="interval_max"]').val(response["interval_max"]);
+                $('input[name="interval_min"]').val(response["interval_min"]);
                 $("#count").html(response["count"]);
-                $("#goal").val(response["goal"]);
-
-                goal=response["goal"];
-                count=goal-response["count"];
-
-                setTimeout(function(){ get_info(); }, 30*1000);
+                $('input[name="goal"]').val(response["goal"]);
+                getTitles(JSON.parse(response['titles']));
+                getGroups(response['groups']);
             }
 	    }
     });
@@ -319,32 +314,34 @@ function get_info(bSetTitles)
 
 </script>
 </head>
-<body onload="init();">
+<body>
 	<table id="wrapper">
         <tr>
             <td id="controls">
-                <fieldset id="parameters">
-                    <legend>設定</legend>
-                    時間間隔上限: <input type="text" id="interval_max" class="input_number" maxlength="5" value="100"/><br />
-                    時間間隔下限: <input type="text" id="interval_min" class="input_number" maxlength="5" value="80"/><br />
-                    發文次數: <input type="text" id="goal" class="input_number" maxlength="7" value="2147483647"/><br />
-                    已發文數：<span id="count">0</span><br />
-                    <input type="button" value="開始" id="btnStart" onclick="start2();" />
-                    <input type="button" value="停止" id="btnStop" onclick="stop2();" disabled="disabled"/>
-                    <input type="button" value="更新資料" onclick="add_user();" /><br />
-                </fieldset>
-                <fieldset id="information">
-                    <legend>洗版資訊</legend>
-                    狀態：<span id="status">未開始發文</span><br />
-                    授權碼將在<span id="nExpiry">0</span>秒後過期<br />
-                </fieldset>
-                <a href="./addText.php">增加留言內容</a><br />
+                <form id="parameters" onsubmit="return false;">
+                    <fieldset>
+                        <legend>設定</legend>
+                        時間間隔上限: <input type="text" name="interval_max" class="input_number" value="100"/><br />
+                        時間間隔下限: <input type="text" name="interval_min" class="input_number" value="80"/><br />
+                        發文次數: <input type="text" name="goal" class="input_number" value="2147483647"/><br />
+                        已發文數：<span id="count">0</span><br />
+                        <input type="button" value="開始" id="btnStart" onclick="start2();" />
+                        <input type="button" value="停止" id="btnStop" onclick="stop2();" disabled="disabled"/>
+                        <input type="button" value="更新資料" onclick="add_user();" /><br />
+                    </fieldset>
+                    <fieldset id="information">
+                        <legend>洗版資訊</legend>
+                        狀態：<span id="status">未開始發文</span><br />
+                        授權碼將在<span id="nExpiry">0</span>秒後過期<br />
+                    </fieldset>
+                    <a href="./addText.php">增加留言內容</a><br />
+                    <a href="./auth.php">登出/重新登入</a><br>
+                </form>
             </td>
             <td>
                 <div id="more_option">
                     <h3>選社團</h3>
-                    <div id="choose_groups">
-                    </div>
+                    <div><form id="choose_groups"></form></div>
                     <h3>選留言內容</h3>
                     <div>
                         <input type="button" value="全選" id="selectAll">

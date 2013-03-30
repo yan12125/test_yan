@@ -11,18 +11,7 @@ if(isset($_GET['source']))
 	exit(0);
 }
 
-// PHP 5.2.6 doesn't support SimpleXMLElement::count(), so write one
 /*
- * not used anymore
-function xmlCount($xml)
-{
-	$i=0;
-	foreach($xml as $child)
-	{
-		$i++;
-	}
-	return $i;
-}
 // not using get total count because it's too slow
 function getCount($facebook, $access_token)
 {

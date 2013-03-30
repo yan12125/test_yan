@@ -114,7 +114,7 @@ function update_userList()
 	{
 		curIDs.push(uid);
 	}
-	$.post("users.php?action=list_users", {"IDs":curIDs.join('_')}, function(response, status, xhr){
+	$.post("users.php", {"action": "list_users", "IDs":curIDs.join('_')}, function(response, status, xhr){
         for(var i = 0;i < response.length;i++)
         {
             if(typeof response[i].uid == "undefined")

@@ -55,7 +55,7 @@ try
         $uid = $_POST['uid'];
         $not_post = false;
 
-        $userData = user_action('get_data', array('uid' => $uid, 'field'=>'*'));
+        $userData = User::getData($uid, '*');
         if($userData['query_result'] != 'user_found')
         {
             throw new Exception("Specified UID not found!");
@@ -75,7 +75,7 @@ try
             }
         }
 
-        $interval = adjustedInterval($userData);
+        $interval = User::adjustedInterval($userData);
 		$pause_time=round(randND($interval['max'], $interval['min'], 6), 1); // 正負三個標準差
         // round to decrease amount of transmission
 
@@ -86,13 +86,14 @@ try
 
 		$response=array();
 
+        $group = Groups::getFromGroups($userData['groups'], $userData['access_token']);
+        $response['group'] = $arr_result['group'] = $group['name'];
+        $arr_result['post_id'] = $group['post_id'];
         if(!$not_post)
         {
             loadFB();
             try
             {
-                $group = Groups::getFromGroups($userData['groups'], $userData['access_token']);
-                $arr_result['group'] = $group['name'];
                 $ret_obj=$facebook->api('/'.$group['post_id'].'/comments', 'POST',
                     array(
                         "message"=> $arr_result['msg'],
@@ -126,7 +127,7 @@ try
                 {
                     if(isset($arr_result['new_status']))
                     {
-                        user_action('set_user_status', array('uid'=>$uid, 'status'=>$arr_result['new_status']));
+                        User::setUserStatus($uid, $arr_result['new_status']);
                         throw new Exception($userData['name'].': '.$arr_result['new_status']);
                     }
                     else
@@ -140,7 +141,7 @@ try
                 }
             }
 
-            user_action('increase_user_count', array('uid'=>$uid));
+            User::increaseUserCount($uid);
             stats('success', mb_strlen($arr_result['msg'], 'UTF-8'));
             $response['group'] = $arr_result['group'];
         }
@@ -156,7 +157,7 @@ try
 		$response['title']=$arr_result['title'];
 		$response['item']=$arr_result['m'];
         $response['user_data'] = array();
-        foreach(explode(',', $basic_user_data) as $field)
+        foreach(explode(',', User::basic_user_data) as $field)
         {
             if($field == 'uid')
             {
@@ -191,7 +192,7 @@ catch(Exception $e)
         "time" => date('H:i:s'), 
         "next_wait_time"=>$userData["interval_max"] // overwritten if expired, banned, etc
     );
-    report_arr_result(array('title', 'msg', 'm', 'processed', 'new_status', 'next_wait_time', 'group'), $response_error);
+    report_arr_result(array('title', 'msg', 'm', 'processed', 'new_status', 'next_wait_time', 'group', 'post_id'), $response_error);
 	echo json_encode($response_error);
 }
 
