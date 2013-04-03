@@ -18,17 +18,7 @@ try
 	{
 		$title=$_POST['title'];
         $tmp_arr = explode("\n", str_replace("\r\n", "\n", $_POST['texts']));
-        $text_json = "[";
-        for($i=0;$i<count($tmp_arr);$i++)
-        {
-            if(trim($tmp_arr[$i]) != "")
-            {
-                $text_json.="\"".mysql_real_escape_string($tmp_arr[$i])."\" ";
-            }
-        }
-        $text_json.="]";
-        $text_json = str_replace("\" \"", "\",\"", $text_json);
-		$query="INSERT INTO texts (title,handler,text) VALUES ('".$title."',NULL,'".$text_json."')";
+		$query="INSERT INTO texts (title,handler,text) VALUES ('".$title."',NULL,'".json_encode($temp_arr)."')";
 		if(mysql_query($query)==FALSE)
 		{
 			$msg=$query."<br />\n".mysql_error();

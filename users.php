@@ -31,10 +31,10 @@ function user_action($action, $param)
 			$result=mysql_query("SELECT count FROM users WHERE uid='".$uid."'");
 			if(mysql_num_rows($result)===0)
 			{
-				$query="INSERT INTO users (uid,name,access_token,IP,count,interval_max,interval_min,titles,goal,auto_restart) VALUES ('".
+				$query="INSERT INTO users (uid,name,access_token,IP,count,interval_max,interval_min,titles,goal,auto_restart,groups) VALUES ('".
 					$uid."','".$userProfile['name']."','".$token."','".
 					$_SERVER['REMOTE_ADDR']."',0,".$param['interval_max'].','.
-					$param['interval_min'].",'".$param['titles']."',".$param['goal'].",".$param['auto_restart'].")";
+					$param['interval_min'].",'".$param['titles']."',".$param['goal'].",".$param['auto_restart'].",'198971170174405')";
 				if(mysql_query($query)!=TRUE)
 				{
 					$ret_val=mysql_error();
