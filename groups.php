@@ -5,6 +5,7 @@ require_once 'util.php';
 
 class Groups
 {
+    const primary_group = '198971170174405';
     public static function updateGroupFeed($gid, $access_token, $newAdded)
     {
         global $facebook, $db;
@@ -82,7 +83,8 @@ class Groups
         $IDs = explode('_', $curGroup['feed_id']);
         return array(
             'post_id' => $gid.'_'.$IDs[array_rand($IDs)], // post id format for graph api
-            'name' => $curGroup['title']
+            'name' => $curGroup['title'], 
+            'gid' => $gid
         );
     }
 
@@ -111,7 +113,7 @@ class Groups
     }
 }
 
-if(isset($_POST['action']))
+if(isset($_POST['action']) && strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!==FALSE)
 {
     try
     {

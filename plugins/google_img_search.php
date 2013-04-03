@@ -1,13 +1,6 @@
 <?php
 chdir('..');
 require_once 'common_inc.php';
-
-if(isset($_GET['source']))
-{
-	header('Location: '.$source_url);
-	exit(0);
-}
-
 // download from http://sourceforge.net/projects/simplehtmldom/files/
 require_once '../../../HTML_JS_PHP/library/simple_html_dom.php';
 
@@ -16,7 +9,6 @@ if(isset($_GET['param']))
 	header("Content-type:text/plain; charset=utf-8");
 
 	$url='http://images.google.com/images?q='.$_GET['param'].'&hl=zh-TW';
-	$semantic_url=$rootUrl.'fb_semantic.php';
 
 	// get the html of search result page
     $ch = curl_init();

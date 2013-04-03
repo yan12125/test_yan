@@ -1,5 +1,5 @@
 <?php
-require_once 'common_inc.php';
+require_once 'util.php';
 ip_only('127.0.0.1');
 ?>
 <!DOCTYPE html>
@@ -59,13 +59,7 @@ function post2(uid)
 					var msg=response["msg"];
 					$("tr#u_"+users[uid].uid+" td.last_msg").html(msg);
 					$("tr#u_"+users[uid].uid+" td.group").html(response['group']);
-					var next_wait_time=parseFloat(response["next_wait_time"]);
-					if(isNaN(next_wait_time))
-					{
-						$("#results").append("Error when parsing time: "+xhr.responseText+"\n");
-						next_wait_time=60;
-					}
-					users[uid].wait_time=next_wait_time;
+					users[uid].wait_time=parseFloat(response["next_wait_time"]);
 					countDown(uid);
 
 					// update user data
@@ -246,7 +240,7 @@ $(document).on('ready', function(e){
 			</table>
 		</td>
 		<td align="left" valign="top">
-			<textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="40"></textarea><br>
+			<textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="20"></textarea><br>
 			<input type="button" id="btn_start" value="Start">
 			<input type="button" id="btn_stop" value="Stop">
 			<input type="button" id="btn_clearLog" value="clear log">

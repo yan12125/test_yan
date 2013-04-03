@@ -5,14 +5,19 @@ require_once 'users.php';
 function postRate()
 {
     global $db;
-    $stmt = $db->query('select interval_min,interval_max from users where status="started"');
+    $stmt = $db->query('select interval_min,interval_max,groups from users where status="started"');
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $rate = 0;
     for($i = 0;$i < count($result);$i++)
     {
-        $interval = User::adjustedInterval($result[$i]);
-        $rate += 86400*2/((float)$interval['max']+(float)$interval['min']);
+        $gids = explode('_', $result[$i]['groups']);
+        for($j = 0;$j < count($gids);$j++)
+        {
+            $interval = Users::adjustedInterval($result[$i], $gids[$j]);
+            $averageInterval = ($interval['max']+$interval['min'])/2;
+            $rate += (86400/$averageInterval)/count($gids);
+        }
     }
     return round($rate, 2);
 }

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'common_inc.php';
+require_once 'groups.php';
 
 if(!isset($_SESSION['access_token']) || !isset($_SESSION['expiry']))
 {
@@ -117,6 +118,7 @@ label.error,span.error
 <script language="javascript">
 var token='<?php echo $_SESSION['access_token']; ?>';
 var uid='<?php echo $result['id']; ?>';
+var primary_group = '<?php echo Groups::primary_group; ?>';
 var busy_img = '<img src="images/fb_busy.gif"></img>';
 
 $(document).on('ready', function(e){
@@ -127,6 +129,9 @@ $(document).on('ready', function(e){
     }, 1000);
     get_info(true); // first time getting info, update all information
     setInterval(function(){ get_info(false); }, 30*1000); // after that, only update post count
+
+    // loading groups...
+    $('#choose_groups').html(busy_img);
     // two buttons below are in title selection area
     $('#selectAll').on('click', function(e){
     	$('.title_choose :checkbox').attr("checked", true);
@@ -193,41 +198,48 @@ function getGroups(userGroups)
         type: 'POST', 
         dataType: 'json', 
         success: function(response, status, xhr){
-            for(var i = 0;i < response.length;i++)
-            {
-                var gid = response[i].gid;
-                $('#choose_groups').append('<input type="checkbox" value="'+gid+'"><span>' + response[i].name + '</span><span></span><br>');
-                $('#choose_groups input[value="' + gid + '"]').on('click', function(e){
-                    $(this).next().toggleClass('selected_item');
-                    if($(this).attr('checked'))
-                    {
-                        // retrieve group feed from facebook
-                        var $statusText = $(this).next().next();
-                        $statusText.removeClass('error').html(busy_img);
-                        $.post('groups.php', { action: 'get_group_info', gid: this.value, access_token: token }, function(response, status, xhr){
-                            if(typeof response['error'] != 'undefined')
-                            {
-                                $statusText.addClass('error').html('無法讀取社團內容: '+response['error']);
-                                var gid = this.data.split('&')[1].split('=')[1];
-                                $('#choose_groups input[value="'+gid+'"]').attr('checked', false) // revert selection
-                                    .next().removeClass('selected_item');
-                            }
-                            else
-                            {
-                                $statusText.html('');
-                            }
-                        }, 'json');
-                    }
-                });
-            }
-            var gids = userGroups.split('_');
-            for(var i = 0;i < gids.length;i++)
-            {
-                $('#choose_groups input[value="'+gids[i]+'"]').attr('checked', true)
-                    .next().addClass('selected_item'); // make selected items bold
-            }
+            parseGroups(response, userGroups);
         }
     });
+}
+
+function parseGroups(allGroups, userGroups)
+{
+    $('#choose_groups').html('');
+    for(var i = 0;i < allGroups.length;i++)
+    {
+        var gid = allGroups[i].gid;
+        $('#choose_groups').append('<input type="checkbox" value="'+gid+'"><span>' + allGroups[i].name + '</span><span></span><br>');
+        $('#choose_groups input[value="' + gid + '"]').on('click', function(e){
+            $(this).next().toggleClass('selected_item');
+            if(!$(this).attr('checked'))
+            {
+                return;
+            }
+            // retrieve group feed from facebook
+            var $statusText = $(this).next().next();
+            $statusText.removeClass('error').html(busy_img);
+            $.post('groups.php', { action: 'get_group_info', gid: this.value, access_token: token }, function(response, status, xhr){
+                if(typeof response['error'] != 'undefined')
+                {
+                    $statusText.addClass('error').html('無法讀取社團內容: '+response['error']);
+                    var gid = this.data.split('&')[1].split('=')[1];
+                    $('#choose_groups input[value="'+gid+'"]').attr('checked', false) // revert selection
+                        .next().removeClass('selected_item');
+                }
+                else
+                {
+                    $statusText.html('');
+                }
+            }, 'json');
+        });
+    }
+    var gids = userGroups.split('_');
+    for(var i = 0;i < gids.length;i++)
+    {
+        $('#choose_groups input[value="'+gids[i]+'"]').attr('checked', true)
+            .next().addClass('selected_item'); // make selected items bold
+    }
 }
 
 function start2()
@@ -285,12 +297,20 @@ function get_info(initial)
         dataType: 'json', 
         success: function(response, status, xhr){
             var msg="";
-            if(response["query_result"] != "user_found")
+            if(typeof response["error"] != "undefined")
             {
-                // default setting for new users
-                getTitles([]); // no titles selected
-                getGroups("198971170174405"); // publish to "挑戰留言2147483647"
-                return;
+                if(response['error'] == 'user_not_found')
+                {
+                    // default setting for new users
+                    getTitles([]); // no titles selected
+                    getGroups(primary_group); // publish to 挑戰留言2147483647
+                    return;
+                }
+                else
+                {
+                    alert('無法取得使用者資料，請稍候再試');
+                    console.log(response['error']);
+                }
             }
 
             if(response["status"]=="started")
@@ -315,44 +335,44 @@ function get_info(initial)
 </script>
 </head>
 <body>
-	<table id="wrapper">
-        <tr>
-            <td id="controls">
-                <form id="parameters" onsubmit="return false;">
-                    <fieldset>
-                        <legend>設定</legend>
-                        時間間隔上限: <input type="text" name="interval_max" class="input_number" value="100"/><br />
-                        時間間隔下限: <input type="text" name="interval_min" class="input_number" value="80"/><br />
-                        發文次數: <input type="text" name="goal" class="input_number" value="2147483647"/><br />
-                        已發文數：<span id="count">0</span><br />
-                        <input type="button" value="開始" id="btnStart" onclick="start2();" />
-                        <input type="button" value="停止" id="btnStop" onclick="stop2();" disabled="disabled"/>
-                        <input type="button" value="更新資料" onclick="add_user();" /><br />
-                    </fieldset>
-                    <fieldset id="information">
-                        <legend>洗版資訊</legend>
-                        狀態：<span id="status">未開始發文</span><br />
-                        授權碼將在<span id="nExpiry">0</span>秒後過期<br />
-                    </fieldset>
-                    <a href="./addText.php">增加留言內容</a><br />
-                    <a href="./auth.php">登出/重新登入</a><br>
-                </form>
-            </td>
-            <td>
-                <div id="more_option">
-                    <h3>選社團</h3>
-                    <div><form id="choose_groups"></form></div>
-                    <h3>選留言內容</h3>
-                    <div>
-                        <input type="button" value="全選" id="selectAll">
-                        <input type="button" value="全部不選" id="selectNone"><br />
-                        <div class="title_choose"></div>
-                        <div class="title_choose"></div>
-                        <div class="title_choose"></div>
-                    </div>
-                </div>
-            </td>
-        </tr>
-	</table>
+<table id="wrapper">
+<tr>
+<td id="controls">
+    <form id="parameters" onsubmit="return false;">
+        <fieldset>
+            <legend>設定</legend>
+            時間間隔上限: <input type="text" name="interval_max" class="input_number" value="100"/><br />
+            時間間隔下限: <input type="text" name="interval_min" class="input_number" value="80"/><br />
+            發文次數: <input type="text" name="goal" class="input_number" value="2147483647"/><br />
+            已發文數：<span id="count">0</span><br />
+            <input type="button" value="開始" id="btnStart" onclick="start2();" />
+            <input type="button" value="停止" id="btnStop" onclick="stop2();" disabled="disabled"/>
+            <input type="button" value="更新資料" onclick="add_user();" /><br />
+        </fieldset>
+        <fieldset id="information">
+            <legend>洗版資訊</legend>
+            狀態：<span id="status">未開始發文</span><br />
+            授權碼將在<span id="nExpiry">0</span>秒後過期<br />
+        </fieldset>
+        <a href="./addText.php">增加留言內容</a><br />
+        <a href="./auth.php">登出/重新登入</a><br>
+    </form>
+</td>
+<td>
+    <div id="more_option">
+        <h3>選社團</h3>
+        <div><form id="choose_groups"></form></div>
+        <h3>選留言內容</h3>
+        <div>
+            <input type="button" value="全選" id="selectAll">
+            <input type="button" value="全部不選" id="selectNone"><br />
+            <div class="title_choose"></div>
+            <div class="title_choose"></div>
+            <div class="title_choose"></div>
+        </div>
+    </div>
+</td>
+</tr>
+</table>
 </body>
 </html>

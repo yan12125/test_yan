@@ -1,5 +1,5 @@
 <?php
-error_reporting(E_ALL|E_STRICT); // suppress all error outputs
+error_reporting(0); // suppress all error outputs
 chdir('..');
 require_once 'common_inc.php';
 

@@ -2,9 +2,9 @@
 require_once 'common_inc.php';
 require_once 'stats.php';
 require_once 'util.php';
+require_once 'groups.php';
 
-
-class User
+class Users
 {
     // used in SQL SELECT
     const basic_user_data = 'uid,name,status';
@@ -45,7 +45,7 @@ class User
         }
         else // user had been added, so modify data
         {
-            User::setData(array("uid"=>$uid, "status"=>"started"));
+            Users::setData(array("uid"=>$uid, "status"=>"started"));
             $stmt = self::$db->prepare('UPDATE users SET name=?,access_token=?,IP=?,interval_max=?,interval_min=?,titles=?,goal=?,groups=? WHERE uid=?');
         }
         if(!$stmt->execute(array($userProfile['name'], $token, $_SERVER['REMOTE_ADDR'], $userData['interval_max'], $userData['interval_min'], $userData['titles'], $userData['goal'], $userData['groups'], $uid)))
@@ -59,17 +59,12 @@ class User
     {
         $stmt = self::$db->prepare("SELECT {$field} FROM users WHERE uid=?");
         $stmt->execute(array($uid));
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        if(count($results)==0)
+        $results = $stmt->fetch(PDO::FETCH_ASSOC);
+        if($results === false)
         {
-            $arr_info=array('query_result'=>'user_not_found');
+            throw new Exception("Specified UID not found!");
         }
-        else
-        {
-            $arr_info=$results[0];
-            $arr_info['query_result']='user_found';
-        }
-        return $arr_info;
+        return $results;
     }
 
     public static function setData($param)
@@ -97,7 +92,7 @@ class User
             // general action: set user data
             if($newStatus=='started'||$newStatus=='stopped'||$newStatus=='banned'||$newStatus=='expired')
             {
-                User::setData(array('uid'=>$uid, 'status'=>$newStatus));
+                Users::setData(array('uid'=>$uid, 'status'=>$newStatus));
             }
             else
             {
@@ -107,19 +102,12 @@ class User
             // if from started to banned...
             if($newStatus=='banned'&&$userData['status']=='started')
             {
-                User::setData(array('uid'=>$uid, 'banned_time'=>date("Y-m-d H:i:s")));
+                Users::setData(array('uid'=>$uid, 'banned_time'=>date("Y-m-d H:i:s")));
             }
             if($newStatus=='started'&&$userData['status']=='banned')
             {
                 $arr_result=self::getData($uid, 'count');
-                if($arr_result['query_result']=='user_found')
-                {
-                    User::setData(array('uid'=>$uid, 'last_count'=>$arr_result['count']));
-                }
-                else
-                {
-                    throw new Exception('user_not_found');
-                }
+                Users::setData(array('uid'=>$uid, 'last_count'=>$arr_result['count']));
             }
             $userData['status']=$newStatus;
             return $userData;
@@ -135,14 +123,15 @@ class User
         }
     }
 
-    public static function adjustedInterval($userData)
+    public static function adjustedInterval($userData, $gid)
     {
         // disallow too short timeout
         $interval = array(
-            'min' => (integer)$userData['interval_min'], 
-            'max' => (integer)$userData['interval_max']
+            'min' => (float)$userData['interval_min'], 
+            'max' => (float)$userData['interval_max']
         );
-        if($interval['min']+$interval['max'] < 150)
+        // only limit interval in 挑戰留言2147483647
+        if( ($gid == Groups::primary_group) && ($interval['min']+$interval['max'] < 150) )
         {
             $interval['min'] = $interval['max'] = 75;
         }
@@ -150,7 +139,7 @@ class User
     }
 }
 
-User::$db = $db;
+Users::$db = $db;
 
 if(isset($_POST['action']) && strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!==FALSE)
 {
@@ -162,19 +151,19 @@ if(isset($_POST['action']) && strpos($_SERVER['REQUEST_URI'], basename(__FILE__)
             case 'list_users':
                 ip_only('127.0.0.1');
                 checkPOST(array('IDs'));
-                echo json_encode(User::listUsers(User::basic_user_data, $_POST['IDs']));
+                echo json_encode(Users::listUsers(Users::basic_user_data, $_POST['IDs']));
                 break;
             case 'add_user':
                 checkPOST(array('access_token', 'interval_min', 'interval_max', 'titles', 'goal', 'groups'));
-                echo json_encode(User::addUser($_POST)); // $_POST contains all needed fields
+                echo json_encode(Users::addUser($_POST)); // $_POST contains all needed fields
                 break;
             case 'get_user_info': // used in index.php
                 checkPOST(array('uid'));
-                echo json_encode(User::getData($_POST['uid'], User::detailed_user_data));
+                echo json_encode(Users::getData($_POST['uid'], Users::detailed_user_data));
                 break;
             case 'set_user_status':
                 checkPOST(array('uid', 'status'));
-                echo json_encode(User::setUserStatus($_POST['uid'], $_POST['status']));
+                echo json_encode(Users::setUserStatus($_POST['uid'], $_POST['status']));
                 break;
             default:
                 throw new Exception('invalid_action_verb');

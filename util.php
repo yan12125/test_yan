@@ -96,4 +96,16 @@ function xmlCount($xml)
 	}
 	return $i;
 }
+
+function ip_only($ip)
+{
+    $remote_ip = $_SERVER['REMOTE_ADDR'];
+    if($ip !== $remote_ip)
+    {
+        header('403 Forbidden');
+        echo "IP {$remote_ip} forbidden";
+        exit(0);
+    }
+}
+
 ?>
