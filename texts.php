@@ -8,7 +8,7 @@ class Texts
 
     public static function listTitles()
     {
-        if(($stmt = self::$db->query("SELECT title FROM texts"))!==false)
+        if(($stmt = self::$db->query("SELECT title FROM texts where locked=0"))!==false)
         {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
@@ -111,7 +111,8 @@ class Texts
         }
         else
         {
-            $ret_val['msg']=htmlspecialchars($json_texts[$m]);
+            // no need to escape html special chars because facebook will fo it
+            $ret_val['msg'] = $json_texts[$m];
         }
         if(isset($ret_val['msg']) && trim($ret_val['msg']) == "")
         {

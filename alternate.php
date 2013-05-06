@@ -7,6 +7,12 @@ ip_only('127.0.0.1');
 <head>
 <title>alternate.php</title>
 <meta charset="UTF-8">
+<style>
+#users
+{
+    border-collapse: collapse;
+}
+</style>
 <script src="/HTML/library/jquery.js"></script>
 <script src="/HTML/library/jquery.ajaxq.js"></script>
 <script>
@@ -16,80 +22,90 @@ var debug = 0;
 
 function post2(uid)
 {
-	if(users[uid].bStarted)
+	if(!users[uid].bStarted)
 	{
-        var _data = { "uid":users[uid].uid, "truncated_msg": 1 };
-        if(debug)
-        {
-            _data["debug"] = 1;
-        }
-		$.ajaxq("queue_main", {
-			url: "post.php", 
-			type: "POST", 
-			data: _data, 
-			dataType: "json", 
-            timeout: 30*1000, // in milliseconds
-			success: function(response, status, xhr)
-			{
-				if((typeof response["error"])!="undefined")
-				{
-					var err_msg=response["error"];
-                    if(typeof response["processed"] != "undefined")
-                    {
-						$("#results").append(err_msg+"\n");
-                        if(typeof response['new_status'] != "undefined")
-                        {   // no new status when "Timed out"
-                            users[uid]['status'] = response["new_status"];
-                            users[uid].bStarted = false; // "started" won't appear here
-                        }
-                    }
-					else
-					{
-						$("#results").append("Error from "+users[uid].name+"\n");
-						window.errors.push(response);
-					}
-                    users[uid].wait_time = response["next_wait_time"];
-                    if(users[uid].wait_time > 0)
-                    {
-                        countDown(uid);
-                    }
-				}
-				else
-				{
-					var msg=response["msg"];
-					$("tr#u_"+users[uid].uid+" td.last_msg").html(msg);
-					$("tr#u_"+users[uid].uid+" td.group").html(response['group']);
-					users[uid].wait_time=parseFloat(response["next_wait_time"]);
-					countDown(uid);
+        return false;
+    }
 
-					// update user data
-					for(var s in response["user_data"])
-					{
-						users[uid][s]=response["user_data"][s];
-					}
-					if(response["user_data"]["status"]!="started")
-					{
-						users[uid].bStarted=false;
-					}
-                    update_user_data(users[uid]);
-				}
-			}, 
-			error: function(xhr, status, error)
-			{
-				$("#results").append(status+" : "+escape(error)+"\n");
-				var now=new Date();
-				console.log(now.toLocaleTimeString());
-				console.log(xhr.responseText);
-				users[uid].wait_time=600;
-				countDown(uid);
-			}
-		});
-	}
+    var _data = { "uid":users[uid].uid, "truncated_msg": 1 };
+    if(debug)
+    {
+        _data["debug"] = 1;
+    }
+    $.ajaxq("queue_main", {
+        url: "post.php", 
+        type: "POST", 
+        data: _data, 
+        dataType: "json", 
+        timeout: 30*1000, // in milliseconds
+        success: function(response, status, xhr)
+        {
+            if((typeof response["error"])!="undefined")
+            {
+                var err_msg=response["error"];
+                if(typeof response["processed"] != "undefined")
+                {
+                    if(typeof response['new_status'] != "undefined")
+                    {   // no new status when "Timed out"
+                        $("#results").append(err_msg+"\n");
+                        users[uid]['status'] = response["new_status"];
+                        users[uid].bStarted = false; // "started" won't appear here
+                    }
+                }
+                else
+                {
+                    $("#results").append("Error from "+users[uid].name+"\n");
+                    window.errors.push(response);
+                }
+                users[uid].wait_time = response["next_wait_time"];
+                if(users[uid].wait_time > 0)
+                {
+                    countDown(uid);
+                }
+            }
+            else
+            {
+                var msg=response["msg"];
+                $("tr#u_"+users[uid].uid+" td.last_msg").text(msg);
+                $("tr#u_"+users[uid].uid+" td.group").text(response['group']);
+                users[uid].wait_time=parseFloat(response["next_wait_time"]);
+                countDown(uid);
+
+                // update user data
+                for(var s in response["user_data"])
+                {
+                    users[uid][s]=response["user_data"][s];
+                }
+                if(response["user_data"]["status"]!="started")
+                {
+                    users[uid].bStarted=false;
+                }
+                update_user_data(users[uid]);
+            }
+        }, 
+        error: function(xhr, status, error)
+        {
+            $("#results").append(status+" : "+escape(error)+"\n");
+            var now=new Date();
+            console.log(now.toLocaleTimeString());
+            console.log(xhr.responseText);
+            users[uid].wait_time=300;
+            if(xhr.status == 500)
+            {
+                // postpone all users
+                for(var id in users)
+                {
+                    users[id].wait_time = 300;
+                }
+            }
+            countDown(uid);
+        }
+    });
 }
 
 function countDown(uid)
 {
-    $("tr#u_"+uid+" td.time").html(Math.floor(users[uid].wait_time).toString());
+    $("tr#u_"+uid+" td.time").text(Math.floor(users[uid].wait_time).toString());
     if(users[uid].wait_time>=1)
     {
         users[uid].wait_time--;
@@ -115,7 +131,7 @@ function update_userList()
             {
                 if(typeof response[i].rate != "undefined")
                 {
-                    $("#rate").html(response[i].rate);
+                    $("#rate").text(response[i].rate);
                 }
                 continue;
             }
@@ -142,7 +158,7 @@ function update_userList()
         var rows = get_user_rows();
         for(var i = 0;i < rows.length;i++)
         {
-            rows.eq(i).find("td:first").html(i);
+            rows.eq(i).find("td:first").text(i);
         }
 	}, "json");
 }
@@ -195,12 +211,12 @@ $(document).on('ready', function(e){
         }
     });
     $("#btn_clearLog").on('click', function(e){
-        $("#results").html('');
+        $("#results").text('');
     });
     $("#btn_print_error").on('click', function(e){
         for(var i = 0;i < errors.length;i++)
         {
-            console.log(errors[i].error);
+            console.log(i + '\t' + errors[i].error);
         }
     });
     // confirm when closing page

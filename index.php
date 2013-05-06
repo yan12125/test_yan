@@ -132,14 +132,29 @@ $(document).on('ready', function(e){
 
     // loading groups...
     $('#choose_groups').html(busy_img);
-    // two buttons below are in title selection area
+    // three buttons below are in title selection area
+    var selectRandom = function(probability){
+        var checkboxes = $('.title_choose :checkbox');
+        var titleTexts = $('.title_choose span');
+    	checkboxes.attr("checked", false);
+        titleTexts.removeClass('selected_item');
+        for(var i = 0;i < checkboxes.length;i++)
+        {
+            if(Math.random() <= probability)
+            {
+                checkboxes.eq(i).attr('checked', true);
+                titleTexts.eq(i).addClass('selected_item');
+            }
+        }
+    };
     $('#selectAll').on('click', function(e){
-    	$('.title_choose :checkbox').attr("checked", true);
-        $('.title_choose span').addClass('selected_item');
+        selectRandom(1);
+    });
+    $('#selectRandom').on('click', function(e){
+        selectRandom(0.3);
     });
     $('#selectNone').on('click', function(e){
-    	$('.title_choose :checkbox').attr("checked", false);
-        $('.title_choose span').removeClass('selected_item');
+        selectRandom(0);
     });
 
     // initialize validation
@@ -299,7 +314,8 @@ function get_info(initial)
             var msg="";
             if(typeof response["error"] != "undefined")
             {
-                if(response['error'] == 'user_not_found')
+                var err = response['error'];
+                if(err == 'user_not_found')
                 {
                     // default setting for new users
                     getTitles([]); // no titles selected
@@ -308,8 +324,9 @@ function get_info(initial)
                 }
                 else
                 {
-                    alert('無法取得使用者資料，請稍候再試');
-                    console.log(response['error']);
+                    alert('無法取得使用者資料，請稍候再試\n' + err);
+                    console.log(err);
+                    return;
                 }
             }
 
@@ -318,12 +335,12 @@ function get_info(initial)
                 $("#status").html("代洗中");
                 $("#btnStart").attr("disabled", true);
                 $("#btnStop").attr("disabled", false);
+                $("#count").html(response["count"]);
             }
             if(initial)
             {
                 $('input[name="interval_max"]').val(response["interval_max"]);
                 $('input[name="interval_min"]').val(response["interval_min"]);
-                $("#count").html(response["count"]);
                 $('input[name="goal"]').val(response["goal"]);
                 getTitles(JSON.parse(response['titles']));
                 getGroups(response['groups']);
@@ -360,16 +377,17 @@ function get_info(initial)
 </td>
 <td>
     <div id="more_option">
-        <h3>選社團</h3>
-        <div><form id="choose_groups"></form></div>
         <h3>選留言內容</h3>
         <div>
             <input type="button" value="全選" id="selectAll">
+            <input type="button" value="隨便選" id="selectRandom">
             <input type="button" value="全部不選" id="selectNone"><br />
             <div class="title_choose"></div>
             <div class="title_choose"></div>
             <div class="title_choose"></div>
         </div>
+        <h3>選社團</h3>
+        <div><form id="choose_groups"></form></div>
     </div>
 </td>
 </tr>

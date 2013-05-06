@@ -2,7 +2,7 @@
 chdir('..');
 require_once 'common_inc.php';
 // download from http://sourceforge.net/projects/simplehtmldom/files/
-require_once '../../../HTML_JS_PHP/library/simple_html_dom.php';
+require_once '../simple_html_dom.php';
 
 if(isset($_GET['param']))
 {
@@ -24,17 +24,17 @@ if(isset($_GET['param']))
 	$imgurl='';
 	$count=count($imgs);
 	$n=rand(0, $count-1);
-	if(isset($imgs[$n]->parent()->href))
+	if(isset($imgs[$n]) && isset($imgs[$n]->parent()->href))
     {
         $href = $imgs[$n]->parent()->href;
-    }
-    // href is like "/imgres?a=b&amp;c=d&amp;..."
-    $sign = '/imgres?';
-    if(substr($href, 0, strlen($sign))===$sign)
-    {
-        $qs = str_replace('&amp;', '&', substr($href, strlen($sign)));
-        parse_str($qs, $param);
-        echo $param['imgurl'];
+        // href is like "/imgres?a=b&amp;c=d&amp;..."
+        $sign = '/imgres?';
+        if(substr($href, 0, strlen($sign))===$sign)
+        {
+            $qs = str_replace('&amp;', '&', substr($href, strlen($sign)));
+            parse_str($qs, $param);
+            echo $_GET['param'].' '.$param['imgurl'];
+        }
     }
 }
 

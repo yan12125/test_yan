@@ -43,6 +43,7 @@ class Post
             if($text['error'] == 'title_locked')
             {
                 $this->config['not_post'] = true;
+                unset($this->config['truncated_msg']); // this message shouldn't be truncated
                 $this->response['msg'] = '(title locked)';
                 $this->response['processed'] = 1;
                 $this->response['next_wait_time'] = $this->userData['interval_max'];
@@ -77,14 +78,13 @@ class Post
                     "message"=> $this->response['msg'],
                     "access_token"=>$this->userData['access_token']
                 ));
+                Users::increaseUserCount($this->userData['uid']);
+                stats('success', mb_strlen($this->response['msg'], 'UTF-8'));
             }
             catch(FacebookApiException $e)
             {
                 $this->handleFacebookError($e);
             }
-
-            Users::increaseUserCount($this->userData['uid']);
-            stats('success', mb_strlen($this->response['msg'], 'UTF-8'));
         }
     }
 
@@ -103,9 +103,9 @@ class Post
             $this->response['next_wait_time'] = -1;
             $this->response['processed'] = 1;
         }
-        else if(strpos($err, 'Operation timed out') !== false)
+        else if(strpos($err, 'timed out') !== false || strpos($err, 'timeout') !== false)
         {
-            stats('timed_out', mb_strlen($this->response['err'], 'UTF-8'));
+            stats('timed_out', mb_strlen($this->response['msg'], 'UTF-8'));
             $this->response['processed'] = 1;
             $this->response['next_wait_time'] = $this->userData['interval_max'];
         }
@@ -118,7 +118,7 @@ class Post
         if(isset($this->response['new_status']))
         {
             Users::setUserStatus($this->userData['uid'], $this->response['new_status']);
-            throw new Exception($userData['name'].': '.$this->response['new_status']);
+            throw new Exception($this->userData['name'].': '.$this->response['new_status']);
         }
         else
         {
@@ -151,7 +151,7 @@ class Post
         unset($this->response['post_id']); // if arrive here, post_id not needed anymore
         if(isset($this->config['truncated_msg']))
         {
-            $this->response['msg'] = truncate($this->response['msg'], 20);
+            $this->response['msg'] = truncate($this->response['msg'], 10);
         }
         if($this->group['gid'] == Groups::primary_group)
         {

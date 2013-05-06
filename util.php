@@ -108,4 +108,9 @@ function ip_only($ip)
     }
 }
 
+function checkAction($filename)
+{
+    return isset($_POST['action']) && 
+           (strpos($_SERVER['REQUEST_URI'], basename($filename)) !== FALSE);
+}
 ?>

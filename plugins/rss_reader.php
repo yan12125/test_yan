@@ -9,7 +9,20 @@ try
 {
 	if(isset($_GET['param']))
 	{
-		$feed=new SimpleXMLElement($_GET['param'], 0, true/*indicate 1st param is url*/);
+        $url = $_GET['param'];
+        $ch = curl_init();
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => $url, 
+            CURLOPT_RETURNTRANSFER => true, 
+            CURLOPT_FOLLOWLOCATION => true
+        ));
+        $xml = curl_exec($ch);
+        curl_close($ch);
+        if(empty($xml))
+        {
+            throw new Exception('Failed to retrieve '.$url);
+        }
+		$feed=new SimpleXMLElement($xml);
 		$n=rand(0, $feed->channel->item->count()-1);
 		header("Content-Type:text/plain; charset=utf-8");
 		echo $feed->channel->item[$n]->title."\n".$feed->channel->item[$n]->link;
@@ -17,15 +30,32 @@ try
 }
 catch(Exception $e)
 {
-    header("HTTP/1.1 500 Internal Server Error");
+    header('HTTP/1.1 500 Internal server error');
     $xmlErr = libxml_get_last_error();
-    if($xmlErr != FALSE)
+    if($xmlErr !== false)
     {
-        echo 'LibXML: Error '.$xmlErr->code.' '.$xmlErr->message;
+        $output = array(
+            'source' => 'LibXML', 
+            'code' => $xmlErr->code, 
+            'message' => $xmlErr->message, 
+        );
     }
     else
     {
-        echo 'Uncaught error: '.$e->getMessage();
+        $output = array(
+            'source' => 'unknown', 
+            'message' => $e->getMessage(), 
+            'line' => $e->getLine()
+        );
     }
+    if(isset($xml))
+    {
+        $output['xml'] = $xml;
+    }
+    if(isset($url))
+    {
+        $output['url'] = $url;
+    }
+    echo json_encode($output);
 }
 ?>

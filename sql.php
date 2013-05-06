@@ -58,6 +58,17 @@ $(document).on('ready', function(e){
     });
 });
 
+// reference: http://stackoverflow.com/questions/1787322/htmlspecialchars-equivalent-in-javascript
+function escapeHtml(text)
+{
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function parseQueryResult(query, result)
 {
     if(typeof result['error'] !== 'undefined')
@@ -99,7 +110,7 @@ function parseQueryResult(query, result)
         resultHTML += '<tr>';
         for(var field in result[i])
         {
-            resultHTML += '<td>'+result[i][field]+'</td>';
+            resultHTML += '<td>'+escapeHtml(""+result[i][field])+'</td>';
         }
         resultHTML += '</tr>'
     }
