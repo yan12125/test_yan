@@ -1,10 +1,5 @@
 <?php
-require_once 'common_inc.php';
-require_once 'util.php';
-require_once 'texts.php';
-require_once 'users.php';
-require_once 'stats.php';
-require_once 'groups.php';
+require 'common_inc.php';
 
 class Post
 {
@@ -66,20 +61,18 @@ class Post
 
     public function doPost()
     {
-        global $facebook;
         $this->init();
         if(!$this->config['not_post'])
         {
-            loadFB();
             try
             {
                 $request_path = '/'.$this->group['post_id'].'/comments';
-                $ret_obj=$facebook->api($request_path, 'POST', array(
+                $ret_obj=Fb::api($request_path, 'POST', array(
                     "message"=> $this->response['msg'],
                     "access_token"=>$this->userData['access_token']
                 ));
                 Users::increaseUserCount($this->userData['uid']);
-                stats('success', mb_strlen($this->response['msg'], 'UTF-8'));
+                Stats::success(mb_strlen($this->response['msg'], 'UTF-8'));
             }
             catch(FacebookApiException $e)
             {
@@ -93,25 +86,24 @@ class Post
         $err = $e->getMessage();
         if(strpos($err, 'banned') !== false)
         {
-            $this->response['new_status'] = 'banned';
-            $this->response['next_wait_time'] = -1;
-            $this->response['processed'] = 1;
+            $this->fillErrorMsg(false, 'banned');
         }
         else if(strpos($err, 'expired') !== false || strpos($err, 'validating access token') !== false)
         {
-            $this->response['new_status'] = 'expired';
-            $this->response['next_wait_time'] = -1;
-            $this->response['processed'] = 1;
+            $this->fillErrorMsg(false, 'expired');
         }
         else if(strpos($err, 'timed out') !== false || strpos($err, 'timeout') !== false)
         {
-            stats('timed_out', mb_strlen($this->response['msg'], 'UTF-8'));
-            $this->response['processed'] = 1;
-            $this->response['next_wait_time'] = $this->userData['interval_max'];
+            Stats::timedOut(mb_strlen($this->response['msg'], 'UTF-8'));
+            $this->fillErrorMsg(true);
+        }
+        else if(strpos($err, 'An unexpected error has occurred.') !== false)
+        {
+            $this->fillErrorMsg(true);
         }
         else
         {
-            $this->response['next_wait_time'] = $this->userData['interval_max'];
+            $this->fillErrorMsg(true, '', false);
             throw $e;
         }
 
@@ -126,9 +118,29 @@ class Post
         }
     }
 
+    protected function fillErrorMsg($continue, $newStatus = '', $processed = true)
+    {
+        if($processed === true)
+        {
+            $this->response['processed'] = 1;
+        }
+        if($continue === true)
+        {
+            $this->response['next_wait_time'] = $this->userData['interval_max'];
+        }
+        else
+        {
+            $this->response['next_wait_time'] = -1;
+        }
+        if($newStatus !== '')
+        {
+            $this->response['new_status'] = $newStatus;
+        }
+    }
+
     protected function makeResponse()
     {
-        if(($special_wait_time=load_params('special_wait_time'))>0)
+        if(($special_wait_time = Db::getConfig('special_wait_time'))>0)
         {
             $this->response["next_wait_time"]=$special_wait_time;
         }
@@ -194,11 +206,22 @@ try
 catch(Exception $e)
 {
 	$response_error=array(
-        "error" => $e->getMessage(), 
         "code" => $e->getCode(), 
         "class_name" => get_class($e), 
         "time" => date('H:i:s'), 
     );
+
+    $err = $e->getMessage();
+    $err_json = json_decode($err, true);
+    if($err_json !== null)
+    {
+        $response_error['error'] = $err_json;
+    }
+    else
+    {
+        $response_error['error'] = $err;
+    }
+
     if($aPost instanceof Post)
     {
         $aPost->report_fields(array('title', 'msg', 'm', 'processed', 'new_status', 'next_wait_time', 'group', 'post_id'), $response_error);

@@ -1,20 +1,17 @@
 <?php
-require_once 'common_inc.php';
-require_once 'util.php';
+require 'common_inc.php';
 
 class Texts
 {
-    static $db;
-
     public static function listTitles()
     {
-        if(($stmt = self::$db->query("SELECT title FROM texts where locked=0"))!==false)
+        if(($stmt = Db::query("SELECT title FROM texts where locked=0"))!==false)
         {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         else
         {
-            throw new Exception('PDO query() failed: '.getPDOErr(self::$db));
+            throw new Exception('PDO query() failed: '.Db::getErr());
         }
     }
 
@@ -31,22 +28,22 @@ class Texts
         $textArr = array_filter($textArr, 'remove_empty');
 
         $texts = json_unicode($textArr);
-        $stmt = self::$db->prepare($query);
+        $stmt = Db::prepare($query);
         if($stmt->execute(array($title, $texts)) === false)
 		{
-			throw new Exception("PDO execute() failed: ".$db->errorInfo());
+			throw new Exception("PDO execute() failed: ".Db::getErr());
 		}
         return array('status' => 'success');
     }
 
     public static function check()
     {
-        $stmt = self::$db->query('SELECT * FROM texts');
+        $stmt = Db::query('SELECT * FROM texts');
         while(($arr = $stmt->fetch(PDO::FETCH_ASSOC))!==false)
         {
             if(($new_text=str_replace(", \"\"", "", $arr['text']))!==$arr['text'])
             {
-                $stmt_update = $db->prepare('UPDATE texts SET text=? WHERE title=?');
+                $stmt_update = Db::prepare('UPDATE texts SET text=? WHERE title=?');
                 $stmt_update->execute(array(str_replace('"', '\"', $new_text), $arr['title']));
             }
         }
@@ -54,7 +51,7 @@ class Texts
 
     public static function getTexts($title)
     {
-        $stmt = self::$db->prepare("SELECT text FROM texts WHERE title=?");
+        $stmt = Db::prepare("SELECT text FROM texts WHERE title=?");
         $stmt->execute(array($title));
         $arr = $stmt->fetch(PDO::FETCH_ASSOC);
         return $arr['text'];
@@ -66,8 +63,7 @@ class Texts
      */
     public static function getTextFromTitle($title, $m = -1)
     {
-        global $rootUrl;
-        $stmt = self::$db->prepare("SELECT text,handler,locked FROM texts WHERE title=?");
+        $stmt = Db::prepare("SELECT text,handler,locked FROM texts WHERE title=?");
         $stmt->execute(array($title));
         $arr = $stmt->fetch(PDO::FETCH_ASSOC);
         if($arr===false)
@@ -130,8 +126,7 @@ class Texts
 
     protected static function callPlugin($handler, $param)
     {
-        global $rootUrl;
-        $url=$rootUrl.'plugins/'.$handler.'?param='.$param;
+        $url = Config::getParam('rootUrl').'plugins/'.$handler.'?param='.$param;
         $ch=curl_init($url);
         curl_setopt_array($ch, array(
             CURLOPT_RETURNTRANSFER => true, 
@@ -153,8 +148,6 @@ class Texts
         }
     }
 }
-
-Texts::$db = $db;
 
 if(isset($_POST['action'])&&strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!==FALSE)
 {

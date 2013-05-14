@@ -1,24 +1,19 @@
 <?php
-require_once 'common_inc.php';
-require_once 'users.php';
-require_once 'util.php';
+require 'common_inc.php';
 
 class Groups
 {
     const primary_group = '198971170174405';
     public static function updateGroupFeed($gid, $access_token, $newAdded)
     {
-        global $facebook, $db;
-        loadFB();
-
         // retrieve group title
-        $groupData = $facebook->api('/'.$gid, array(
+        $groupData = Fb::api('/'.$gid, array(
             'access_token' => $access_token
         ));
         $groupTitle = $groupData['name'];
 
         // retrieve posts in the group
-        $feeds = $facebook->api('/'.$gid.'/feed', array(
+        $feeds = Fb::api('/'.$gid.'/feed', array(
             'access_token' => $access_token
         ));
         if(count($feeds['data']) == 0) // some groups are wierd...
@@ -35,13 +30,13 @@ class Groups
 
         if($newAdded)
         {
-            $stmt = $db->prepare('insert into groups (gid,title,feed_id,persistent,last_update) values (?,?,?,?,?)');
+            $stmt = Db::prepare('insert into groups (gid,title,feed_id,persistent,last_update) values (?,?,?,?,?)');
             $stmt->execute(array($gid, $groupTitle, $IDstr, 0, date('Y-m-d H:i:s')));
             // persistent groups should be added manually
         }
         else
         {
-            $stmt = $db->prepare('update groups set feed_id=?,title=?,last_update=? where gid=?');
+            $stmt = Db::prepare('update groups set feed_id=?,title=?,last_update=? where gid=?');
             $stmt->execute(array($IDstr, $groupTitle, date('Y-m-d H:i:s'), $gid));
         }
         return array(
@@ -55,7 +50,6 @@ class Groups
      * */
     public static function getFromGroup($gid, $access_token)
     {
-        global $db;
         if(preg_match('/g_\d+/', $gid))
         {
             $gid = substr($gid, 2);
@@ -64,7 +58,7 @@ class Groups
         {
             throw new Exception('invalid_group_id');
         }
-        $stmt = $db->prepare('select * from groups where gid=?');
+        $stmt = Db::prepare('select * from groups where gid=?');
         $stmt->execute(array($gid));
         $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if(count($groups) == 0) // newly added group
@@ -96,9 +90,7 @@ class Groups
 
     public static function getUserGroups($access_token)
     {
-        global $facebook;
-        loadFB();
-        $groups = $facebook->api('/me/groups', array(
+        $groups = Fb::api('/me/groups', array(
             'access_token' => $access_token
         ));
         $ret_val = array();

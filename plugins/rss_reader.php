@@ -1,7 +1,5 @@
 <?php
 error_reporting(0); // suppress all error outputs
-chdir('..');
-require_once 'common_inc.php';
 
 libxml_use_internal_errors(true); // handle errors manually
 

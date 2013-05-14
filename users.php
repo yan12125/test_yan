@@ -1,8 +1,5 @@
 <?php
-require_once 'common_inc.php';
-require_once 'stats.php';
-require_once 'util.php';
-require_once 'groups.php';
+require 'common_inc.php';
 
 class Users
 {
@@ -10,12 +7,10 @@ class Users
     const basic_user_data = 'uid,name,status';
     const detailed_user_data = 'uid,name,status,interval_max,interval_min,count,goal,titles,groups';
 
-    static $db;
-
     public static function listUsers($field, $IDs = '', $appendRate = false)
     {
         $curIDs = explode('_', $IDs);
-        $stmt = self::$db->query("SELECT {$field} FROM users ORDER BY status"); // problem occurs when select multiple columns
+        $stmt = Db::query("SELECT {$field} FROM users ORDER BY status"); // problem occurs when select multiple columns
         $users=$stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach($users as &$user)
         {
@@ -26,21 +21,18 @@ class Users
         }
         if($appendRate)
         {
-            array_unshift($users, array("rate"=>postRate()));
+            array_unshift($users, array("rate" => Stats::postRate()));
         }
         return $users;
     }
 
     public static function viewUsers($page, $nRows)
     {
-        global $facebook;
-
         if($nRows > 45) // batch limit is 50
         {
             throw new Exception('Can\'t get more than 45 rows in a time');
         }
 
-        loadFB();
         $users = self::listUsers('name,uid,access_token,status');
         $N = count($users);
         $users_chunked = array_chunk($users, $nRows);
@@ -60,8 +52,8 @@ class Users
                 'relative_url' => 'debug_token?input_token='.$user['access_token']
             );
         }
-        $response = $facebook->api('/', 'POST', array(
-            'access_token' => getAppToken(), 
+        $response = Fb::api('/', 'POST', array(
+            'access_token' => Fb::getAppToken(), 
             'batch' => json_encode($queries)
         ));
         $token_response = array_merge($token_response, $response);
@@ -133,27 +125,26 @@ class Users
 
     public static function addUser($userData)
     {
-        loadFB();
         // get user id
         $token=$userData['access_token'];
-        $userProfile=$GLOBALS['facebook']->api('/me', array('access_token'=>$token));
+        $userProfile=Fb::api('/me', array('access_token'=>$token));
         $uid=$userProfile['id'];
         // check user exist or not
-        $stmt = self::$db->prepare('SELECT count FROM users WHERE uid=?');
+        $stmt = Db::prepare('SELECT count FROM users WHERE uid=?');
         $stmt->execute(array($uid));
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if(count($users)===0) // php.net says rowCount not work for select
         {
-            $stmt = self::$db->prepare('INSERT INTO users (count,name,access_token,IP,interval_max,interval_min,titles,goal,groups,uid) VALUES (0,?,?,?,?,?,?,?,?,?)');
+            $stmt = Db::prepare('INSERT INTO users (count,name,access_token,IP,interval_max,interval_min,titles,goal,groups,uid) VALUES (0,?,?,?,?,?,?,?,?,?)');
         }
         else // user had been added, so modify data
         {
-            self::setData(array("uid"=>$uid, "status"=>"started"));
-            $stmt = self::$db->prepare('UPDATE users SET name=?,access_token=?,IP=?,interval_max=?,interval_min=?,titles=?,goal=?,groups=? WHERE uid=?');
+            self::setData($uid, array("status"=>"started"));
+            $stmt = Db::prepare('UPDATE users SET name=?,access_token=?,IP=?,interval_max=?,interval_min=?,titles=?,goal=?,groups=? WHERE uid=?');
         }
         if(!$stmt->execute(array($userProfile['name'], $token, $_SERVER['REMOTE_ADDR'], $userData['interval_max'], $userData['interval_min'], $userData['titles'], $userData['goal'], $userData['groups'], $uid)))
         {
-            throw new Exception(getPDOErr(self::$db));
+            throw new Exception(Db::getErr());
         }
         return array('message' => 'User added successfully');
     }
@@ -168,7 +159,7 @@ class Users
             $fieldCount = PHP_INT_MAX;
         }
 
-        $stmt = self::$db->prepare("SELECT {$field} FROM users WHERE uid=?");
+        $stmt = Db::prepare("SELECT {$field} FROM users WHERE uid=?");
         $stmt->execute(array($uid));
         if($fieldCount > 1)
         {
@@ -192,18 +183,18 @@ class Users
         }
     }
 
-    public static function setData($param)
+    protected static function setData($uid, $param)
     {
         foreach($param as $key=>$value)
         {
-            if($key=='uid')
+            if(!preg_match('/^[a-zA-Z_]+$/', $key))
             {
                 continue;
             }
-            $stmt = self::$db->prepare("UPDATE users SET {$key}=? WHERE uid=?"); // can't parameterize column names
-            if(!$stmt->execute(array($value, $param['uid'])))
+            $stmt = Db::prepare("UPDATE users SET {$key}=? WHERE uid=?"); // can't parameterize column names
+            if(!$stmt->execute(array($value, $uid)))
             {
-                throw new Exception(getPDOErr(self::$db));
+                throw new Exception(Db::getErr());
             }
         }
         return true;
@@ -217,7 +208,7 @@ class Users
             // general action: set user data
             if($newStatus=='started'||$newStatus=='stopped'||$newStatus=='banned'||$newStatus=='expired')
             {
-                self::setData(array('uid'=>$uid, 'status'=>$newStatus));
+                self::setData($uid, array('status'=>$newStatus));
             }
             else
             {
@@ -227,12 +218,12 @@ class Users
             // if from started to banned...
             if($newStatus=='banned'&&$oldStatus=='started')
             {
-                self::setData(array('uid'=>$uid, 'banned_time'=>date("Y-m-d H:i:s")));
+                self::setData($uid, array('banned_time'=>date("Y-m-d H:i:s")));
             }
             if($newStatus=='started'&&$oldStatus=='banned')
             {
                 $count = self::getData($uid, 'count');
-                self::setData(array('uid'=>$uid, 'last_count'=>$count));
+                self::setData($uid, array('last_count'=>$count));
             }
             return array('status' => $newStatus);
         }
@@ -240,10 +231,10 @@ class Users
 
     public static function increaseUserCount($uid)
     {
-        $stmt = self::$db->prepare("UPDATE users SET count=count+1 WHERE uid=?");
+        $stmt = Db::prepare("UPDATE users SET count=count+1 WHERE uid=?");
         if(!$stmt->execute(array($uid)))
         {
-            throw new Exception(getPDOErr(self::$db));
+            throw new Exception(Db::getErr());
         }
     }
 
@@ -261,9 +252,31 @@ class Users
         }
         return $interval;
     }
-}
 
-Users::$db = $db;
+    public static function logout()
+    {
+        if(session_id() === '')
+        {
+            session_start();
+        }
+        if(isset($_SESSION['access_token']))
+        {
+            $token = $_SESSION['access_token'];
+            session_destroy();
+        }
+        else
+        {
+            session_destroy();
+            throw new Exception('Not logged in.');
+        }
+        return array('url' => 'https://www.facebook.com/logout.php?'.
+            http_build_query(array(
+                'next' => Config::getParam('rootUrl'), 
+                'access_token' => $token
+            ))
+        );
+    }
+}
 
 if(checkAction(__FILE__))
 {
@@ -292,6 +305,9 @@ if(checkAction(__FILE__))
             case 'view_users':
                 checkPOST(array('page', 'rows'));
                 echo json_encode(Users::viewUsers($_POST['page'], $_POST['rows']));
+                break;
+            case 'logout':
+                echo json_encode(Users::logout());
                 break;
             default:
                 throw new Exception('invalid_action_verb');

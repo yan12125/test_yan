@@ -1,19 +1,19 @@
 <?php
 session_start();
-require_once 'common_inc.php';
-require_once 'groups.php';
+require 'common_inc.php';
+
+redirectHttps();
 
 if(!isset($_SESSION['access_token']) || !isset($_SESSION['expiry']))
 {
-    Header('Location: '.$rootUrl.'auth.php');
+    Header('Location: '.Config::getParam('rootUrl').'auth.php');
     exit(0);
 }
 
 // get basic user information from facebook
-loadFB();
 try
 {
-    $result=$facebook->api('/me', array('access_token'=>$_SESSION['access_token']));
+    $result=Fb::api('/me', array('access_token'=>$_SESSION['access_token']));
     if(!isset($result['name']) || !isset($result['id']))
     {
         print_r($result);
@@ -175,6 +175,12 @@ $(document).on('ready', function(e){
         autoWidth: false, 
         autoHeight: false
     });
+
+    $('#logout').on('click', function(e){
+        $.post('users.php', { action: 'logout' }, function(response, status, xhr){
+            location.href = response.url;
+        });
+    })
 });
 
 function getTitles(userTitles)
@@ -335,7 +341,6 @@ function get_info(initial)
                 $("#status").html("代洗中");
                 $("#btnStart").attr("disabled", true);
                 $("#btnStop").attr("disabled", false);
-                $("#count").html(response["count"]);
             }
             if(initial)
             {
@@ -345,6 +350,7 @@ function get_info(initial)
                 getTitles(JSON.parse(response['titles']));
                 getGroups(response['groups']);
             }
+            $("#count").html(response["count"]);
 	    }
     });
 }
@@ -372,7 +378,7 @@ function get_info(initial)
             授權碼將在<span id="nExpiry">0</span>秒後過期<br />
         </fieldset>
         <a href="./addText.php">增加留言內容</a><br />
-        <a href="./auth.php">登出/重新登入</a><br>
+        <input type="button" id="logout" value="登出"><br>
     </form>
 </td>
 <td>

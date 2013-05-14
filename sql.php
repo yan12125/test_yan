@@ -1,6 +1,5 @@
 <?php
-require_once 'common_inc.php';
-require_once 'util.php';
+require 'common_inc.php';
 ip_only('127.0.0.1');
 
 if(isset($_POST['action'])&&strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!==FALSE)
@@ -11,10 +10,10 @@ if(isset($_POST['action'])&&strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!
         {
             case 'query':
                 checkPOST(array('query'));
-                $stmt = $db->query($_POST['query']);
+                $stmt = Db::query($_POST['query']);
                 if(!$stmt)
                 {
-                    throw new Exception(getPDOErr($db));
+                    throw new Exception(Db::getErr());
                     exit(0);
                 }
                 echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -35,22 +34,33 @@ if(isset($_POST['action'])&&strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!
 <meta charset="UTF-8">
 <title>sql.php</title>
 <script src="/HTML/library/jquery.js"></script>
+<script src="/HTML/library/codemirror.js"></script>
+<script src="/HTML/library/sql.js"></script>
+<link rel="stylesheet" href="/HTML/library/codemirror.css">
+<script src="util.js"></script>
 <script>
 $(document).on('ready', function(e){
-    $('#query').on('keyup', function(e){
-        if(e.which == 13) // enter
+    var editor = CodeMirror.fromTextArea($('#query')[0], {
+        mode: 'text/x-mysql', 
+        lineWrapping: true, 
+        autofocus: true, 
+    });
+    editor.setSize("100%", 100); // (width, height)
+    editor.on('beforeChange', function(cm, e){
+        if(e.text.length == 2 && e.text[0] == "" && e.text[1] == "")
         {
+            e.cancel();
             $('#b_submit').click();
         }
     });
     $('#b_submit').on('click', function(e){
         $('#result tbody').html('<tr></tr>');
-        var q = $('#query').val();
+        var q = editor.getDoc().getValue();
         $.ajax({
             url: 'sql.php', 
             data: { action: 'query', query:  q }, 
             success: function(response, status, xhr){
-                parseQueryResult(q, response);
+                parseQueryResult(q, response, editor);
             }, 
             dataType: 'json', 
             type: 'POST'
@@ -58,18 +68,7 @@ $(document).on('ready', function(e){
     });
 });
 
-// reference: http://stackoverflow.com/questions/1787322/htmlspecialchars-equivalent-in-javascript
-function escapeHtml(text)
-{
-    return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function parseQueryResult(query, result)
+function parseQueryResult(query, result, editor)
 {
     if(typeof result['error'] !== 'undefined')
     {
@@ -90,7 +89,7 @@ function parseQueryResult(query, result)
         $('#history').append('<div class="historyItem">'+query+'</div>');
         $('.historyItem:last').data('query', query)
             .on('click', function(e){
-                $('#query').val($(this).data('query'));
+                editor.setValue($(this).data('query'));
                 $('#b_submit').click();
             });
     }
@@ -129,7 +128,13 @@ function parseQueryResult(query, result)
     border-style: solid;
     border-color: black;
     word-break: break-all;
-    min-width: 30px;
+    min-width: 50px;
+}
+
+.CodeMirror
+{
+    border: 1px solid black;
+    font-size: 20px;
 }
 
 .historyItem
@@ -141,7 +146,8 @@ function parseQueryResult(query, result)
 </style>
 </head>
 <body>
-    Query: <input type="text" id="query" value="">
+    Query:<br>
+    <textarea id="query"></textarea><br>
     <input type="button" id="b_submit" value="Submit">
     <div id="history"></div>
     <table id="result"><tbody>

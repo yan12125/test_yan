@@ -1,5 +1,5 @@
 <?php
-require_once 'util.php';
+require 'common_inc.php';
 ip_only('127.0.0.1');
 ?>
 <!DOCTYPE html>
@@ -7,6 +7,7 @@ ip_only('127.0.0.1');
 <head>
 <title>alternate.php</title>
 <meta charset="UTF-8">
+<base target="_blank">
 <style>
 #users
 {
@@ -15,6 +16,7 @@ ip_only('127.0.0.1');
 </style>
 <script src="/HTML/library/jquery.js"></script>
 <script src="/HTML/library/jquery.ajaxq.js"></script>
+<script src="util.js"></script>
 <script>
 var users={};
 var errors=[];
@@ -85,19 +87,22 @@ function post2(uid)
         }, 
         error: function(xhr, status, error)
         {
-            $("#results").append(status+" : "+escape(error)+"\n");
+            $("#results").append(status+" : "+escapeHtml(error)+"\n");
             var now=new Date();
             console.log(now.toLocaleTimeString());
             console.log(xhr.responseText);
-            users[uid].wait_time=300;
             if(xhr.status == 500)
             {
-                // postpone all users
-                for(var id in users)
+                // postpone all "running" users
+                for(var _uid in users)
                 {
-                    users[id].wait_time = 300;
+                    if(users[_uid].bStarted)
+                    {
+                        users[_uid].wait_time = 300;
+                    }
                 }
             }
+            users[uid].wait_time=300;
             countDown(uid);
         }
     });
@@ -230,7 +235,7 @@ $(document).on('ready', function(e){
         for(var uid in users)
         {
             if(users[uid].bStarted || users[uid].wait_time > 1)
-            {   // wait_time might be like 0.7xxx... when stopped
+            {   // wait_time might be between when stopped
                 still_running = true;
             }
         }
@@ -262,7 +267,8 @@ $(document).on('ready', function(e){
 			<input type="button" id="btn_clearLog" value="clear log">
             <input type="button" id="btn_print_error" value="Print errors"><br>
 			Rate=<span id="rate"></span>Posts/day<br>
-            <a href="sql.php" target="_blank">execute SQL</a><br>
+            <a href="sql.php">execute SQL</a>
+            <a href="table.php">Tables</a><br>
 		</td>
 	</tr>
 </table>

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'common_inc.php';
+require 'common_inc.php';
 
 // still return result for http codes other than 200 in file_get_contents
 // http://stackoverflow.com/questions/6718598/download-the-contents-of-a-url-in-php-even-if-it-returns-a-404
@@ -8,16 +8,13 @@ stream_context_set_default(array('http' => array('ignore_errors' => true)));
 
 class Auth
 {
-    static $appId;
-    static $appSecret;
-    static $rootUrl;
-
     public static function authenticate()
     {
+        $conf = Config::getParamArr(array('appId', 'rootUrl'));
         $params = http_build_query(array(
-            'client_id' => self::$appId, 
+            'client_id' => $conf['appId'], 
             'scope' => 'publish_stream,user_groups', 
-            'redirect_uri' => self::$rootUrl.'auth.php'
+            'redirect_uri' => $conf['rootUrl'].'auth.php'
         ));
         $authUrl='https://graph.facebook.com/oauth/authorize?'.$params;
         Header("Location: ".$authUrl);
@@ -26,10 +23,11 @@ class Auth
 
     public static function getToken($fbCode)
     {
+        $conf = Config::getParamArr(array('appId', 'appSecret', 'rootUrl'));
         $params = http_build_query(array(
-            'client_id' => self::$appId, 
-            'redirect_uri' => self::$rootUrl.'auth.php', 
-            'client_secret' => self::$appSecret, 
+            'client_id' => $conf['appId'], 
+            'redirect_uri' => $conf['rootUrl'].'auth.php', 
+            'client_secret' => $conf['appSecret'], 
             'code' => $fbCode
         ));
         $tokenUrl='https://graph.facebook.com/oauth/access_token?'.$params;
@@ -58,9 +56,10 @@ class Auth
 
     public static function exchangeToken($token)
     {
+        $conf = Config::getParamArr(array('appId', 'appSecret'));
         $params = http_build_query(array(
-            'client_id' => self::$appId, 
-            'client_secret' => self::$appSecret, 
+            'client_id' => $conf['appId'], 
+            'client_secret' => $conf['appSecret'], 
             'grant_type' => 'fb_exchange_token', 
             'fb_exchange_token' => $token
         ));
@@ -73,10 +72,6 @@ class Auth
         return $arr_result;
     }
 }
-
-Auth::$appId = $appId;
-Auth::$appSecret = $appSecret;
-Auth::$rootUrl = $rootUrl;
 
 if(!isset($_GET['code']))
 {
@@ -91,7 +86,7 @@ else
         $tokenObj = Auth::getToken($_GET['code']);
         $_SESSION['access_token'] = $tokenObj['token'];
         $_SESSION['expiry'] = $tokenObj['expiry'];
-        Header('Location: '.$rootUrl);
+        Header('Location: '.Config::getParam('rootUrl'));
     }
     catch(Exception $e)
     {

@@ -106,11 +106,23 @@ function ip_only($ip)
         echo "IP {$remote_ip} forbidden";
         exit(0);
     }
+    redirectHttps();
 }
 
 function checkAction($filename)
 {
     return isset($_POST['action']) && 
            (strpos($_SERVER['REQUEST_URI'], basename($filename)) !== FALSE);
+}
+
+function redirectHttps()
+{
+    if(!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on')
+    {
+        $host = isset($_SERVER['HTTP_HOST'])?$_SERVER['HTTP_HOST']:'chyen.twbbs.org';
+        $url = 'https://'.$host.$_SERVER['REQUEST_URI'];
+        header('Location: '.$url);
+        exit(0);
+    }
 }
 ?>
