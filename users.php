@@ -1,13 +1,11 @@
 <?php
-require 'common_inc.php';
-
 class Users
 {
     // used in SQL SELECT
     const basic_user_data = 'uid,name,status';
     const detailed_user_data = 'uid,name,status,interval_max,interval_min,count,goal,titles,groups';
 
-    public static function listUsers($field, $IDs = '', $appendRate = false)
+    protected static function listUsers($field, $IDs = '')
     {
         $curIDs = explode('_', $IDs);
         $stmt = Db::query("SELECT {$field} FROM users ORDER BY status"); // problem occurs when select multiple columns
@@ -19,10 +17,14 @@ class Users
                 unset($user['name']);
             }
         }
-        if($appendRate)
-        {
-            array_unshift($users, array("rate" => Stats::postRate()));
-        }
+        return $users;
+    }
+
+    public static function listUsersAndRate($IDs)
+    {
+        Util::ip_only('127.0.0.1');
+        $users = self::listUsers(Users::basic_user_data, $IDs);
+        array_unshift($users, array("rate" => Stats::postRate()));
         return $users;
     }
 
@@ -200,8 +202,12 @@ class Users
         return true;
     }
 
-    public static function setUserStatus($uid, $newStatus)
+    public static function setUserStatus($uid, $newStatus, $token)
     {
+        if($token != self::getData($uid, 'access_token'))
+        {
+            throw new Exception('Invalid access_token');
+        }
         $oldStatus = self::getData($uid, 'status');
         if($oldStatus!=$newStatus)
         {
@@ -275,47 +281,6 @@ class Users
                 'access_token' => $token
             ))
         );
-    }
-}
-
-if(checkAction(__FILE__))
-{
-    header("Content-type: application/json");
-    try
-    {
-        switch($_POST['action'])
-        {
-            case 'list_users':
-                ip_only('127.0.0.1');
-                checkPOST(array('IDs'));
-                echo json_encode(Users::listUsers(Users::basic_user_data, $_POST['IDs'], true));
-                break;
-            case 'add_user':
-                checkPOST(array('access_token', 'interval_min', 'interval_max', 'titles', 'goal', 'groups'));
-                echo json_encode(Users::addUser($_POST)); // $_POST contains all needed fields
-                break;
-            case 'get_user_info': // used in index.php
-                checkPOST(array('uid'));
-                echo json_encode(Users::getData($_POST['uid'], Users::detailed_user_data));
-                break;
-            case 'set_user_status':
-                checkPOST(array('uid', 'status'));
-                echo json_encode(Users::setUserStatus($_POST['uid'], $_POST['status']));
-                break;
-            case 'view_users':
-                checkPOST(array('page', 'rows'));
-                echo json_encode(Users::viewUsers($_POST['page'], $_POST['rows']));
-                break;
-            case 'logout':
-                echo json_encode(Users::logout());
-                break;
-            default:
-                throw new Exception('invalid_action_verb');
-        }
-    }
-    catch(Exception $e)
-    {
-        echo json_encode(array('error' => $e->getMessage()));
     }
 }
 ?>

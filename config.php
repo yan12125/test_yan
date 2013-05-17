@@ -1,6 +1,4 @@
 <?php
-require 'common_inc.php';
-
 class Config
 {
     protected static $params = null;
@@ -11,6 +9,8 @@ class Config
         {
             return;
         }
+        $oldPath = getcwd();
+        chdir(dirname(__FILE__));
         $searchPaths = array('./', '../');
         $secretFilename = '.htsecret';
         foreach($searchPaths as $path)
@@ -18,6 +18,7 @@ class Config
             if(file_exists($path.$secretFilename))
             {
                 $strParams = file_get_contents($path.$secretFilename);
+                chdir($oldPath);
                 self::$params = json_decode($strParams, true);
                 if(!is_array(self::$params))
                 {

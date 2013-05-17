@@ -1,6 +1,4 @@
 <?php
-require 'common_inc.php';
-
 class Stats
 {
     public static function postRate()
@@ -24,7 +22,7 @@ class Stats
 
     protected static function addResult($status, $length)
     {
-        if($length <= 999 && $length >=1)
+        if($length <= 999 && $length >=0)
         {
             $stmt = Db::prepare('update statistics set N=N+1 where type=? and length=?');
             if(!$stmt->execute(array($status, $length)))
@@ -46,6 +44,11 @@ class Stats
         return self::addResult('timed_out', $length);
     }
 
+    public static function unexpected()
+    {
+        return self::addResult('unexpected', 0);
+    }
+
     public static function report($page, $rows)
     {
         if($rows <= 0)
@@ -53,27 +56,48 @@ class Stats
             throw new Exception('Invalid number of rows.');
         }
         $data = array();
-        $stmt = Db::query('select * from statistics where type="success" or type="timed_out"');
+        $unexpected = 0;
+        $total = array('success' => 0, 'timed_out' => 0);
+        $stmt = Db::query('select * from statistics');
         while(($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false)
         {
             $length = $row['length'];
-            if($row['N'] > 0)
+            switch($row['type'])
             {
-                if(!isset($data[$length]))
-                {
-                    $data[$length] = array(
-                        'length' => $length, 
-                        'success' => 0, 
-                        'timed_out' => 0
-                    );
-                }
-                $data[$length][$row['type']] = $row['N'];
+                case 'timed_out':
+                case 'success':
+                    if($row['N'] > 0)
+                    {
+                        if(!isset($data[$length]))
+                        {
+                            $data[$length] = array(
+                                'length' => $length, 
+                                'success' => 0, 
+                                'timed_out' => 0
+                            );
+                        }
+                        $data[$length][$row['type']] = $row['N'];
+                        $total[$row['type']] += $row['N'];
+                    }
+                    break;
+                case 'unexpected':
+                    $unexpected = $row['N'];
+                    break;
             }
         }
+        array_unshift($data, array('length' => 'unexpected', 'success' => 0, 'timed_out' => $unexpected));
+        array_unshift($data, array('length' => '合計', 'success' => $total['success'], 'timed_out' => $total['timed_out']));
         foreach($data as &$row)
         {
-            $ratio = $row['success']/($row['success']+$row['timed_out']);
-            $row['ratio'] = round(100*$ratio, 2).'%';
+            if($row['success']+$row['timed_out']>0)
+            {
+                $ratio = $row['success']/($row['success']+$row['timed_out']);
+                $row['ratio'] = round(100*$ratio, 2).'%';
+            }
+            else
+            {
+                $row['ratio'] = '0.00%';
+            }
         }
         $N = count($data);
         $nPages = ceil($N/$rows);
@@ -83,25 +107,6 @@ class Stats
         }
         $partial_data = array_slice(array_values($data), ($page - 1) * $rows, $rows);
         return array('total' => $nPages, 'records' => $N, 'rows' => $partial_data);
-    }
-}
-
-if(checkAction(__FILE__))
-{
-    try
-    {
-        switch($_POST['action'])
-        {
-            case 'report':
-                checkPOST(array('page', 'rows'));
-                header('Content-type: application/json;charset=UTF-8');
-                echo json_encode(Stats::report($_POST['page'], $_POST['rows']));
-                break;
-        }
-    }
-    catch(Exception $e)
-    {
-        echo json_encode(array('error' => $e->getMessage()));
     }
 }
 ?>

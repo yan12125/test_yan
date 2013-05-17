@@ -24,7 +24,7 @@ $(document).on('ready', function(e){
             return;
         }
         $.ajax({
-            url: 'texts.php', 
+            url: 'wrapper.php', 
             data: { 
                 action: 'add_text', 
                 title: $('#title').val(), 

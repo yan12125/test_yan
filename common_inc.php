@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL|E_STRICT);
+
 /*
  * Class autoloading
  * */
@@ -12,6 +14,6 @@ if(!function_exists('autoload'))
     spl_autoload_register('autoload');
 }
 
-require_once 'util.php';
+set_error_handler(array('Util', 'errorHandler'));
 
 ?>

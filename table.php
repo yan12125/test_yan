@@ -47,7 +47,7 @@ function viewUsers()
         { caption: '授權碼有效', name: 'valid', width: 70 }, 
         { caption: '訊息', name: 'msg', width: 600 }
     ];
-    createTable('users.php', 'view_users', columns, '所有使用者');
+    createTable('wrapper.php', 'view_users', columns, '所有使用者');
 }
 
 function getStats()
@@ -58,7 +58,7 @@ function getStats()
         { caption: '失敗數', name: 'timed_out', width: 70 }, 
         { caption: '成功率', name: 'ratio', width: 70 }
     ];
-    createTable('stats.php', 'report', columns, '發文字數統計');
+    createTable('wrapper.php', 'report_stats', columns, '發文字數統計');
 }
 </script>
 </head>

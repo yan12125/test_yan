@@ -2,13 +2,13 @@
 session_start();
 require 'common_inc.php';
 
-redirectHttps();
-
 if(!isset($_SESSION['access_token']) || !isset($_SESSION['expiry']))
 {
     Header('Location: '.Config::getParam('rootUrl').'auth.php');
     exit(0);
 }
+
+Util::redirectHttps();
 
 // get basic user information from facebook
 try
@@ -177,7 +177,7 @@ $(document).on('ready', function(e){
     });
 
     $('#logout').on('click', function(e){
-        $.post('users.php', { action: 'logout' }, function(response, status, xhr){
+        $.post('wrapper.php', { action: 'logout' }, function(response, status, xhr){
             location.href = response.url;
         });
     })
@@ -186,7 +186,7 @@ $(document).on('ready', function(e){
 function getTitles(userTitles)
 {
 	$.ajaxq('q_main', {
-        url: "texts.php", 
+        url: "wrapper.php", 
         type: 'POST', 
         data: { action: 'list_titles' }, 
         dataType: 'json', 
@@ -214,7 +214,7 @@ function getTitles(userTitles)
 function getGroups(userGroups)
 {
     $.ajaxq('q_main', {
-        url: 'groups.php', 
+        url: 'wrapper.php', 
         data: {action: 'get_groups', access_token: token}, 
         type: 'POST', 
         dataType: 'json', 
@@ -240,7 +240,7 @@ function parseGroups(allGroups, userGroups)
             // retrieve group feed from facebook
             var $statusText = $(this).next().next();
             $statusText.removeClass('error').html(busy_img);
-            $.post('groups.php', { action: 'get_group_info', gid: this.value, access_token: token }, function(response, status, xhr){
+            $.post('wrapper.php', { action: 'get_group_info', gid: this.value, access_token: token }, function(response, status, xhr){
                 if(typeof response['error'] != 'undefined')
                 {
                     $statusText.addClass('error').html('無法讀取社團內容: '+response['error']);
@@ -273,7 +273,12 @@ function start2()
 
 function stop2()
 {
-    $.post("users.php", {"action": "set_user_status", "uid":uid, "status": "stopped"});
+    $.post("wrapper.php", {
+        "action": "set_user_status", 
+        "uid":uid, 
+        "status": "stopped", 
+        "access_token": token
+    });
 
 	$("#status").html("未開始發文");
 	$("#btnStart").attr("disabled", false);
@@ -298,7 +303,7 @@ function add_user()
         alert('至少要選一個社團！');
         return;
     }
-	$.post("users.php", {
+	$.post("wrapper.php", {
         "action": "add_user", 
 		"interval_max": $('input[name="interval_max"]').val(), 
 		"interval_min": $('input[name="interval_min"]').val(), 
@@ -312,7 +317,7 @@ function add_user()
 function get_info(initial)
 {
 	$.ajaxq('q_main', {
-        url: "users.php", 
+        url: "wrapper.php", 
         data: { "action": "get_user_info", "uid":uid }, 
         type: 'POST', 
         dataType: 'json', 

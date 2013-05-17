@@ -99,6 +99,7 @@ class Post
         }
         else if(strpos($err, 'An unexpected error has occurred.') !== false)
         {
+            Stats::unexpected();
             $this->fillErrorMsg(true);
         }
         else
@@ -109,7 +110,7 @@ class Post
 
         if(isset($this->response['new_status']))
         {
-            Users::setUserStatus($this->userData['uid'], $this->response['new_status']);
+            Users::setUserStatus($this->userData['uid'], $this->response['new_status'], $this->userData['access_token']);
             throw new Exception($this->userData['name'].': '.$this->response['new_status']);
         }
         else
@@ -147,7 +148,7 @@ class Post
         else
         {
             $newInterval = Users::adjustedInterval($this->userData, $this->group['gid']);
-            $this->response['next_wait_time'] = round(randND($newInterval['max'], $newInterval['min'], 6), 1); // 正負三個標準差
+            $this->response['next_wait_time'] = round(Util::randND($newInterval['max'], $newInterval['min'], 6), 1); // 正負三個標準差
             // round to decrease amount of transmission
         }
 
@@ -163,7 +164,7 @@ class Post
         unset($this->response['post_id']); // if arrive here, post_id not needed anymore
         if(isset($this->config['truncated_msg']))
         {
-            $this->response['msg'] = truncate($this->response['msg'], 10);
+            $this->response['msg'] = Util::truncate($this->response['msg'], 10);
         }
         if($this->group['gid'] == Groups::primary_group)
         {
@@ -193,21 +194,22 @@ class Post
 $aPost = null;
 try
 {
-    ip_only('127.0.0.1');
+    Util::ip_only('127.0.0.1');
     header("Content-type: application/json; charset=UTF-8");
 
-    checkPOST(array('uid'));
+    Util::checkPOST(array('uid'));
 
     $aPost = new Post($_POST['uid'], $_POST);
     $aPost->doPost();
 
-    echo json_unicode($aPost->getResponse());
+    echo Util::json_unicode($aPost->getResponse());
 }
 catch(Exception $e)
 {
+    $errClass = get_class($e);
 	$response_error=array(
         "code" => $e->getCode(), 
-        "class_name" => get_class($e), 
+        "class_name" => $errClass, 
         "time" => date('H:i:s'), 
     );
 
@@ -220,6 +222,11 @@ catch(Exception $e)
     else
     {
         $response_error['error'] = $err;
+    }
+
+    if($errClass == 'ErrorException')
+    {
+        $response_error['severity'] = Util::getSeverityStr($e->getSeverity());
     }
 
     if($aPost instanceof Post)

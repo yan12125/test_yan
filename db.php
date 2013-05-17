@@ -1,6 +1,4 @@
 <?php
-require 'common_inc.php';
-
 class Db
 {
     protected static $db = null;
@@ -52,11 +50,21 @@ class Db
 
     public static function getConfig($key)
     {
-        self::loadDB();
-        $stmt = self::$db->prepare("SELECT value FROM main WHERE name=?");
+        $stmt = self::prepare("SELECT value FROM main WHERE name=?");
         $stmt->execute(array($key));
         $arr_result=$stmt->fetch(PDO::FETCH_NUM);
         return $arr_result[0];
+    }
+
+    public static function queryToArray($sql)
+    {
+        Util::ip_only('127.0.0.1');
+        $stmt = self::query($sql);
+        if(!$stmt)
+        {
+            throw new Exception(Db::getErr());
+        }
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 ?>

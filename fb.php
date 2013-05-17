@@ -30,13 +30,13 @@ class Fb
     // not using get total count because it's too slow
     public static function getCount($access_token)
     {
+        // July 2013 breaking changes
         $post_id = '198971170174405_198971283507727';
-        $result = self::$fb->api(array(
-            'method' => 'fql.query',
-            'query' => 'SELECT comments FROM stream WHERE post_id="'.$post_id.'"', 
+        $result = self::api("/{$post_id}/comments", array(
+            'summary' => true, 
             'access_token' => $access_token
         ));
-        return (integer)$result[0]['comments']['count'];
+        return (integer)$result['summary']['total_count'];
     }
 
     public static function getAppToken()

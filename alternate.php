@@ -1,6 +1,6 @@
 <?php
 require 'common_inc.php';
-ip_only('127.0.0.1');
+Util::ip_only('127.0.0.1');
 ?>
 <!DOCTYPE html>
 <html>
@@ -129,7 +129,7 @@ function update_userList()
 	{
 		curIDs.push(uid);
 	}
-	$.post("users.php", {"action": "list_users", "IDs":curIDs.join('_')}, function(response, status, xhr){
+	$.post("wrapper.php", {"action": "list_users", "IDs":curIDs.join('_')}, function(response, status, xhr){
         for(var i = 0;i < response.length;i++)
         {
             if(typeof response[i].uid == "undefined")

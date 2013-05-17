@@ -1,6 +1,4 @@
 <?php
-require 'common_inc.php';
-
 class Groups
 {
     const primary_group = '198971170174405';
@@ -102,31 +100,6 @@ class Groups
             );
         }
         return $ret_val;
-    }
-}
-
-if(isset($_POST['action']) && strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!==FALSE)
-{
-    try
-    {
-        switch($_POST['action'])
-        {
-            case 'get_groups':
-                checkPOST(array('access_token'));
-                echo json_unicode(Groups::getUserGroups($_POST['access_token']));
-                break;
-            case 'get_group_info':
-                checkPOST(array('access_token', 'gid'));
-                echo json_unicode(Groups::getFromGroup($_POST['gid'], $_POST['access_token']));
-                break;
-            default;
-                throw new Exception('invalid action');
-                break;
-        }
-    }
-    catch(Exception $e)
-    {
-        echo json_unicode(array('error' => $e->getMessage()));
     }
 }
 ?>

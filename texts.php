@@ -1,6 +1,4 @@
 <?php
-require 'common_inc.php';
-
 class Texts
 {
     public static function listTitles()
@@ -27,7 +25,7 @@ class Texts
         }
         $textArr = array_filter($textArr, 'remove_empty');
 
-        $texts = json_unicode($textArr);
+        $texts = Util::json_unicode($textArr);
         $stmt = Db::prepare($query);
         if($stmt->execute(array($title, $texts)) === false)
 		{
@@ -85,7 +83,7 @@ class Texts
         }
         $arr['text'] = str_replace('	', '    ', $arr['text']);
         $json_texts=json_decode($arr['text'], true);
-        if(count($json_texts) == 0) // if not valid json, json_decode return null, and count(null) is 0
+        if(!is_array($json_texts) || count($json_texts) == 0) // if not valid json, json_decode return null, and count(null) is 0
         {
             return array(
                 'error' => 'Texts in specified title not valid!', 
@@ -146,29 +144,6 @@ class Texts
         {
             return array('error' => (string)$data);
         }
-    }
-}
-
-if(isset($_POST['action'])&&strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!==FALSE)
-{
-    try
-    {
-        switch($_POST['action'])
-        {
-            case "list_titles":
-                echo json_unicode(Texts::listTitles());
-                break;
-            case 'add_text':
-                checkPOST(array('title', 'texts'));
-                echo json_encode(Texts::addText($_POST['title'], $_POST['texts']));
-                break;
-            default:
-                break;
-        }
-    }
-    catch(Exception $e)
-    {
-        echo json_encode(array('error' => $e->getMessage()));
     }
 }
 ?>

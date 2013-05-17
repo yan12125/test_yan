@@ -1,33 +1,3 @@
-<?php
-require 'common_inc.php';
-ip_only('127.0.0.1');
-
-if(isset($_POST['action'])&&strpos($_SERVER['REQUEST_URI'], basename(__FILE__))!==FALSE)
-{
-    try
-    {
-        switch($_POST['action'])
-        {
-            case 'query':
-                checkPOST(array('query'));
-                $stmt = Db::query($_POST['query']);
-                if(!$stmt)
-                {
-                    throw new Exception(Db::getErr());
-                    exit(0);
-                }
-                echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-                break;
-        }
-        exit(0);
-    }
-    catch(Exception $e)
-    {
-        echo json_encode(array('error' => $e->getMessage()));
-        exit(0);
-    }
-}
-?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -57,8 +27,8 @@ $(document).on('ready', function(e){
         $('#result tbody').html('<tr></tr>');
         var q = editor.getDoc().getValue();
         $.ajax({
-            url: 'sql.php', 
-            data: { action: 'query', query:  q }, 
+            url: 'wrapper.php', 
+            data: { action: 'query_sql', query:  q }, 
             success: function(response, status, xhr){
                 parseQueryResult(q, response, editor);
             }, 
