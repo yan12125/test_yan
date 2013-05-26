@@ -84,9 +84,7 @@ class Util
         $remote_ip = $_SERVER['REMOTE_ADDR'];
         if($ip !== $remote_ip)
         {
-            header('403 Forbidden');
-            echo "IP {$remote_ip} forbidden";
-            exit(0);
+            throw new Exception("IP {$remote_ip} forbidden");
         }
         self::redirectHttps();
     }
@@ -118,14 +116,26 @@ class Util
         Replace \uxxxx in $str to utf-8 character
         Reference: http://stackoverflow.com/questions/2934563/how-to-decode-unicode-escape-sequences-like-u00ed-to-proper-utf-8-encoded-cha
      */
-    protected static function unicode_conv($str)
+    public static function unicode_conv($str)
     {
-        return preg_replace_callback('/\\\\u[0-9a-fA-F]{4}/', array(__CLASS__, 'unicode_conv_impl'), $str);
+        // strings like "\\\\u2345" should not be changed
+        $newStr = $str;
+        preg_match_all('/\\\\u[0-9a-fA-F]{4}/', $str, $matches, PREG_OFFSET_CAPTURE);
+        for($i = 0;$i < count($matches[0]);$i++)
+        {
+            $curMatch = $matches[0][$i]; // the i-th match for the first pattern
+            if(($curMatch[1] >= 1 && substr($str, $curMatch[1]-1, 1) !== "\\") ||
+                $curMatch[1] == 0)
+            {
+                $newStr = str_replace($curMatch[0], self::unicode_conv_impl($curMatch[0]), $newStr);
+            }
+        }
+        return $newStr;
     }
 
-    protected static function unicode_conv_impl($matches)
+    protected static function unicode_conv_impl($seq)
     {
-        $entity = '&#'.hexdec(substr($matches[0], 2)).';'; // $str is \uxxxx
+        $entity = '&#'.hexdec(substr($seq, 2)).';'; // $seq is \uxxxx
         return mb_convert_encoding($entity, 'UTF-8', 'HTML-ENTITIES');
     }
 
@@ -162,6 +172,15 @@ class Util
         {
             return null;
         }
+    }
+
+    public static function addIncludePath($path)
+    {
+        if(!is_dir($path))
+        {
+            throw new Exception('Invalid path: '.$path);
+        }
+        set_include_path(get_include_path().PATH_SEPARATOR.$path);
     }
 }
 ?>

@@ -1,7 +1,7 @@
 <?php
 class Stats
 {
-    public static function postRate()
+    protected static function postRate()
     {
         $stmt = Db::query('select interval_min,interval_max,groups from users where status="started"');
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -18,6 +18,24 @@ class Stats
             }
         }
         return round($rate, 2);
+    }
+
+    public static function runningState()
+    {
+        $stmt = Db::query('select sum(count) from users');
+        $num = $stmt->fetch(PDO::FETCH_NUM);
+        $stmt = Db::query('select access_token from users where status="started" limit 1');
+        $token = $stmt->fetch(PDO::FETCH_NUM);
+        $totalCount = 0;
+        if(!is_null($token))
+        {
+            $totalCount = Fb::getCount($token[0]);
+        }
+        return array(
+            array('name' => '每天發文數', 'value' => self::postRate()), 
+            array('name' => 'App洗版數', 'value' => number_format($num[0])), 
+            array('name' => '總留言數', 'value' => number_format($totalCount))
+        );
     }
 
     protected static function addResult($status, $length)

@@ -13,8 +13,29 @@ class Texts
         }
     }
 
+    public static function checkTitle($title)
+    {
+        // check for duplicated titles
+        $stmt = Db::prepare('select count(*) from texts where title=?');
+        $stmt->execute(array($title));
+        $num = $stmt->fetch(PDO::FETCH_NUM);
+        if($num[0] > 0)
+        {
+            return array('status' => 'title_exists');
+        }
+        else
+        {
+            return true;
+        }
+    }
+
     public static function addText($title, $texts)
     {
+        $result = self::checkTitle($title);
+        if($result !== true)
+        {
+            return $result;
+        }
 		$query="INSERT INTO texts (title,handler,text) VALUES (?,NULL,?)";
         $textArr = explode("\n", str_replace("\r\n", "\n", $texts));
 
@@ -23,7 +44,8 @@ class Texts
         {
             return trim($item) != '';
         }
-        $textArr = array_filter($textArr, 'remove_empty');
+        // array_filter preserve keys, but we want continuous array for json_encode
+        $textArr = array_values(array_filter($textArr, 'remove_empty'));
 
         $texts = Util::json_unicode($textArr);
         $stmt = Db::prepare($query);
@@ -52,7 +74,17 @@ class Texts
         $stmt = Db::prepare("SELECT text FROM texts WHERE title=?");
         $stmt->execute(array($title));
         $arr = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $arr['text'];
+        $text = $arr['text'];
+        self::replaceTab($text);
+        $json_text = json_decode($text, true);
+        if(is_array($json_text))
+        {
+            return $json_text;
+        }
+        else
+        {
+            return $text;
+        }
     }
 
     /*
@@ -81,7 +113,7 @@ class Texts
                 'm' => -1 // used in output in post.php
             );
         }
-        $arr['text'] = str_replace('	', '    ', $arr['text']);
+        self::replaceTab($arr['text']);
         $json_texts=json_decode($arr['text'], true);
         if(!is_array($json_texts) || count($json_texts) == 0) // if not valid json, json_decode return null, and count(null) is 0
         {
@@ -144,6 +176,10 @@ class Texts
         {
             return array('error' => (string)$data);
         }
+    }
+    protected static function replaceTab(&$text)
+    {
+        $text = str_replace('	', '    ', $text);
     }
 }
 ?>

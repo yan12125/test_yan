@@ -43,7 +43,7 @@ function viewUsers()
 {
     var columns = [
         { caption: '姓名', name: 'name', width: 200 }, 
-        { caption: '狀態', name: 'status', width: 50 }, 
+        { caption: '狀態', name: 'status', width: 70 }, 
         { caption: '授權碼有效', name: 'valid', width: 70 }, 
         { caption: '訊息', name: 'msg', width: 600 }
     ];
@@ -60,11 +60,21 @@ function getStats()
     ];
     createTable('wrapper.php', 'report_stats', columns, '發文字數統計');
 }
+
+function runningState()
+{
+    var columns = [
+        { caption: '項目', name: 'name', width: 100 }, 
+        { caption: '數值', name: 'value', width: 100 }, 
+    ];
+    createTable('wrapper.php', 'running_state', columns, '洗版狀況');
+}
 </script>
 </head>
 <body>
-<a href="#" onclick="viewUsers();">所有使用者</a>
-<a href="#" onclick="getStats();">發文字數統計</a>
+<input type="button" onclick="viewUsers();" value="所有使用者">
+<input type="button" onclick="getStats();" value="發文字數統計">
+<input type="button" onclick="runningState();" value="洗版狀況">
 <div id="wrapper">選擇一個表格</div>
 </body>
 </html>

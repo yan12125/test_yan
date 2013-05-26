@@ -48,10 +48,7 @@ class Auth
         {
             $arr_result = exchangeToken($arr_result['access_token']);
         }
-        return array(
-            'token' => $arr_result['access_token'], 
-            'expiry' => $arr_result['expires']
-        );
+        return array('token' => $arr_result['access_token']);
     }
 
     public static function exchangeToken($token)
@@ -85,7 +82,6 @@ else
         header('Content-type: application/json');
         $tokenObj = Auth::getToken($_GET['code']);
         $_SESSION['access_token'] = $tokenObj['token'];
-        $_SESSION['expiry'] = $tokenObj['expiry'];
         Header('Location: '.Config::getParam('rootUrl'));
     }
     catch(Exception $e)

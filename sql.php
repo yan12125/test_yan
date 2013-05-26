@@ -67,6 +67,11 @@ function parseQueryResult(query, result, editor)
     {
         return;
     }
+    else if(typeof result == 'object' && typeof result[0] == 'string')
+    {   // simple string, come from UPDATE
+        $('#result tbody').html('<tr><td>'+result[0]+'</td></tr>');
+        return;
+    }
     var resultHTML = '';
     resultHTML += '<tr>';
     for(var field in result[0])

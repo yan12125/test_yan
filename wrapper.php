@@ -1,5 +1,5 @@
 <?php
-require_once 'common_inc.php';
+require 'common_inc.php';
 
 try
 {
@@ -17,12 +17,15 @@ try
             Util::checkPOST(array('page', 'rows'));
             echo json_encode(Stats::report($_POST['page'], $_POST['rows']));
             break;
+        case 'running_state':
+            echo json_encode(Stats::runningState());
+            break;
         /*
          * users.php
          */
         case 'list_users':
             Util::checkPOST(array('IDs'));
-            echo json_encode(Users::listUsersAndRate($_POST['IDs']));
+            echo json_encode(Users::listUsersSimple($_POST['IDs']));
             break;
         case 'add_user':
             Util::checkPOST(array('access_token', 'interval_min', 'interval_max', 'titles', 'goal', 'groups'));
@@ -43,6 +46,10 @@ try
         case 'logout':
             echo json_encode(Users::logout());
             break;
+        case 'get_basic_data':
+            Util::checkPOST(array('access_token'));
+            echo json_encode(Users::getBasicData($_POST['access_token']));
+            break;
         /*
          * groups.php
          */
@@ -54,6 +61,9 @@ try
             Util::checkPOST(array('access_token', 'gid'));
             echo Util::json_unicode(Groups::getFromGroup($_POST['gid'], $_POST['access_token']));
             break;
+        case 'get_primary_group':
+            echo json_encode(Groups::getPrimaryGroup());
+            break;
         /*
          * texts.php
          */
@@ -63,6 +73,10 @@ try
         case 'add_text':
             Util::checkPOST(array('title', 'texts'));
             echo json_encode(Texts::addText($_POST['title'], $_POST['texts']));
+            break;
+        case 'check_title':
+            Util::checkPOST(array('title'));
+            echo json_encode(Texts::checkTitle($_POST['title']));
             break;
         /*
          * db.php

@@ -1,35 +1,20 @@
 <?php
-session_start();
 require 'common_inc.php';
 
-if(!isset($_SESSION['access_token']) || !isset($_SESSION['expiry']))
+session_start();
+
+if(!isset($_SESSION['access_token']))
 {
     Header('Location: '.Config::getParam('rootUrl').'auth.php');
     exit(0);
 }
 
 Util::redirectHttps();
-
-// get basic user information from facebook
-try
-{
-    $result=Fb::api('/me', array('access_token'=>$_SESSION['access_token']));
-    if(!isset($result['name']) || !isset($result['id']))
-    {
-        print_r($result);
-        exit(0);
-    }
-}
-catch(Exception $e)
-{
-    echo 'Error: '.$e->getMessage();
-    exit(0);
-}
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-<title><?php echo $result['name']; ?></title>
+<title>挑戰留言2147483647</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <style type="text/css">
 body
@@ -114,21 +99,32 @@ label.error,span.error
 <script src="/HTML/library/jquery.ajaxq.js"></script>
 <script src="/HTML/library/jquery.validate.js"></script>
 <script src="/HTML/library/jquery.validate.message_zh_TW.js"></script>
+<script src="util.js"></script>
 <link rel="stylesheet" href="/HTML/library/jquery-ui.css">
 <script language="javascript">
-var token='<?php echo $_SESSION['access_token']; ?>';
-var uid='<?php echo $result['id']; ?>';
-var primary_group = '<?php echo Groups::primary_group; ?>';
 var busy_img = '<img src="images/fb_busy.gif"></img>';
 
 $(document).on('ready', function(e){
-    var expiry=<?php echo $_SESSION['expiry']; ?>;
-	window.setInterval(function(){
-        $("#nExpiry").html(expiry.toString());
-        expiry--;
-    }, 1000);
-    get_info(true); // first time getting info, update all information
-    setInterval(function(){ get_info(false); }, 30*1000); // after that, only update post count
+    // basic data
+    $('#token').val('<?php echo $_SESSION['access_token']; ?>');
+    callWrapper('get_basic_data', { access_token: $('#token').val() }, function(data){
+        if(typeof data.error != 'undefined')
+        {
+            alert(data.error);
+            logout();
+        }
+        document.title = data.name;
+        $('#uid').val(data.uid);
+        get_info(true); // first time getting info, update all information
+        // expiry
+        var expiry = data.expiry;
+        window.setInterval(function(){
+            $("#nExpiry").html(expiry.toString());
+            expiry--;
+        }, 1000);
+        setInterval(function(){ get_info(false); }, 30*1000); // after that, only update post count
+    });
+
 
     // loading groups...
     $('#choose_groups').html(busy_img);
@@ -151,7 +147,7 @@ $(document).on('ready', function(e){
         selectRandom(1);
     });
     $('#selectRandom').on('click', function(e){
-        selectRandom(0.3);
+        selectRandom(0.5);
     });
     $('#selectNone').on('click', function(e){
         selectRandom(0);
@@ -177,50 +173,43 @@ $(document).on('ready', function(e){
     });
 
     $('#logout').on('click', function(e){
-        $.post('wrapper.php', { action: 'logout' }, function(response, status, xhr){
-            location.href = response.url;
-        });
+        logout();
     })
 });
 
+function logout()
+{
+    callWrapper('logout', function(response){
+        location.href = response.url;
+    });
+}
+
 function getTitles(userTitles)
 {
-	$.ajaxq('q_main', {
-        url: "wrapper.php", 
-        type: 'POST', 
-        data: { action: 'list_titles' }, 
-        dataType: 'json', 
-        success: function(textgroups, status, xhr){
-            for(var i=0;i<textgroups.length;i++)
+	callWrapper('list_titles', function(textgroups){
+        for(var i=0;i<textgroups.length;i++)
+        {
+            var titles_div = $('.title_choose');
+            var title_text=textgroups[i]['title'];
+            titles_div.eq(i%titles_div.length).append("<input type=\"checkbox\" value=\""+
+                title_text+"\" /><span>"+title_text+"</span><br />\n");
+            if($.inArray(title_text, userTitles) > -1)
             {
-                var titles_div = $('.title_choose');
-                var title_text=textgroups[i]['title'];
-                titles_div.eq(i%titles_div.length).append("<input type=\"checkbox\" value=\""+
-                    title_text+"\" /><span>"+title_text+"</span><br />\n");
-                if($.inArray(title_text, userTitles) > -1)
-                {
-                    titles_div.find("input[value=\""+title_text+"\"]")
-                        .attr("checked", true)
-                        .next().addClass('selected_item');
-                }
+                titles_div.find("input[value=\""+title_text+"\"]")
+                    .attr("checked", true)
+                    .next().addClass('selected_item');
             }
-            $('.title_choose :checkbox').click(function(e){
-                $(this).next().toggleClass('selected_item');
-            });
         }
+        $('.title_choose :checkbox').click(function(e){
+            $(this).next().toggleClass('selected_item');
+        });
     });
 }
 
 function getGroups(userGroups)
 {
-    $.ajaxq('q_main', {
-        url: 'wrapper.php', 
-        data: {action: 'get_groups', access_token: token}, 
-        type: 'POST', 
-        dataType: 'json', 
-        success: function(response, status, xhr){
-            parseGroups(response, userGroups);
-        }
+    callWrapper('get_groups', { access_token: $('#token').val() }, function(response){
+        parseGroups(response, userGroups);
     });
 }
 
@@ -240,7 +229,7 @@ function parseGroups(allGroups, userGroups)
             // retrieve group feed from facebook
             var $statusText = $(this).next().next();
             $statusText.removeClass('error').html(busy_img);
-            $.post('wrapper.php', { action: 'get_group_info', gid: this.value, access_token: token }, function(response, status, xhr){
+            callWrapper('get_group_info', { gid: this.value, access_token: $('#token').val() }, function(response){
                 if(typeof response['error'] != 'undefined')
                 {
                     $statusText.addClass('error').html('無法讀取社團內容: '+response['error']);
@@ -252,7 +241,7 @@ function parseGroups(allGroups, userGroups)
                 {
                     $statusText.html('');
                 }
-            }, 'json');
+            });
         });
     }
     var gids = userGroups.split('_');
@@ -265,27 +254,34 @@ function parseGroups(allGroups, userGroups)
 
 function start2()
 {
-    add_user();
-	$("#status").html("代洗中");
-	$("#btnStart").attr("disabled", true);
-	$("#btnStop").attr("disabled", false);
+    add_user(function(){
+    	$("#status").html("代洗中");
+	    $("#btnStart").attr("disabled", true);
+    	$("#btnStop").attr("disabled", false);
+    });
 }
 
 function stop2()
 {
-    $.post("wrapper.php", {
-        "action": "set_user_status", 
-        "uid":uid, 
+    callWrapper('set_user_status', {
+        "uid": $('#uid').val(), 
         "status": "stopped", 
-        "access_token": token
+        "access_token": $('#token').val()
+    }, function(response){
+        if(response.status == 'stopped')
+        {
+            $("#status").html("未開始發文");
+            $("#btnStart").attr("disabled", false);
+            $("#btnStop").attr("disabled", true);
+        }
+        else
+        {
+            alert('無法停止，有bug!\n按「更新資料」後再試一次');
+        }
     });
-
-	$("#status").html("未開始發文");
-	$("#btnStart").attr("disabled", false);
-	$("#btnStop").attr("disabled", true);
 }
 
-function add_user()
+function add_user(cb)
 {
     var titleList = $('.title_choose :checkbox:checked').map(function(index, element){
         return $(element).val();
@@ -303,60 +299,60 @@ function add_user()
         alert('至少要選一個社團！');
         return;
     }
-	$.post("wrapper.php", {
-        "action": "add_user", 
+	callWrapper("add_user", {
 		"interval_max": $('input[name="interval_max"]').val(), 
 		"interval_min": $('input[name="interval_min"]').val(), 
 		"titles": JSON.stringify($.makeArray(titleList)), 
         "groups": $.makeArray(userGroups).join('_'), 
-		"access_token":token, 
+		"access_token": $('#token').val(), 
 		"goal": $('input[name="goal"]').val()
-	});
+	}, function(){
+        if(typeof cb == 'function')
+        {
+            cb();
+        }
+    });
 }
 
 function get_info(initial)
 {
-	$.ajaxq('q_main', {
-        url: "wrapper.php", 
-        data: { "action": "get_user_info", "uid":uid }, 
-        type: 'POST', 
-        dataType: 'json', 
-        success: function(response, status, xhr){
-            var msg="";
-            if(typeof response["error"] != "undefined")
+	callWrapper("get_user_info", { "uid": $('#uid').val() }, function(response){
+        var msg="";
+        if(typeof response["error"] != "undefined")
+        {
+            var err = response['error'];
+            if(err == 'user_not_found')
             {
-                var err = response['error'];
-                if(err == 'user_not_found')
-                {
-                    // default setting for new users
-                    getTitles([]); // no titles selected
-                    getGroups(primary_group); // publish to 挑戰留言2147483647
-                    return;
-                }
-                else
-                {
-                    alert('無法取得使用者資料，請稍候再試\n' + err);
-                    console.log(err);
-                    return;
-                }
+                // default setting for new users
+                getTitles([]); // no titles selected
+                callWrapper('get_primary_group', function(response){
+                    getGroups(response.primary_group);
+                });
+                return;
             }
+            else
+            {
+                alert('無法取得使用者資料，請稍候再試\n' + err);
+                console.log(err);
+                return;
+            }
+        }
 
-            if(response["status"]=="started")
-            {
-                $("#status").html("代洗中");
-                $("#btnStart").attr("disabled", true);
-                $("#btnStop").attr("disabled", false);
-            }
-            if(initial)
-            {
-                $('input[name="interval_max"]').val(response["interval_max"]);
-                $('input[name="interval_min"]').val(response["interval_min"]);
-                $('input[name="goal"]').val(response["goal"]);
-                getTitles(JSON.parse(response['titles']));
-                getGroups(response['groups']);
-            }
-            $("#count").html(response["count"]);
-	    }
+        if(response["status"]=="started")
+        {
+            $("#status").html("代洗中");
+            $("#btnStart").attr("disabled", true);
+            $("#btnStop").attr("disabled", false);
+        }
+        if(initial)
+        {
+            $('input[name="interval_max"]').val(response["interval_max"]);
+            $('input[name="interval_min"]').val(response["interval_min"]);
+            $('input[name="goal"]').val(response["goal"]);
+            getTitles(JSON.parse(response['titles']));
+            getGroups(response['groups']);
+        }
+        $("#count").html(response["count"]);
     });
 }
 
@@ -369,6 +365,8 @@ function get_info(initial)
     <form id="parameters" onsubmit="return false;">
         <fieldset>
             <legend>設定</legend>
+            <input type="hidden" id="uid" value="">
+            <input type="hidden" id="token" value="">
             時間間隔上限: <input type="text" name="interval_max" class="input_number" value="100"/><br />
             時間間隔下限: <input type="text" name="interval_min" class="input_number" value="80"/><br />
             發文次數: <input type="text" name="goal" class="input_number" value="2147483647"/><br />

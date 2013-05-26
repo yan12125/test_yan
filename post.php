@@ -92,7 +92,7 @@ class Post
         {
             $this->fillErrorMsg(false, 'expired');
         }
-        else if(strpos($err, 'timed out') !== false || strpos($err, 'timeout') !== false)
+        else if(strpos($err, 'timed out') !== false || strpos($err, 'timeout') !== false || strpos($err, 'time-out') !== false)
         {
             Stats::timedOut(mb_strlen($this->response['msg'], 'UTF-8'));
             $this->fillErrorMsg(true);
@@ -141,16 +141,9 @@ class Post
 
     protected function makeResponse()
     {
-        if(($special_wait_time = Db::getConfig('special_wait_time'))>0)
-        {
-            $this->response["next_wait_time"]=$special_wait_time;
-        }
-        else
-        {
-            $newInterval = Users::adjustedInterval($this->userData, $this->group['gid']);
-            $this->response['next_wait_time'] = round(Util::randND($newInterval['max'], $newInterval['min'], 6), 1); // 正負三個標準差
-            // round to decrease amount of transmission
-        }
+        $newInterval = Users::adjustedInterval($this->userData, $this->group['gid']);
+        $this->response['next_wait_time'] = round(Util::randND($newInterval['max'], $newInterval['min'], 6), 1); // 正負三個標準差
+        // round to decrease amount of transmission
 
         $this->response['user_data'] = array();
         foreach(explode(',', Users::basic_user_data) as $field)

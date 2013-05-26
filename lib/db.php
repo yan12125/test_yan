@@ -17,18 +17,18 @@ class Db
             'charset' => 'utf8'
         ), '', ';');
         self::$db = new PDO($dsn, $dbConf['sqlusername'], $dbConf['mysqlPass']);
+        self::$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
-    public static function query($sql)
+    public static function __callStatic($name, $args)
     {
         self::loadDB();
-        return self::$db->query($sql);
-    }
-
-    public static function prepare($sql)
-    {
-        self::loadDB();
-        return self::$db->prepare($sql);
+        $ret = call_user_func_array(array(self::$db, $name), $args);
+        if($ret == null && $name == 'query')
+        {
+            throw new Exception(self::getErr());
+        }
+        return $ret;
     }
 
     public static function getErr()
@@ -58,13 +58,22 @@ class Db
 
     public static function queryToArray($sql)
     {
+        Util::addIncludePath('../../library/php-sql-parser');
+        require 'php-sql-parser.php';
         Util::ip_only('127.0.0.1');
-        $stmt = self::query($sql);
-        if(!$stmt)
+        $stmt = self::prepare($sql);
+        $ret = $stmt->execute();
+        // determine the type of query
+        $parser = new PHPSQLParser();
+        $result = $parser->parse($sql);
+        if(isset($result['UPDATE']) || isset($result['INSERT']))
         {
-            throw new Exception(Db::getErr());
+            return array($stmt->rowCount().' rows updated');
         }
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        else
+        {
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
     }
 }
 ?>

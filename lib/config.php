@@ -10,7 +10,7 @@ class Config
             return;
         }
         $oldPath = getcwd();
-        chdir(dirname(__FILE__));
+        chdir(APP_ROOT);
         $searchPaths = array('./', '../');
         $secretFilename = '.htsecret';
         foreach($searchPaths as $path)

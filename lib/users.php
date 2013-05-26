@@ -5,10 +5,18 @@ class Users
     const basic_user_data = 'uid,name,status';
     const detailed_user_data = 'uid,name,status,interval_max,interval_min,count,goal,titles,groups';
 
-    protected static function listUsers($field, $IDs = '')
+    protected static function listUsers($field, $listDisabled, $IDs = '')
     {
         $curIDs = explode('_', $IDs);
-        $stmt = Db::query("SELECT {$field} FROM users ORDER BY status"); // problem occurs when select multiple columns
+        if($listDisabled)
+        {
+            $query = "select {$field} from users order by status";
+        }
+        else
+        {
+            $query = "select {$field} from users where status!='disabled' order by status";
+        }
+        $stmt = Db::query($query); // problem occurs when select multiple columns
         $users=$stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach($users as &$user)
         {
@@ -20,11 +28,10 @@ class Users
         return $users;
     }
 
-    public static function listUsersAndRate($IDs)
+    public static function listUsersSimple($IDs)
     {
         Util::ip_only('127.0.0.1');
-        $users = self::listUsers(Users::basic_user_data, $IDs);
-        array_unshift($users, array("rate" => Stats::postRate()));
+        $users = self::listUsers(Users::basic_user_data, false, $IDs);
         return $users;
     }
 
@@ -35,7 +42,7 @@ class Users
             throw new Exception('Can\'t get more than 45 rows in a time');
         }
 
-        $users = self::listUsers('name,uid,access_token,status');
+        $users = self::listUsers('name,uid,access_token,status,banned_time', true);
         $N = count($users);
         $users_chunked = array_chunk($users, $nRows);
         $nPages = count($users_chunked);
@@ -73,7 +80,8 @@ class Users
             'started' => '洗版中', 
             'stopped' => '已停止', 
             'banned' => '鎖兩天', 
-            'expired' => '授權碼失效'
+            'expired' => '授權碼失效', 
+            'disabled' => '永久鎖帳'
         );
         for($i = 0;$i < min($nRows, $N - ($page - 1) * $nRows);$i++)
         {
@@ -108,6 +116,10 @@ class Users
                 {
                     $curRow['msg'] = '授權碼已在'.date('Y/m/d H:i:s', $matches[1]).'過期';
                 }
+                else if(preg_match('/Sessions for user with id .* are not allowed/', $err) > 0)
+                {
+                    $curRow['msg'] = $statusStr['disabled'];
+                }
                 else
                 {
                     $curRow['msg'] = $err;
@@ -119,6 +131,11 @@ class Users
                 $expiry = $token_response[$i]['expires_at'];
                 $timestr = date('Y/m/d H:i:s', $expiry);
                 $curRow['msg'] = '有效期限：'.$timestr;
+            }
+            if($curUser['status'] == 'banned')
+            {
+                $unlockTime = strtotime($curUser['banned_time'] . ' +2 days');
+                $curRow['msg'] .= ' 解鎖時間：' . date('Y-m-d H:i:s', $unlockTime);
             }
             $rows[] = $curRow;
         }
@@ -148,6 +165,8 @@ class Users
         {
             throw new Exception(Db::getErr());
         }
+        $count = self::getData($uid, 'count');
+        self::setData($uid, array('last_count'=>$count));
         return array('message' => 'User added successfully');
     }
 
@@ -204,8 +223,10 @@ class Users
 
     public static function setUserStatus($uid, $newStatus, $token)
     {
-        if($token != self::getData($uid, 'access_token'))
+        $curToken = self::getData($uid, 'access_token');
+        if($token != $curToken)
         {
+            print_r(array('token' => $token, 'token2' => $curToken));
             throw new Exception('Invalid access_token');
         }
         $oldStatus = self::getData($uid, 'status');
@@ -225,11 +246,6 @@ class Users
             if($newStatus=='banned'&&$oldStatus=='started')
             {
                 self::setData($uid, array('banned_time'=>date("Y-m-d H:i:s")));
-            }
-            if($newStatus=='started'&&$oldStatus=='banned')
-            {
-                $count = self::getData($uid, 'count');
-                self::setData($uid, array('last_count'=>$count));
             }
             return array('status' => $newStatus);
         }
@@ -280,6 +296,43 @@ class Users
                 'next' => Config::getParam('rootUrl'), 
                 'access_token' => $token
             ))
+        );
+    }
+
+    public static function getBasicData($access_token)
+    {
+        // called when login from index.php
+        $data = Fb::api('/me', array('access_token' => $access_token));
+        if(!isset($data['name']) || !isset($data['id']))
+        {
+            throw new Exception('Faile to load user data: '.json_encode($data));
+        }
+        // update access_token if user has registered
+        try
+        {
+            $oldToken = self::getData($data['id'], 'access_token');
+            self::setData($data['id'], array('access_token' => $access_token));
+        }
+        catch(Exception $e)
+        {
+            if($e->getMessage() != 'user_not_found')
+            {
+                throw $e;
+            }
+        }
+        // expiry
+        $response = Fb::api('/debug_token', array(
+            'input_token' => $access_token, 
+            'access_token' => Fb::getAppToken()
+        ));
+        if(isset($response['error']))
+        {
+            throw new Exception($response['error']);
+        }
+        return array(
+            'name' => $data['name'], 
+            'uid' => $data['id'], 
+            'expiry' => $response['data']['expires_at'] - time()
         );
     }
 }

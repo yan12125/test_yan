@@ -2,6 +2,12 @@
 class Groups
 {
     const primary_group = '198971170174405';
+
+    public static function getPrimaryGroup()
+    {
+        return array('primary_group' => self::primary_group);
+    }
+
     public static function updateGroupFeed($gid, $access_token, $newAdded)
     {
         // retrieve group title

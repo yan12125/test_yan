@@ -10,7 +10,7 @@ class Fb
             return;
         }
         $appConf = Config::getParamArr(array('appId', 'appSecret', 'fb_prefix'));
-        set_include_path(get_include_path().PATH_SEPARATOR.$appConf['fb_prefix']);
+        Util::addIncludePath($appConf['fb_prefix']);
         require_once $appConf['fb_prefix'].'facebook.php';
         // Disable ssl verify to hide messages in error.log
         // Reference: http://stackoverflow.com/questions/7374223/invalid-or-no-certificate-authority-found-using-bundled-information
@@ -21,10 +21,11 @@ class Fb
         ));
     }
 
-    public static function api()
+    // require PHP 5.3
+    public static function __callStatic($name, $args)
     {
         self::loadFB();
-        return call_user_func_array(array(self::$fb, 'api'), func_get_args());
+        return call_user_func_array(array(self::$fb, $name), $args);
     }
 
     // not using get total count because it's too slow

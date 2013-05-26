@@ -1,7 +1,3 @@
-<?php
-require 'common_inc.php';
-Util::ip_only('127.0.0.1');
-?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -90,7 +86,10 @@ function post2(uid)
             $("#results").append(status+" : "+escapeHtml(error)+"\n");
             var now=new Date();
             console.log(now.toLocaleTimeString());
-            console.log(xhr.responseText);
+            if(typeof xhr.responseText != 'undefined') // undefined if timeout
+            {
+                console.log(xhr.responseText);
+            }
             if(xhr.status == 500)
             {
                 // postpone all "running" users
@@ -130,16 +129,13 @@ function update_userList()
 		curIDs.push(uid);
 	}
 	$.post("wrapper.php", {"action": "list_users", "IDs":curIDs.join('_')}, function(response, status, xhr){
+        if(typeof response.error != 'undefined')
+        {
+            alert('無法取得使用者名單：' + response.error);
+            return;
+        }
         for(var i = 0;i < response.length;i++)
         {
-            if(typeof response[i].uid == "undefined")
-            {
-                if(typeof response[i].rate != "undefined")
-                {
-                    $("#rate").text(response[i].rate);
-                }
-                continue;
-            }
             var uid = response[i].uid;
             if(typeof response[i].name == "undefined") // not new users, only process status
             {
@@ -266,7 +262,6 @@ $(document).on('ready', function(e){
 			<input type="button" id="btn_stop" value="Stop">
 			<input type="button" id="btn_clearLog" value="clear log">
             <input type="button" id="btn_print_error" value="Print errors"><br>
-			Rate=<span id="rate"></span>Posts/day<br>
             <a href="sql.php">execute SQL</a>
             <a href="table.php">Tables</a><br>
 		</td>

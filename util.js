@@ -10,3 +10,27 @@ function escapeHtml(text)
         .replace(/'/g, "&#039;");
 }
 
+function callWrapper(_action, _data, _success)
+{
+    if(typeof _data == 'undefined')
+    {
+        _data = {};
+    }
+    if(typeof _data == 'function')
+    {
+        _success = _data;
+        _data = {};
+    }
+    _data.action = _action;
+    var options = {
+        url: 'wrapper.php', 
+        type: 'POST', 
+        dataType: 'json', 
+        data: _data, 
+    };
+    if(typeof _success == 'function')
+    {
+        options.success = _success;
+    }
+    $.ajaxq('q_main', options);
+}
