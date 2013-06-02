@@ -3,14 +3,10 @@
 <head>
 <title>table.php</title>
 <meta charset="UTF-8">
-<style>
-</style>
-<script src="/HTML/library/jquery.js"></script>
-<script src="/HTML/library/jquery-ui.js"></script>
-<script src="/HTML/library/jquery.jqGrid.min.js"></script>
-<script src="/HTML/library/grid.locale-tw.js"></script>
-<link rel="stylesheet" href="/HTML/library/jquery-ui.css">
-<link rel="stylesheet" href="/HTML/library/ui.jqgrid.css">
+<?php
+require 'common_inc.php';
+echo External::loadJsCss('jquery', 'jquery-ui', 'jqGrid');
+?>
 <script>
 function createTable(module, _action, columns, _caption)
 {

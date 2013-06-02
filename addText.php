@@ -2,7 +2,10 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<script src="/HTML/library/jquery.js"></script>
+<?php
+require 'common_inc.php';
+echo External::loadJsCss('jquery');
+?>
 <script>
 function checkData()
 {

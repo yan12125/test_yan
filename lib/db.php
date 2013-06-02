@@ -58,9 +58,8 @@ class Db
 
     public static function queryToArray($sql)
     {
-        Util::addIncludePath('../../library/php-sql-parser');
-        require 'php-sql-parser.php';
         Util::ip_only('127.0.0.1');
+        External::loadPhp('php-sql-parser');
         $stmt = self::prepare($sql);
         $ret = $stmt->execute();
         // determine the type of query

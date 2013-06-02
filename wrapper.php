@@ -78,6 +78,10 @@ try
             Util::checkPOST(array('title'));
             echo json_encode(Texts::checkTitle($_POST['title']));
             break;
+        case 'get_texts':
+            Util::checkPOST(array('title'));
+            echo json_encode(Texts::getTexts($_POST['title']));
+            break;
         /*
          * db.php
          */

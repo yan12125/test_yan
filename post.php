@@ -208,7 +208,7 @@ catch(Exception $e)
 
     $err = $e->getMessage();
     $err_json = json_decode($err, true);
-    if($err_json !== null)
+    if(!is_null($err_json))
     {
         $response_error['error'] = $err_json;
     }

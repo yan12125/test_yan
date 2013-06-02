@@ -10,9 +10,10 @@
     border-collapse: collapse;
 }
 </style>
-<script src="/HTML/library/jquery.js"></script>
-<script src="/HTML/library/jquery.ajaxq.js"></script>
-<script src="util.js"></script>
+<?php
+require 'common_inc.php';
+echo External::loadJsCss('jquery', 'ajaxq');
+?>
 <script>
 var users={};
 var errors=[];
@@ -128,7 +129,7 @@ function update_userList()
 	{
 		curIDs.push(uid);
 	}
-	$.post("wrapper.php", {"action": "list_users", "IDs":curIDs.join('_')}, function(response, status, xhr){
+	callWrapper("list_users", { "IDs": curIDs.join('_') }, function(response, status, xhr){
         if(typeof response.error != 'undefined')
         {
             alert('無法取得使用者名單：' + response.error);
@@ -263,7 +264,8 @@ $(document).on('ready', function(e){
 			<input type="button" id="btn_clearLog" value="clear log">
             <input type="button" id="btn_print_error" value="Print errors"><br>
             <a href="sql.php">execute SQL</a>
-            <a href="table.php">Tables</a><br>
+            <a href="table.php">Tables</a>
+            <a href="text_mgr.php">Text Manager</a><br>
 		</td>
 	</tr>
 </table>

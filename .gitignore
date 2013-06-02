@@ -7,3 +7,5 @@ test*
 
 # created when merging
 *.orig
+
+3rdparty

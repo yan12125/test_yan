@@ -56,7 +56,7 @@ class Texts
         return array('status' => 'success');
     }
 
-    public static function check()
+    protected static function check()
     {
         $stmt = Db::query('SELECT * FROM texts');
         while(($arr = $stmt->fetch(PDO::FETCH_ASSOC))!==false)
@@ -74,6 +74,10 @@ class Texts
         $stmt = Db::prepare("SELECT text FROM texts WHERE title=?");
         $stmt->execute(array($title));
         $arr = $stmt->fetch(PDO::FETCH_ASSOC);
+        if($arr === false) // no title matches
+        {
+            throw new Exception('Unable to find title '.$title);
+        }
         $text = $arr['text'];
         self::replaceTab($text);
         $json_text = json_decode($text, true);
@@ -137,7 +141,7 @@ class Texts
         }
         else
         {
-            // no need to escape html special chars because facebook will fo it
+            // no need to escape html special chars because facebook will do it
             $ret_val['msg'] = $json_texts[$m];
         }
         if(isset($ret_val['msg']) && trim($ret_val['msg']) == "")
@@ -156,25 +160,23 @@ class Texts
 
     protected static function callPlugin($handler, $param)
     {
-        $url = Config::getParam('rootUrl').'plugins/'.$handler.'?param='.$param;
-        $ch=curl_init($url);
-        curl_setopt_array($ch, array(
-            CURLOPT_RETURNTRANSFER => true, 
-            CURLOPT_HEADER => 0, 
-            CURLOPT_BINARYTRANSFER => true, 
-            CURLOPT_SSL_VERIFYHOST => 0, 
-            CURLOPT_SSL_VERIFYPEER => false
-        ));
-        $data=curl_exec($ch);
-        $status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if($status_code == 200)
+        $instance = null;
+        try
         {
-            return array('msg' => htmlspecialchars((string)$data));
+            $instance = new $handler();
+            return array('msg' => $instance->run($param));
         }
-        else
+        catch(Exception $e)
         {
-            return array('error' => (string)$data);
+            if(method_exists($instance, 'handleException'))
+            {
+                $errStr = json_encode($instance->handleException($e));
+                throw new Exception($errStr);
+            }
+            else
+            {
+                throw $e;
+            }
         }
     }
     protected static function replaceTab(&$text)

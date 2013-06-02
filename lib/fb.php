@@ -10,8 +10,7 @@ class Fb
             return;
         }
         $appConf = Config::getParamArr(array('appId', 'appSecret', 'fb_prefix'));
-        Util::addIncludePath($appConf['fb_prefix']);
-        require_once $appConf['fb_prefix'].'facebook.php';
+        External::loadPhp('facebook');
         // Disable ssl verify to hide messages in error.log
         // Reference: http://stackoverflow.com/questions/7374223/invalid-or-no-certificate-authority-found-using-bundled-information
         Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYPEER] = false;

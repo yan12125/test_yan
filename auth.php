@@ -73,6 +73,11 @@ class Auth
 if(!isset($_GET['code']))
 {
     session_destroy();
+    if(isset($_GET['error']))
+    {
+        header('Location: https://www.facebook.com/');
+        exit(0);
+    }
     Auth::authenticate();
 }
 else

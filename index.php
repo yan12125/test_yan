@@ -16,91 +16,10 @@ Util::redirectHttps();
 <head>
 <title>挑戰留言2147483647</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<style type="text/css">
-body
-{
-    overflow-y: scroll;
-}
-
-#wrapper
-{
-	position: relative;
-	width: 1000px;
-	height: auto;
-	margin-left: auto;
-	margin-right: auto;
-}
-
-#controls
-{
-	width: 180px;
-	float: left;
-}
-
-#messages
-{
-	clear: both;
-	margin-left: auto;
-	margin-right: auto;
-	text-align: center;
-}
-
-.title_choose
-{
-	width: 220px;
-	float: left;
-}
-
-
-#choose_groups img
-{
-    margin-left: 10px;
-}
-
-#wrapper td
-{
-    vertical-align: top;
-}
-
-#more_option
-{
-    margin-left: -800px;
-}
-
-#more_option > div
-{
-    height: 400px;
-    overflow-y: scroll;
-}
-
-.selected_item /* <span> in more_options */
-{
-    font-weight: bold;
-}
-
-.input_number
-{
-	width: 80px;
-}
-
-/* indicates failure in jquery.validate */
-.error
-{
-    color: red;
-}
-
-label.error,span.error
-{
-    margin-left: 10px;
-}
-</style>
-<script language="javascript" src="/HTML/library/jquery.js"></script>
-<script src="/HTML/library/jquery-ui.js"></script>
-<script src="/HTML/library/jquery.ajaxq.js"></script>
-<script src="/HTML/library/jquery.validate.js"></script>
-<script src="/HTML/library/jquery.validate.message_zh_TW.js"></script>
-<script src="util.js"></script>
-<link rel="stylesheet" href="/HTML/library/jquery-ui.css">
+<?php
+echo External::loadJsCss('jquery', 'jquery-ui', 'ajaxq', 'validate');
+?>
+<link rel="stylesheet" src="index.css">
 <script language="javascript">
 var busy_img = '<img src="images/fb_busy.gif"></img>';
 
@@ -111,7 +30,7 @@ $(document).on('ready', function(e){
         if(typeof data.error != 'undefined')
         {
             alert(data.error);
-            logout();
+            location.href = 'auth.php';
         }
         document.title = data.name;
         $('#uid').val(data.uid);
@@ -124,7 +43,6 @@ $(document).on('ready', function(e){
         }, 1000);
         setInterval(function(){ get_info(false); }, 30*1000); // after that, only update post count
     });
-
 
     // loading groups...
     $('#choose_groups').html(busy_img);
@@ -355,7 +273,6 @@ function get_info(initial)
         $("#count").html(response["count"]);
     });
 }
-
 </script>
 </head>
 <body>

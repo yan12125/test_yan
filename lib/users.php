@@ -52,28 +52,20 @@ class Users
         }
 
         // check all access_token's in one batch request
-        $token_response = array();
-        $queries = array();
+        $req = new FbBatch(Fb::getAppToken());
         foreach($users_chunked[$page - 1] as $user)
         {
-            $queries[] = array(
-                'method' => 'GET', 
-                'relative_url' => 'debug_token?input_token='.$user['access_token']
-            );
+            $req->push('/debug_token', array('input_token' => $user['access_token']));
         }
-        $response = Fb::api('/', 'POST', array(
-            'access_token' => Fb::getAppToken(), 
-            'batch' => json_encode($queries)
-        ));
-        $token_response = array_merge($token_response, $response);
-        foreach($token_response as &$response)
+        $token_response = $req->run();
+        foreach($token_response as &$item)
         {
-            $response = json_decode($response['body'], true);
-            if(isset($response['data']))
+            if(isset($item['data']))
             {
-                $response = $response['data'];
+                $item = $item['data'];
             }
         }
+
         $rows = array();
         // assume the returned order in batch request is the same as sent request
         $statusStr = array(
@@ -302,16 +294,24 @@ class Users
     public static function getBasicData($access_token)
     {
         // called when login from index.php
-        $data = Fb::api('/me', array('access_token' => $access_token));
-        if(!isset($data['name']) || !isset($data['id']))
+        $req = new FbBatch();
+        $req->push('/me', array('access_token' => $access_token));
+        $req->push('/debug_token', array(
+            'input_token' => $access_token, 
+            'access_token' => Fb::getAppToken()
+        ));
+        $results = $req->run();
+        $userData = $results[0];
+        $tokenInfo = $results[1];
+        // processing user data
+        if(!isset($userData['name']) || !isset($userData['id']))
         {
-            throw new Exception('Faile to load user data: '.json_encode($data));
+            throw new Exception('Faile to load user data: '.json_encode($userData));
         }
         // update access_token if user has registered
         try
         {
-            $oldToken = self::getData($data['id'], 'access_token');
-            self::setData($data['id'], array('access_token' => $access_token));
+            self::setData($userData['id'], array('access_token' => $access_token));
         }
         catch(Exception $e)
         {
@@ -321,18 +321,14 @@ class Users
             }
         }
         // expiry
-        $response = Fb::api('/debug_token', array(
-            'input_token' => $access_token, 
-            'access_token' => Fb::getAppToken()
-        ));
-        if(isset($response['error']))
+        if(isset($tokenInfo['error']))
         {
-            throw new Exception($response['error']);
+            throw new Exception($tokenInfo['error']);
         }
         return array(
-            'name' => $data['name'], 
-            'uid' => $data['id'], 
-            'expiry' => $response['data']['expires_at'] - time()
+            'name' => $userData['name'], 
+            'uid' => $userData['id'], 
+            'expiry' => $tokenInfo['data']['expires_at'] - time()
         );
     }
 }

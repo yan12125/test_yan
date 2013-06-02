@@ -11,7 +11,16 @@ if(!function_exists('autoload'))
     function autoload($className)
     {
         $lowerClassName = strtolower($className[0]).substr($className, 1);
-        require APP_ROOT.'lib'.'/'.$lowerClassName.'.php';
+        $directories = array('lib', 'plugins');
+        foreach($directories as $directory)
+        {
+            $absPath = APP_ROOT.$directory.'/'.$lowerClassName.'.php';
+            if(file_exists($absPath))
+            {
+                require $absPath;
+                break;
+            }
+        }
     }
     spl_autoload_register('autoload');
 }

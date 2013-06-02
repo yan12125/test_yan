@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <title>sql.php</title>
-<script src="/HTML/library/jquery.js"></script>
-<script src="/HTML/library/codemirror.js"></script>
-<script src="/HTML/library/sql.js"></script>
-<link rel="stylesheet" href="/HTML/library/codemirror.css">
-<script src="util.js"></script>
+<?php
+require 'common_inc.php';
+echo External::loadJsCss('jquery', 'codemirror');
+?>
 <script>
 $(document).on('ready', function(e){
     var editor = CodeMirror.fromTextArea($('#query')[0], {
