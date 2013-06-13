@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <title>sql.php</title>
 <?php
-require 'common_inc.php';
-echo External::loadJsCss('jquery', 'codemirror');
+require '../common_inc.php';
+External::setRelativePath('..');
+echo External::loadJsCss('codemirror');
 ?>
 <script>
 $(document).on('ready', function(e){
@@ -25,14 +26,8 @@ $(document).on('ready', function(e){
     $('#b_submit').on('click', function(e){
         $('#result tbody').html('<tr></tr>');
         var q = editor.getDoc().getValue();
-        $.ajax({
-            url: 'wrapper.php', 
-            data: { action: 'query_sql', query:  q }, 
-            success: function(response, status, xhr){
+        callWrapper('query_sql', { query:  q }, function(response){
                 parseQueryResult(q, response, editor);
-            }, 
-            dataType: 'json', 
-            type: 'POST'
         });
     });
 });

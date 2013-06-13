@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <title>Text Manager</title>
 <?php
-require 'common_inc.php';
-echo External::loadJsCss('jquery', 'ajaxq');
+require '../common_inc.php';
+External::setRelativePath('..');
+echo External::loadJsCss();
 ?>
 <script>
 $(document).on('ready', function(e){

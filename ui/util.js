@@ -7,7 +7,9 @@ function escapeHtml(text)
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(/'/g, "&#039;")
+        // making strings containing continuous spaces be displayed correctly
+        .replace(/ /g, "&nbsp;");
 }
 
 function callWrapper(_action, _data, _success)
@@ -23,7 +25,7 @@ function callWrapper(_action, _data, _success)
     }
     _data.action = _action;
     var options = {
-        url: 'wrapper.php', 
+        url: Util.relativePath + '/wrapper.php', 
         type: 'POST', 
         dataType: 'json', 
         data: _data, 
@@ -34,3 +36,7 @@ function callWrapper(_action, _data, _success)
     }
     $.ajaxq('q_main', options);
 }
+
+var Util = {
+    relative_path: '.'
+};

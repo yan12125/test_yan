@@ -1,5 +1,5 @@
 <?php
-require 'common_inc.php';
+require '../common_inc.php';
 
 class Post
 {
@@ -66,11 +66,15 @@ class Post
         {
             try
             {
-                $request_path = '/'.$this->group['post_id'].'/comments';
-                $ret_obj=Fb::api($request_path, 'POST', array(
+                $req_path = '/'.$this->group['post_id'].'/comments';
+                $this->response['ret_obj'] = Fb::api($req_path, 'POST', array(
                     "message"=> $this->response['msg'],
                     "access_token"=>$this->userData['access_token']
                 ));
+                if(!isset($this->response['ret_obj']['id']))
+                {
+                    throw new Exception('Can\'t post to facebook');
+                }
                 Users::increaseUserCount($this->userData['uid']);
                 Stats::success(mb_strlen($this->response['msg'], 'UTF-8'));
             }
@@ -154,7 +158,8 @@ class Post
             }
             $this->response['user_data'][$field] = $this->userData[$field];
         }
-        unset($this->response['post_id']); // if arrive here, post_id not needed anymore
+        unset($this->response['post_id']); // remove unnecessary fields
+        unset($this->response['ret_obj']);
         if(isset($this->config['truncated_msg']))
         {
             $this->response['msg'] = Util::truncate($this->response['msg'], 10);
@@ -220,11 +225,13 @@ catch(Exception $e)
     if($errClass == 'ErrorException')
     {
         $response_error['severity'] = Util::getSeverityStr($e->getSeverity());
+        $response_error['file'] = basename($e->getFile());
+        $response_error['line'] = $e->getLine();
     }
 
     if($aPost instanceof Post)
     {
-        $aPost->report_fields(array('title', 'msg', 'm', 'processed', 'new_status', 'next_wait_time', 'group', 'post_id'), $response_error);
+        $aPost->report_fields(array('title', 'msg', 'm', 'processed', 'new_status', 'next_wait_time', 'group', 'post_id', 'ret_obj'), $response_error);
     }
     if(!isset($response_error['next_wait_time']))
     {

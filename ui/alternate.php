@@ -11,8 +11,9 @@
 }
 </style>
 <?php
-require 'common_inc.php';
-echo External::loadJsCss('jquery', 'ajaxq');
+require '../common_inc.php';
+External::setRelativePath('..');
+echo External::loadJsCss();
 ?>
 <script>
 var users={};
@@ -178,7 +179,7 @@ function add_user(_users, uid)
 function update_user_data(user_data)
 {
     var row = $("tr#u_"+user_data.uid);
-    row.find(".name").text(user_data.name);
+    row.find(".name").html(escapeHtml(user_data.name));
     if(typeof user_data.group != 'undefined')
     {
         row.find('.group').text(user_data.group);

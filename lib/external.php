@@ -3,6 +3,8 @@ class External
 {
     const EXT_PATH = '3rdparty/';
 
+    protected static $relativePath = '.';
+
     protected static $list = array(
         'php-sql-parser' => array(
             'path' => 'php-sql-parser/', 
@@ -68,11 +70,14 @@ class External
 
     public static function loadJsCss()
     {
-        $files = self::load('client', func_get_args());
-        array_push($files, 'util.js');
+        $modules = func_get_args();
+        array_unshift($modules, 'jquery', 'ajaxq');
+        $files = self::load('client', $modules);
+        array_push($files, 'ui/util.js');
         $output = '';
         foreach($files as $file)
         {
+            $file = self::$relativePath.'/'.$file;
             $ext = pathinfo($file, PATHINFO_EXTENSION);
             switch($ext)
             {
@@ -85,7 +90,14 @@ class External
             }
             $output .= "\n";
         }
+        $script = '$(document).on("ready", function(e){ Util.relativePath = "'.self::$relativePath.'"; });';
+        $output .= "<script language=\"javascript\">\n".$script."\n</script>\n";
         return $output;
+    }
+
+    public static function setRelativePath($path)
+    {
+        self::$relativePath = $path;
     }
 }
 ?>

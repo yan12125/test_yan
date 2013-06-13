@@ -4,15 +4,16 @@
 <title>table.php</title>
 <meta charset="UTF-8">
 <?php
-require 'common_inc.php';
-echo External::loadJsCss('jquery', 'jquery-ui', 'jqGrid');
+require '../common_inc.php';
+External::setRelativePath('..');
+echo External::loadJsCss('jquery-ui', 'jqGrid');
 ?>
 <script>
-function createTable(module, _action, columns, _caption)
+function createTable(_action, columns, _caption)
 {
     $('#wrapper').html('<table id="list"></table><div id="pager"></div>');
     var options = {
-        url: module,
+        url: '../wrapper.php',
         postData: { action: _action },
         mtype: 'POST', 
         datatype: "json",
@@ -43,7 +44,7 @@ function viewUsers()
         { caption: '授權碼有效', name: 'valid', width: 70 }, 
         { caption: '訊息', name: 'msg', width: 600 }
     ];
-    createTable('wrapper.php', 'view_users', columns, '所有使用者');
+    createTable('view_users', columns, '所有使用者');
 }
 
 function getStats()
@@ -54,7 +55,7 @@ function getStats()
         { caption: '失敗數', name: 'timed_out', width: 70 }, 
         { caption: '成功率', name: 'ratio', width: 70 }
     ];
-    createTable('wrapper.php', 'report_stats', columns, '發文字數統計');
+    createTable('report_stats', columns, '發文字數統計');
 }
 
 function runningState()
@@ -63,7 +64,7 @@ function runningState()
         { caption: '項目', name: 'name', width: 100 }, 
         { caption: '數值', name: 'value', width: 100 }, 
     ];
-    createTable('wrapper.php', 'running_state', columns, '洗版狀況');
+    createTable('running_state', columns, '洗版狀況');
 }
 </script>
 </head>

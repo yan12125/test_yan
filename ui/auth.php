@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'common_inc.php';
+require '../common_inc.php';
 
 // still return result for http codes other than 200 in file_get_contents
 // http://stackoverflow.com/questions/6718598/download-the-contents-of-a-url-in-php-even-if-it-returns-a-404
@@ -14,7 +14,7 @@ class Auth
         $params = http_build_query(array(
             'client_id' => $conf['appId'], 
             'scope' => 'publish_stream,user_groups', 
-            'redirect_uri' => $conf['rootUrl'].'auth.php'
+            'redirect_uri' => $conf['rootUrl'].'ui/auth.php'
         ));
         $authUrl='https://graph.facebook.com/oauth/authorize?'.$params;
         Header("Location: ".$authUrl);
@@ -26,7 +26,7 @@ class Auth
         $conf = Config::getParamArr(array('appId', 'appSecret', 'rootUrl'));
         $params = http_build_query(array(
             'client_id' => $conf['appId'], 
-            'redirect_uri' => $conf['rootUrl'].'auth.php', 
+            'redirect_uri' => $conf['rootUrl'].'ui/auth.php', 
             'client_secret' => $conf['appSecret'], 
             'code' => $fbCode
         ));
@@ -87,7 +87,7 @@ else
         header('Content-type: application/json');
         $tokenObj = Auth::getToken($_GET['code']);
         $_SESSION['access_token'] = $tokenObj['token'];
-        Header('Location: '.Config::getParam('rootUrl'));
+        Header('Location: '.Config::getParam('rootUrl').'ui/index.php');
     }
     catch(Exception $e)
     {

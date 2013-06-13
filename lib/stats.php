@@ -26,6 +26,8 @@ class Stats
         $num = $stmt->fetch(PDO::FETCH_NUM);
         $stmt = Db::query('select access_token from users where status="started" limit 1');
         $token = $stmt->fetch(PDO::FETCH_NUM);
+        $stmt = Db::query('select count(uid) from users where status="started"');
+        $userCount = $stmt->fetch(PDO::FETCH_NUM);
         $totalCount = 0;
         if(!is_null($token))
         {
@@ -33,6 +35,7 @@ class Stats
         }
         return array(
             array('name' => '每天發文數', 'value' => self::postRate()), 
+            array('name' => '洗版人數', 'value' => number_format($userCount[0])), 
             array('name' => 'App洗版數', 'value' => number_format($num[0])), 
             array('name' => '總留言數', 'value' => number_format($totalCount))
         );

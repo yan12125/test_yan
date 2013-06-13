@@ -3,8 +3,9 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <?php
-require 'common_inc.php';
-echo External::loadJsCss('jquery');
+require '../common_inc.php';
+External::setRelativePath('..');
+echo External::loadJsCss();
 ?>
 <script>
 function checkData()
@@ -27,28 +28,21 @@ $(document).on('ready', function(e){
     });
     $('#title').on('blur', function(e){
         $('#msg').text('');
-        $.post('wrapper.php', { action: 'check_title', title: $(this).val() }, function(response, status, xhr){
+        callWrapper('check_title', { title: $(this).val() }, function(response){
             if(response['status'] == 'title_exists')
             {
                 $('#msg').text(title_exists_msg);
             }
-        }, 'json');
+        });
     });
     $('#btn_submit').on('click', function(e){
         if(!checkData())
         {
             return;
         }
-        $.ajax({
-            url: 'wrapper.php', 
-            data: { 
-                action: 'add_text', 
-                title: $('#title').val(), 
-                texts: $('#texts').val()
-            }, 
-            type: 'POST', 
-            dataType: 'json', 
-            success: function(response, status, xhr){
+        callWrapper('add_text', 
+            { title: $('#title').val(), texts: $('#texts').val() }, 
+            function(response){
                 if(response['status'] == 'success')
                 {
                     alert('內容成功增加！');
@@ -63,7 +57,7 @@ $(document).on('ready', function(e){
                     $('#result').text(response['error']);
                 }
             }
-        });
+        );
     });
 });
 </script>
