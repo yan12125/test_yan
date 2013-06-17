@@ -331,5 +331,24 @@ class Users
             'expiry' => $tokenInfo['data']['expires_at'] - time()
         );
     }
+
+    public static function stripGroup($access_token, $gid)
+    {
+        // get uid from token
+        $userData = self::getBasicData($access_token);
+        $uid = $userData['uid'];
+        $groups = explode('_', self::getData($uid, 'groups'));
+        $index = array_search($gid, $groups);
+        if($index !== false)
+        {
+            unset($groups[$index]);
+            $groups = array_values($groups);
+        }
+        self::setData($uid, array('groups' => implode('_', $groups)));
+        if(count($groups) == 0)
+        {
+            self::setUserStatus($uid, 'stopped', $access_token);
+        }
+    }
 }
 ?>

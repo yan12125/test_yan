@@ -79,7 +79,7 @@ class Texts
             throw new Exception('Unable to find title '.$title);
         }
         $text = $arr['text'];
-        self::replaceTab($text);
+        Util::replaceTab($text);
         $json_text = json_decode($text, true);
         if(is_array($json_text))
         {
@@ -117,7 +117,7 @@ class Texts
                 'm' => -1 // used in output in post.php
             );
         }
-        self::replaceTab($arr['text']);
+        Util::replaceTab($arr['text']);
         $json_texts=json_decode($arr['text'], true);
         if(!is_array($json_texts) || count($json_texts) == 0) // if not valid json, json_decode return null, and count(null) is 0
         {
@@ -178,10 +178,6 @@ class Texts
                 throw $e;
             }
         }
-    }
-    protected static function replaceTab(&$text)
-    {
-        $text = str_replace('	', '    ', $text);
     }
 }
 ?>

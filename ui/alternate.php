@@ -40,17 +40,14 @@ function post2(uid)
         timeout: 30*1000, // in milliseconds
         success: function(response, status, xhr)
         {
-            if((typeof response["error"])!="undefined")
+            if(response["error"])
             {
                 var err_msg=response["error"];
-                if(typeof response["processed"] != "undefined")
-                {
-                    if(typeof response['new_status'] != "undefined")
-                    {   // no new status when "Timed out"
-                        $("#results").append(err_msg+"\n");
-                        users[uid]['status'] = response["new_status"];
-                        users[uid].bStarted = false; // "started" won't appear here
-                    }
+                if(response['new_status'])
+                {   // no new status when "Timed out"
+                    $("#results").append(err_msg+"\n");
+                    users[uid]['status'] = response["new_status"];
+                    users[uid].bStarted = false; // "started" won't appear here
                 }
                 else
                 {
@@ -88,7 +85,7 @@ function post2(uid)
             $("#results").append(status+" : "+escapeHtml(error)+"\n");
             var now=new Date();
             console.log(now.toLocaleTimeString());
-            if(typeof xhr.responseText != 'undefined') // undefined if timeout
+            if(xhr.responseText) // undefined if timeout
             {
                 console.log(xhr.responseText);
             }
@@ -130,8 +127,8 @@ function update_userList()
 	{
 		curIDs.push(uid);
 	}
-	callWrapper("list_users", { "IDs": curIDs.join('_') }, function(response, status, xhr){
-        if(typeof response.error != 'undefined')
+	callWrapper("list_users", { "IDs": curIDs.join('_') }, function(response){
+        if(response.error)
         {
             alert('無法取得使用者名單：' + response.error);
             return;
@@ -139,8 +136,9 @@ function update_userList()
         for(var i = 0;i < response.length;i++)
         {
             var uid = response[i].uid;
-            if(typeof response[i].name == "undefined") // not new users, only process status
+            if(!response[i].name) // not new users, only process status
             {
+                users[uid].status = response[i].status;
                 if(response[i].status=="started"&&users[uid].bStarted==false)
                 {
                     users[uid].bStarted=true;
@@ -163,7 +161,7 @@ function update_userList()
         {
             rows.eq(i).find("td:first").text(i);
         }
-	}, "json");
+	});
 }
 
 function add_user(_users, uid)
@@ -180,7 +178,7 @@ function update_user_data(user_data)
 {
     var row = $("tr#u_"+user_data.uid);
     row.find(".name").html(escapeHtml(user_data.name));
-    if(typeof user_data.group != 'undefined')
+    if(user_data.group)
     {
         row.find('.group').text(user_data.group);
     }

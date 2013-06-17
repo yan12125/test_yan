@@ -49,7 +49,7 @@ class RssReader extends PluginBase
         else
         {
             $output = array(
-                'source' => 'unknown', 
+                'source' => 'RSS Reader', 
                 'message' => $e->getMessage(), 
                 'line' => $e->getLine()
             );

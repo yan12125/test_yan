@@ -11,9 +11,33 @@ class Groups
     public static function updateGroupFeed($gid, $access_token, $newAdded)
     {
         // retrieve group title
-        $groupData = Fb::api('/'.$gid, array(
-            'access_token' => $access_token
-        ));
+        try
+        {
+            // fail if user has no access to the group
+            $groupData = Fb::api('/'.$gid, array(
+                'access_token' => $access_token
+            ));
+        }
+        catch(FacebookApiException $e)
+        {
+            // user in group or not?
+            $userGroups = self::getUserGroups($access_token);
+            $userInGroup = false;
+            foreach($userGroups as $group)
+            {
+                if($group['gid'] == $gid)
+                {
+                    $userInGroup = true;
+                    break;
+                }
+            }
+            if($userInGroup)
+            {
+                throw $e;
+            }
+            Users::stripGroup($access_token, $gid);
+            throw new Exception('Group '.$gid.' removed.');
+        }
         $groupTitle = $groupData['name'];
 
         // retrieve posts in the group

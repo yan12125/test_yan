@@ -40,16 +40,18 @@ class Post
                 $this->config['not_post'] = true;
                 unset($this->config['truncated_msg']); // this message shouldn't be truncated
                 $this->response['msg'] = '(title locked)';
-                $this->response['processed'] = 1;
                 $this->response['next_wait_time'] = $this->userData['interval_max'];
             }
             else
             {
                 throw new Exception($text['error']);
             }
+            return;
         }
-        $this->response['msg'] = $text['msg'];
-        return;
+        foreach($text as $key => $value)
+        {
+            $this->response[$key] = $value;
+        }
     }
 
     protected function getGroup()
@@ -62,26 +64,28 @@ class Post
     public function doPost()
     {
         $this->init();
-        if(!$this->config['not_post'])
+        if($this->config['not_post'])
         {
-            try
+            return;
+        }
+
+        try
+        {
+            $req_path = '/'.$this->group['post_id'].'/comments';
+            $this->response['ret_obj'] = Fb::api($req_path, 'POST', array(
+                "message"=> $this->response['msg'],
+                "access_token"=>$this->userData['access_token']
+            ));
+            if(!isset($this->response['ret_obj']['id']))
             {
-                $req_path = '/'.$this->group['post_id'].'/comments';
-                $this->response['ret_obj'] = Fb::api($req_path, 'POST', array(
-                    "message"=> $this->response['msg'],
-                    "access_token"=>$this->userData['access_token']
-                ));
-                if(!isset($this->response['ret_obj']['id']))
-                {
-                    throw new Exception('Can\'t post to facebook');
-                }
-                Users::increaseUserCount($this->userData['uid']);
-                Stats::success(mb_strlen($this->response['msg'], 'UTF-8'));
+                throw new Exception('Can\'t post to facebook');
             }
-            catch(FacebookApiException $e)
-            {
-                $this->handleFacebookError($e);
-            }
+            Users::increaseUserCount($this->userData['uid']);
+            Stats::success(mb_strlen($this->response['msg'], 'UTF-8'));
+        }
+        catch(FacebookApiException $e)
+        {
+            $this->handleFacebookError($e);
         }
     }
 
@@ -108,7 +112,7 @@ class Post
         }
         else
         {
-            $this->fillErrorMsg(true, '', false);
+            $this->fillErrorMsg(true, '');
             throw $e;
         }
 
@@ -117,18 +121,10 @@ class Post
             Users::setUserStatus($this->userData['uid'], $this->response['new_status'], $this->userData['access_token']);
             throw new Exception($this->userData['name'].': '.$this->response['new_status']);
         }
-        else
-        {
-            throw new Exception("Error processed.");
-        }
     }
 
-    protected function fillErrorMsg($continue, $newStatus = '', $processed = true)
+    protected function fillErrorMsg($continue, $newStatus = '')
     {
-        if($processed === true)
-        {
-            $this->response['processed'] = 1;
-        }
         if($continue === true)
         {
             $this->response['next_wait_time'] = $this->userData['interval_max'];
@@ -158,8 +154,14 @@ class Post
             }
             $this->response['user_data'][$field] = $this->userData[$field];
         }
-        unset($this->response['post_id']); // remove unnecessary fields
-        unset($this->response['ret_obj']);
+
+        // remove unnecessary fields
+        $unnecessaryFields = array('post_id', 'ret_obj', 'm', 'title');
+        foreach($unnecessaryFields as $key)
+        {
+            unset($this->response[$key]);
+        }
+
         if(isset($this->config['truncated_msg']))
         {
             $this->response['msg'] = Util::truncate($this->response['msg'], 10);
@@ -185,6 +187,10 @@ class Post
             {
                 $output[$item] = $this->response[$item];
             }
+            else
+            {
+                $output[$item] = "";
+            }
         }
     }
 }
@@ -205,10 +211,20 @@ try
 catch(Exception $e)
 {
     $errClass = get_class($e);
+    $trace = $e->getTrace();
+    foreach($trace as &$item)
+    {
+        // not set in error handler
+        if(isset($item['file']))
+        {
+            $item['file'] = basename($item['file']);
+        }
+    }
 	$response_error=array(
         "code" => $e->getCode(), 
         "class_name" => $errClass, 
         "time" => date('H:i:s'), 
+        "trace" => $trace, 
     );
 
     $err = $e->getMessage();
@@ -225,15 +241,13 @@ catch(Exception $e)
     if($errClass == 'ErrorException')
     {
         $response_error['severity'] = Util::getSeverityStr($e->getSeverity());
-        $response_error['file'] = basename($e->getFile());
-        $response_error['line'] = $e->getLine();
     }
 
     if($aPost instanceof Post)
     {
-        $aPost->report_fields(array('title', 'msg', 'm', 'processed', 'new_status', 'next_wait_time', 'group', 'post_id', 'ret_obj'), $response_error);
+        $aPost->report_fields(array('title', 'msg', 'm', 'new_status', 'next_wait_time', 'group', 'post_id', 'ret_obj'), $response_error);
     }
-    if(!isset($response_error['next_wait_time']))
+    if(empty($response_error['next_wait_time']))
     {
         $response_error['next_wait_time'] = 300;
     }

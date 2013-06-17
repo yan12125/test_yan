@@ -182,5 +182,10 @@ class Util
         }
         set_include_path(get_include_path().PATH_SEPARATOR.$path);
     }
+
+    public static function replaceTab(&$text)
+    {
+        $text = str_replace('	', '    ', $text);
+    }
 }
 ?>
