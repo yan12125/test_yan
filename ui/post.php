@@ -92,6 +92,7 @@ class Post
     protected function handleFacebookError(FacebookApiException $e)
     {
         $err = $e->getMessage();
+        $this->response['msg'] = $err;
         if(strpos($err, 'banned') !== false)
         {
             $this->fillErrorMsg(false, 'banned');
@@ -112,7 +113,7 @@ class Post
         }
         else
         {
-            $this->fillErrorMsg(true, '');
+            $this->fillErrorMsg(true);
             throw $e;
         }
 

@@ -294,12 +294,13 @@ class Users
     public static function getBasicData($access_token)
     {
         // called when login from index.php
-        $req = new FbBatch();
-        $req->push('/me', array('access_token' => $access_token));
+        $req = new FbBatch($access_token);
+        $req->push('/me');
         $req->push('/debug_token', array(
             'input_token' => $access_token, 
             'access_token' => Fb::getAppToken()
         ));
+        $req->push('/me/groups');
         $results = $req->run();
         $userData = $results[0];
         $tokenInfo = $results[1];
@@ -325,10 +326,19 @@ class Users
         {
             throw new Exception($tokenInfo['error']);
         }
+        $groups = array();
+        foreach($results[2]['data'] as $group)
+        {
+            $groups[] = array(
+                'name' => $group['name'], 
+                'gid' => $group['id']
+            );
+        }
         return array(
             'name' => $userData['name'], 
             'uid' => $userData['id'], 
-            'expiry' => $tokenInfo['data']['expires_at'] - time()
+            'expiry' => $tokenInfo['data']['expires_at'] - time(), 
+            'groups' => $groups
         );
     }
 

@@ -53,10 +53,6 @@ try
         /*
          * groups.php
          */
-        case 'get_groups':
-            Util::checkPOST(array('access_token'));
-            echo Util::json_unicode(Groups::getUserGroups($_POST['access_token']));
-            break;
         case 'get_group_info':
             Util::checkPOST(array('access_token', 'gid'));
             echo Util::json_unicode(Groups::getFromGroup($_POST['gid'], $_POST['access_token']));

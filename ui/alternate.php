@@ -42,17 +42,16 @@ function post2(uid)
         {
             if(response["error"])
             {
-                var err_msg=response["error"];
+                window.errors.push(response);
                 if(response['new_status'])
                 {   // no new status when "Timed out"
-                    $("#results").append(err_msg+"\n");
+                    $("#results").append(response.error + "\n");
                     users[uid]['status'] = response["new_status"];
                     users[uid].bStarted = false; // "started" won't appear here
                 }
                 else
                 {
                     $("#results").append("Error from "+users[uid].name+"\n");
-                    window.errors.push(response);
                 }
                 users[uid].wait_time = response["next_wait_time"];
                 if(users[uid].wait_time > 0)

@@ -35,6 +35,7 @@ $(document).on('ready', function(e){
         }
         document.title = data.name;
         $('#uid').val(data.uid);
+        window.userGroups = data.groups;
         get_info(true); // first time getting info, update all information
         // expiry
         var expiry = data.expiry;
@@ -122,13 +123,6 @@ function getTitles(userTitles)
         $('.title_choose :checkbox').click(function(e){
             $(this).next().toggleClass('selected_item');
         });
-    });
-}
-
-function getGroups(userGroups)
-{
-    callWrapper('get_groups', { access_token: $('#token').val() }, function(response){
-        parseGroups(response, userGroups);
     });
 }
 
@@ -245,7 +239,7 @@ function get_info(initial)
                 // default setting for new users
                 getTitles([]); // no titles selected
                 callWrapper('get_primary_group', function(response){
-                    getGroups(response.primary_group);
+                    parseGroups(window.userGroups, response.primary_group);
                 });
                 return;
             }
@@ -269,7 +263,7 @@ function get_info(initial)
             $('input[name="interval_min"]').val(response["interval_min"]);
             $('input[name="goal"]').val(response["goal"]);
             getTitles(JSON.parse(response['titles']));
-            getGroups(response['groups']);
+            parseGroups(window.userGroups, response['groups']);
         }
         $("#count").html(response["count"]);
     });

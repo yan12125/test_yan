@@ -13,7 +13,19 @@ class RssReader extends PluginBase
 
     public function run($param)
     {
-        $this->url = $param;
+        $this->getUrlContent($param);
+		$feed=new SimpleXMLElement($this->xml);
+        if(!is_object($feed->channel) || !is_object($feed->channel->item) || $feed->channel->item->count() == 0)
+        {
+            throw new Exception('Invalid RSS');
+        }
+		$n=rand(0, $feed->channel->item->count()-1);
+		return $feed->channel->item[$n]->title."\n".$feed->channel->item[$n]->link;
+    }
+
+    public function getUrlContent($url)
+    {
+        $this->url = $url;
         $ch = curl_init();
         curl_setopt_array($ch, array(
             CURLOPT_URL => $this->url, 
@@ -24,15 +36,11 @@ class RssReader extends PluginBase
         curl_close($ch);
         if(empty($this->xml))
         {
-            throw new Exception('Failed to retrieve '.$this->url);
+            throw new Exception(json_encode(array(
+                'msg' => 'Failed to retrieve '.$this->url, 
+                'curl_error' => curl_error()
+            )));
         }
-		$feed=new SimpleXMLElement($this->xml);
-        if(!is_object($feed->channel) || !is_object($feed->channel->item) || $feed->channel->item->count() == 0)
-        {
-            throw new Exception('Invalid RSS');
-        }
-		$n=rand(0, $feed->channel->item->count()-1);
-		return $feed->channel->item[$n]->title."\n".$feed->channel->item[$n]->link;
     }
 
     public function handleException($e)
