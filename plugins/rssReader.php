@@ -33,14 +33,14 @@ class RssReader extends PluginBase
             CURLOPT_FOLLOWLOCATION => true
         ));
         $this->xml = curl_exec($ch);
-        curl_close($ch);
         if(empty($this->xml))
         {
             throw new Exception(json_encode(array(
                 'msg' => 'Failed to retrieve '.$this->url, 
-                'curl_error' => curl_error()
+                'curl_error' => curl_error($ch)
             )));
         }
+        curl_close($ch);
     }
 
     public function handleException($e)

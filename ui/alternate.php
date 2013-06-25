@@ -18,7 +18,8 @@ echo External::loadJsCss();
 <script>
 var users={};
 var errors=[];
-var debug = 0;
+var debug = false;
+var pause = false;
 
 function post2(uid)
 {
@@ -26,6 +27,7 @@ function post2(uid)
 	{
         return false;
     }
+    users[uid].bStarted = false;
 
     var _data = { "uid":users[uid].uid, "truncated_msg": 1 };
     if(debug)
@@ -40,6 +42,7 @@ function post2(uid)
         timeout: 30*1000, // in milliseconds
         success: function(response, status, xhr)
         {
+            users[uid].bStarted = true;
             if(response["error"])
             {
                 window.errors.push(response);
@@ -54,18 +57,13 @@ function post2(uid)
                     $("#results").append("Error from "+users[uid].name+"\n");
                 }
                 users[uid].wait_time = response["next_wait_time"];
-                if(users[uid].wait_time > 0)
-                {
-                    countDown(uid);
-                }
             }
             else
             {
                 var msg=response["msg"];
-                $("tr#u_"+users[uid].uid+" td.last_msg").text(msg);
-                $("tr#u_"+users[uid].uid+" td.group").text(response['group']);
+                users[uid].last_msg = msg;
+                users[uid].group = response['group'];
                 users[uid].wait_time=parseFloat(response["next_wait_time"]);
-                countDown(uid);
 
                 // update user data
                 for(var s in response["user_data"])
@@ -76,11 +74,11 @@ function post2(uid)
                 {
                     users[uid].bStarted=false;
                 }
-                update_user_data(users[uid]);
             }
         }, 
         error: function(xhr, status, error)
         {
+            users[uid].bStarted = true;
             $("#results").append(status+" : "+escapeHtml(error)+"\n");
             var now=new Date();
             console.log(now.toLocaleTimeString());
@@ -100,23 +98,8 @@ function post2(uid)
                 }
             }
             users[uid].wait_time=300;
-            countDown(uid);
         }
     });
-}
-
-function countDown(uid)
-{
-    $("tr#u_"+uid+" td.time").text(Math.floor(users[uid].wait_time).toString());
-    if(users[uid].wait_time>=1)
-    {
-        users[uid].wait_time--;
-        setTimeout(function(){ countDown(uid); }, 1000);
-    }
-    else if(users[uid].wait_time>=0) // if users[uid].wait_time < 0, just ignore
-    {
-        setTimeout(function(){ post2(uid); }, users[uid].wait_time*1000);
-    }
 }
 
 function update_userList()
@@ -141,7 +124,6 @@ function update_userList()
                 if(response[i].status=="started"&&users[uid].bStarted==false)
                 {
                     users[uid].bStarted=true;
-                    post2(uid);
                 }
                 if(response[i].status=="stopped"&&users[uid].bStarted==true)
                 {
@@ -181,6 +163,10 @@ function update_user_data(user_data)
     {
         row.find('.group').text(user_data.group);
     }
+    if(user_data.last_msg)
+    {
+        row.find('.last_msg').text(user_data.last_msg);
+    }
 }
 
 function get_user_rows()
@@ -193,22 +179,56 @@ function get_user(n)
     return users[get_user_rows()[n].id.substr(2)]; // id is u_xxxx...xxxx
 }
 
-$(document).on('ready', function(e){
-    var timer_updateUserList = null;
-    $("#btn_start").on('click', function(e) {
-        if(timer_updateUserList == null)
+function mainLoop()
+{
+    if(pause)
+    {
+        return;
+    }
+    var someoneStarted = false;
+    for(var uid in users)
+    {
+        var user = users[uid];
+        update_user_data(user);
+        if(!user.bStarted)
         {
-            update_userList();
-            timer_updateUserList = setInterval(update_userList, 60*1000);
+            continue;
         }
+        someoneStarted = true;
+        if(user.wait_time > 0)
+        {
+            user.wait_time--;
+            var countdownValue = Math.ceil(user.wait_time).toString();
+            $("tr#u_"+uid+" td.time").text(countdownValue);
+        }
+        else if(users[uid].wait_time <= 0)
+        {
+            post2(uid);
+        }
+    }
+    var timestamp = new Date().getTime();
+    timestamp = (timestamp - timestamp%1000)/1000;
+    if(timestamp%30 == 0 && someoneStarted)
+    {
+        update_userList();
+    }
+}
+
+$(document).on('ready', function(e){
+    $("#btn_start").on('click', function(e) {
+        update_userList();
     });
     $("#btn_stop").on('click', function(e){
-        clearTimeout(timer_updateUserList);
-        timer_updateUserList = null;
         for(var uid in users)
         {
-            users[uid].bStarted=false;
+            users[uid].bStarted = false;
+            users[uid].wait_time = 0;
+            $('#users td.time').text('0');
         }
+    });
+    $('#btn_pause').on('click', function(e){
+        $(this).val(window.pause?'Pause':'Resume');
+        window.pause = !window.pause;
     });
     $("#btn_clearLog").on('click', function(e){
         $("#results").text('');
@@ -219,18 +239,17 @@ $(document).on('ready', function(e){
             console.log(i + '\t' + errors[i].error);
         }
     });
+    $("#chk_debug").on('click', function(e){
+        window.debug = ($('#chk_debug').attr('checked') === 'checked');
+    });
     // confirm when closing page
     // http://stackoverflow.com/questions/7080269/javascript-before-leaving-the-page
     $(window).on('beforeunload', function(e){
         var still_running = false;
-        if(timer_updateUserList)
-        {
-            still_running = true;
-        }
         for(var uid in users)
         {
-            if(users[uid].bStarted || users[uid].wait_time > 1)
-            {   // wait_time might be between when stopped
+            if(users[uid].bStarted)
+            {
                 still_running = true;
             }
         }
@@ -240,6 +259,7 @@ $(document).on('ready', function(e){
         }
     });
     update_userList();
+    setInterval(function(){ mainLoop(); }, 1000);
 });
 </script>
 </head>
@@ -259,8 +279,10 @@ $(document).on('ready', function(e){
 			<textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="20"></textarea><br>
 			<input type="button" id="btn_start" value="Start">
 			<input type="button" id="btn_stop" value="Stop">
+            <input type="button" id="btn_pause" value="Pause"><br>
 			<input type="button" id="btn_clearLog" value="clear log">
             <input type="button" id="btn_print_error" value="Print errors"><br>
+            <input type="checkbox" id="chk_debug">Debug<br>
             <a href="sql.php">execute SQL</a>
             <a href="table.php">Tables</a>
             <a href="text_mgr.php">Text Manager</a><br>
