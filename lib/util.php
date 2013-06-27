@@ -33,7 +33,7 @@ class Util
         * Add ... if truncated
         Reference: http://stackoverflow.com/questions/4601032/php-iterate-on-string-characters
     */
-    public static function truncate($str, $len)
+    public static function truncate(&$str, $len)
     {
         $char_arr = preg_split('/(?<!^)(?!$)/u', $str);
         $cur_len = 0;
@@ -48,7 +48,7 @@ class Util
             }
             $ret_val .= $char;
         }
-        return $ret_val;
+        $str = $ret_val;
     }
 
     /*

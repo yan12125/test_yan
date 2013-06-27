@@ -53,5 +53,10 @@ class FbBatch
         }
         return $results;
     }
+
+    public function getCount()
+    {
+        return count($this->queries);
+    }
 }
 ?>

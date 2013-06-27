@@ -21,15 +21,101 @@ var errors=[];
 var debug = false;
 var pause = false;
 
-function post2(uid)
+function handlePost(uid, response)
 {
-	if(!users[uid].bStarted)
-	{
-        return false;
+    if(response.error)
+    {
+        window.errors.push(response);
+        if(response.new_status)
+        {   // no new status when "Timed out"
+            $("#results").append(response.error + "\n");
+            users[uid]['status'] = response.new_status;
+            users[uid].bStarted = false; // "started" won't appear here
+        }
+        else
+        {
+            $("#results").append("Error from "+users[uid].name+"\n");
+        }
+        users[uid].wait_time = response["next_wait_time"];
     }
-    users[uid].bStarted = false;
+    else
+    {
+        users[uid].last_msg = response.msg;
+        users[uid].group = response.group;
+        users[uid].wait_time = parseFloat(response.next_wait_time);
 
-    var _data = { "uid":users[uid].uid, "truncated_msg": 1 };
+        // update user data
+        for(var s in response["user_data"])
+        {
+            users[uid][s]=response["user_data"][s];
+        }
+        if(response["user_data"]["status"]!="started")
+        {
+            users[uid].bStarted=false;
+        }
+    }
+    users[uid].posting = false;
+}
+
+function handleGlobalError(uids, response)
+{
+    window.errors.push(response);
+    var involvedUsers = [];
+    for(var i in uids)
+    {
+        var uid = uids[i];
+        involvedUsers.push(users[uid].name);
+        users[uid].wait_time = response[uid].next_wait_time;
+        users[uid].posting = false;
+    }
+    $('#results').append('Error from ' + involvedUsers.join('、') + "\n");
+}
+
+function handleServerError(uids, status, error, xhr)
+{
+    $("#results").append(status+" : "+escapeHtml(error)+"\n");
+    var now=new Date();
+    console.log(now.toLocaleTimeString());
+    if(xhr.responseText) // undefined if timeout
+    {
+        console.log(xhr.responseText);
+    }
+    if(xhr.status == 500)
+    {
+        // postpone all "running" users
+        for(var _uid in users)
+        {
+            if(users[_uid].bStarted)
+            {
+                users[_uid].wait_time = 300;
+            }
+        }
+    }
+    for(var i in uids)
+    {
+        var uid = uids[i];
+        users[uid].wait_time=300;
+        users[uid].posting = false;
+    }
+}
+
+function post2(uids)
+{
+    if(uids.length == 0)
+    {
+        return;
+    }
+    var realPostUids = [];
+    for(var i = 0;i < uids.length;i++)
+    {
+        if(users[uids[i]].bStarted)
+        {
+            realPostUids.push(uids[i]);
+            users[uids[i]].posting = true;
+        }
+    }
+
+    var _data = { "uids": realPostUids.join('_'), "truncated_msg": 1 };
     if(debug)
     {
         _data["debug"] = 1;
@@ -42,62 +128,27 @@ function post2(uid)
         timeout: 30*1000, // in milliseconds
         success: function(response, status, xhr)
         {
-            users[uid].bStarted = true;
-            if(response["error"])
+            if(response.error)
             {
-                window.errors.push(response);
-                if(response['new_status'])
-                {   // no new status when "Timed out"
-                    $("#results").append(response.error + "\n");
-                    users[uid]['status'] = response["new_status"];
-                    users[uid].bStarted = false; // "started" won't appear here
-                }
-                else
-                {
-                    $("#results").append("Error from "+users[uid].name+"\n");
-                }
-                users[uid].wait_time = response["next_wait_time"];
+                handleGlobalError(realPostUids, response);
+                return;
+            }
+            if(realPostUids.length == 1)
+            {
+                handlePost(realPostUids[0], response);
             }
             else
             {
-                var msg=response["msg"];
-                users[uid].last_msg = msg;
-                users[uid].group = response['group'];
-                users[uid].wait_time=parseFloat(response["next_wait_time"]);
-
-                // update user data
-                for(var s in response["user_data"])
+                for(var i in realPostUids)
                 {
-                    users[uid][s]=response["user_data"][s];
-                }
-                if(response["user_data"]["status"]!="started")
-                {
-                    users[uid].bStarted=false;
+                    var uid = realPostUids[i];
+                    handlePost(uid, response[uid]);
                 }
             }
         }, 
         error: function(xhr, status, error)
         {
-            users[uid].bStarted = true;
-            $("#results").append(status+" : "+escapeHtml(error)+"\n");
-            var now=new Date();
-            console.log(now.toLocaleTimeString());
-            if(xhr.responseText) // undefined if timeout
-            {
-                console.log(xhr.responseText);
-            }
-            if(xhr.status == 500)
-            {
-                // postpone all "running" users
-                for(var _uid in users)
-                {
-                    if(users[_uid].bStarted)
-                    {
-                        users[_uid].wait_time = 300;
-                    }
-                }
-            }
-            users[uid].wait_time=300;
+            handleServerError(realPostUids, status, error, xhr);
         }
     });
 }
@@ -186,11 +237,12 @@ function mainLoop()
         return;
     }
     var someoneStarted = false;
+    var postUids = [];
     for(var uid in users)
     {
         var user = users[uid];
         update_user_data(user);
-        if(!user.bStarted)
+        if(!user.bStarted || user.posting)
         {
             continue;
         }
@@ -203,9 +255,11 @@ function mainLoop()
         }
         else if(users[uid].wait_time <= 0)
         {
-            post2(uid);
+            postUids.push(uid);
         }
     }
+    post2(postUids);
+
     var timestamp = new Date().getTime();
     timestamp = (timestamp - timestamp%1000)/1000;
     if(timestamp%30 == 0 && someoneStarted)
