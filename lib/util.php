@@ -15,9 +15,9 @@ class Util
             $max=$min;
             $min=$temp;
         }
-        $U=rand()/getrandmax();		// uniformly distributed random variables
+        $U=rand()/getrandmax();     // uniformly distributed random variables
         $V=rand()/getrandmax();
-        $sgd=sqrt(-2*log($U))*cos(2*M_PI*$V);	// random number with standard gaussian distribution
+        $sgd=sqrt(-2*log($U))*cos(2*M_PI*$V);   // random number with standard gaussian distribution
         $nRandom=$sgd*($max-$min)/$nSigma+($min+$max)/2;
 
         // restrict the result in the range
@@ -185,7 +185,7 @@ class Util
 
     public static function replaceTab(&$text)
     {
-        $text = str_replace('	', '    ', $text);
+        $text = str_replace("\t", '    ', $text);
     }
 }
 ?>

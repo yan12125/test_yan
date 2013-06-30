@@ -36,7 +36,7 @@ class Texts
         {
             return $result;
         }
-		$query="INSERT INTO texts (title,handler,text) VALUES (?,NULL,?)";
+        $query="INSERT INTO texts (title,handler,text) VALUES (?,NULL,?)";
         $textArr = explode("\n", str_replace("\r\n", "\n", $texts));
 
         // remove empty lines
@@ -50,9 +50,9 @@ class Texts
         $texts = Util::json_unicode($textArr);
         $stmt = Db::prepare($query);
         if($stmt->execute(array($title, $texts)) === false)
-		{
-			throw new Exception("PDO execute() failed: ".Db::getErr());
-		}
+        {
+            throw new Exception("PDO execute() failed: ".Db::getErr());
+        }
         return array('status' => 'success');
     }
 

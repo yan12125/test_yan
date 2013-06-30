@@ -52,7 +52,7 @@ $(document).on('ready', function(e){
     var selectRandom = function(probability){
         var checkboxes = $('.title_choose :checkbox');
         var titleTexts = $('.title_choose span');
-    	checkboxes.attr("checked", false);
+        checkboxes.attr("checked", false);
         titleTexts.removeClass('selected_item');
         for(var i = 0;i < checkboxes.length;i++)
         {
@@ -106,7 +106,7 @@ function logout()
 
 function getTitles(userTitles)
 {
-	callWrapper('list_titles', function(textgroups){
+    callWrapper('list_titles', function(textgroups){
         for(var i=0;i<textgroups.length;i++)
         {
             var titles_div = $('.title_choose');
@@ -168,9 +168,9 @@ function parseGroups(allGroups, userGroups)
 function start2()
 {
     add_user(function(){
-    	$("#status").html("代洗中");
-	    $("#btnStart").attr("disabled", true);
-    	$("#btnStop").attr("disabled", false);
+        $("#status").html("代洗中");
+        $("#btnStart").attr("disabled", true);
+        $("#btnStop").attr("disabled", false);
     });
 }
 
@@ -212,14 +212,14 @@ function add_user(cb)
         alert('至少要選一個社團！');
         return;
     }
-	callWrapper("add_user", {
-		"interval_max": $('input[name="interval_max"]').val(), 
-		"interval_min": $('input[name="interval_min"]').val(), 
-		"titles": JSON.stringify($.makeArray(titleList)), 
+    callWrapper("add_user", {
+        "interval_max": $('input[name="interval_max"]').val(), 
+        "interval_min": $('input[name="interval_min"]').val(), 
+        "titles": JSON.stringify($.makeArray(titleList)), 
         "groups": $.makeArray(userGroups).join('_'), 
-		"access_token": $('#token').val(), 
-		"goal": $('input[name="goal"]').val()
-	}, function(){
+        "access_token": $('#token').val(), 
+        "goal": $('input[name="goal"]').val()
+    }, function(){
         if(typeof cb == 'function')
         {
             cb();
@@ -229,7 +229,7 @@ function add_user(cb)
 
 function get_info(initial)
 {
-	callWrapper("get_user_info", { "uid": $('#uid').val() }, function(response){
+    callWrapper("get_user_info", { "uid": $('#uid').val() }, function(response){
         var msg="";
         if(typeof response["error"] != "undefined")
         {

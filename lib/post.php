@@ -1,8 +1,7 @@
 <?php
-require '../common_inc.php';
-
 class Post
 {
+    protected static $posts; // class instances
     protected $uids;
     protected $config;
     protected $userData;
@@ -43,7 +42,14 @@ class Post
         for($i = 0;$i < count($this->uids);$i++)
         {
             $uid = $this->uids[$i];
-            $this->userData[$uid] = Users::getData($uid, '*');
+            $userData = $this->userData[$uid] = Users::getData($uid, '*');
+            if($userData['count'] >= $userData['goal'])
+            {
+                $this->config[$uid]['not_post'] = true;
+                $this->fillErrorMsg($uid, false, 'stopped');
+                $this->response[$uid]['error'] = $userData['name'].' : goal achieved';
+                Users::setUserStatus($uid, 'stopped', $userData['access_token']);
+            }
             $this->getGroup($uid);
             $this->getTextItem($uid);
             if($this->config[$uid]['debug'])
@@ -67,7 +73,7 @@ class Post
             }
             else
             {
-                throw new Exception($text['error']);
+                throw new Exception(json_encode($text));
             }
             return;
         }
@@ -138,7 +144,8 @@ class Post
     protected function handleFacebookError($uid, $e)
     {
         $err = $e['message'];
-        $this->response[$uid]['error'] = $err;
+        $this->response[$uid]['fbErr'] = $err;
+        $this->response[$uid]['error'] = '';
         $this->config[$uid]['truncated_msg'] = false;
         if(strpos($err, 'banned') !== false)
         {
@@ -169,6 +176,10 @@ class Post
             Users::setUserStatus($this->userData[$uid]['uid'], $this->response[$uid]['new_status'], $this->userData[$uid]['access_token']);
             $err = $this->userData[$uid]['name'].': '.$this->response[$uid]['new_status'];
             $this->response[$uid]['error'] = $err;
+        }
+        if(empty($this->response[$uid]['error']))
+        {
+            $this->response[$uid]['error'] = $this->response[$uid]['fbErr'];
         }
     }
 
@@ -257,81 +268,25 @@ class Post
         }
     }
 
-    public function report_fields(&$output)
+    public static function postUids($uids, $config)
     {
-        for($i = 0;$i < count($this->uids);$i++)
+        Util::ip_only('127.0.0.1');
+        self::$posts = new Post($uids, $config);
+        self::$posts->doPost();
+        return self::$posts->getResponse();
+    }
+
+    public static function report_fields(&$output)
+    {
+        if(self::$posts instanceof Post)
         {
-            $uid = $this->uids[$i];
-            $output[$uid] = array();
-            $this->reportFieldsPerUser($this->uids[$i], $output[$uid]);
+            for($i = 0;$i < count(self::$posts->uids);$i++)
+            {
+                $uid = self::$posts->uids[$i];
+                $output[$uid] = array();
+                self::$posts->reportFieldsPerUser($uid, $output[$uid]);
+            }
         }
     }
 }
-
-$posts = array();
-try
-{
-    Util::ip_only('127.0.0.1');
-    header("Content-type: application/json; charset=UTF-8");
-
-    Util::checkPOST(array('uids'));
-
-    $posts = new Post($_POST['uids'], $_POST);
-    $posts->doPost();
-
-    echo Util::json_unicode($posts->getResponse());
-}
-catch(Exception $e)
-{
-    $errClass = get_class($e);
-    $trace = $e->getTrace();
-    foreach($trace as &$item)
-    {
-        // not set in error handler
-        if(isset($item['file']))
-        {
-            $item['file'] = basename($item['file']);
-        }
-    }
-	$response_error=array(
-        "code" => $e->getCode(), 
-        "class_name" => $errClass, 
-        "time" => date('H:i:s'), 
-        "trace" => $trace, 
-    );
-
-    $err = $e->getMessage();
-    $err_json = json_decode($err, true);
-    if(!is_null($err_json))
-    {
-        $response_error['error'] = $err_json;
-    }
-    else
-    {
-        $response_error['error'] = $err;
-    }
-
-    if($errClass == 'ErrorException')
-    {
-        $response_error['severity'] = Util::getSeverityStr($e->getSeverity());
-    }
-
-    if(method_exists($posts, 'report_fields'))
-    {
-        $posts->report_fields($response_error);
-    }
-    try
-    {
-        echo json_encode($response_error);
-    }
-    catch(Exception $e)
-    {
-        $err = var_export($response_error, true);
-        echo json_encode(array(
-            'error' => iconv('UTF-8', 'UTF-8//IGNORE', $err), 
-            'next_wait_time' => 300
-        ));
-    }
-}
-
 ?>

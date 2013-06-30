@@ -10,15 +10,15 @@ echo External::loadJsCss();
 <script>
 function checkData()
 {
-	if($("#title").val() != "" && $("#texts").val() != "")
-	{
-		return true;
-	}
-	else
-	{
-		alert("標題和內容皆為必填！");
-		return false;
-	}
+    if($("#title").val() != "" && $("#texts").val() != "")
+    {
+        return true;
+    }
+    else
+    {
+        alert("標題和內容皆為必填！");
+        return false;
+    }
 }
 
 $(document).on('ready', function(e){

@@ -25,18 +25,7 @@ function handlePost(uid, response)
 {
     if(response.error)
     {
-        window.errors.push(response);
-        if(response.new_status)
-        {   // no new status when "Timed out"
-            $("#results").append(response.error + "\n");
-            users[uid]['status'] = response.new_status;
-            users[uid].bStarted = false; // "started" won't appear here
-        }
-        else
-        {
-            $("#results").append("Error from "+users[uid].name+"\n");
-        }
-        users[uid].wait_time = response["next_wait_time"];
+        handlePostError([ uid ], response);
     }
     else
     {
@@ -57,29 +46,52 @@ function handlePost(uid, response)
     users[uid].posting = false;
 }
 
-function handleGlobalError(uids, response)
+function handlePostError(uids, response)
 {
     window.errors.push(response);
     var involvedUsers = [];
+    var hasNewStatus = false;
     for(var i in uids)
     {
         var uid = uids[i];
+        if(response.new_status)
+        {   // no new status when "Timed out"
+            $("#results").append(response.error + "\n");
+            users[uid]['status'] = response.new_status;
+            users[uid].bStarted = false; // "started" won't appear here
+            hasNewStatus = true;
+        }
         involvedUsers.push(users[uid].name);
-        users[uid].wait_time = response[uid].next_wait_time;
+        if(response[uid])
+        {
+            users[uid].wait_time = response[uid].next_wait_time;
+        }
+        else
+        {
+            users[uid].wait_time = response.next_wait_time;
+        }
         users[uid].posting = false;
     }
-    $('#results').append('Error from ' + involvedUsers.join('、') + "\n");
+    if(!hasNewStatus)
+    {
+        $('#results').append('Error from ' + involvedUsers.join(', ') + "\n");
+    }
 }
 
 function handleServerError(uids, status, error, xhr)
 {
-    $("#results").append(status+" : "+escapeHtml(error)+"\n");
-    var now=new Date();
-    console.log(now.toLocaleTimeString());
+    $("#results").append(error + "\n");
+    var errObj = {
+        'time': new Date().toLocaleTimeString(), 
+        'status': status, 
+        'error': error, 
+        'uids': uids
+    };
     if(xhr.responseText) // undefined if timeout
     {
-        console.log(xhr.responseText);
+        errObj.responseText = xhr.responseText;
     }
+    window.errors.push(errObj);
     if(xhr.status == 500)
     {
         // postpone all "running" users
@@ -115,30 +127,34 @@ function post2(uids)
         }
     }
 
-    var _data = { "uids": realPostUids.join('_'), "truncated_msg": 1 };
+    var _data = {
+        action: 'post_uids', 
+        uids: realPostUids.join('_'), 
+        truncated_msg: 1 
+    };
     if(debug)
     {
         _data["debug"] = 1;
     }
     $.ajaxq("queue_main", {
-        url: "post.php", 
+        url: "../wrapper.php", 
         type: "POST", 
         data: _data, 
         dataType: "json", 
         timeout: 30*1000, // in milliseconds
         success: function(response, status, xhr)
         {
-            if(response.error)
-            {
-                handleGlobalError(realPostUids, response);
-                return;
-            }
             if(realPostUids.length == 1)
             {
                 handlePost(realPostUids[0], response);
             }
             else
             {
+                if(response.error)
+                {
+                    handlePostError(realPostUids, response);
+                    return;
+                }
                 for(var i in realPostUids)
                 {
                     var uid = realPostUids[i];
@@ -155,12 +171,12 @@ function post2(uids)
 
 function update_userList()
 {
-	var curIDs=[];
-	for(var uid in users)
-	{
-		curIDs.push(uid);
-	}
-	callWrapper("list_users", { "IDs": curIDs.join('_') }, function(response){
+    var curIDs=[];
+    for(var uid in users)
+    {
+        curIDs.push(uid);
+    }
+    callWrapper("list_users", { "IDs": curIDs.join('_') }, function(response){
         if(response.error)
         {
             alert('無法取得使用者名單：' + response.error);
@@ -193,16 +209,16 @@ function update_userList()
         {
             rows.eq(i).find("td:first").text(i);
         }
-	});
+    });
 }
 
 function add_user(_users, uid)
 {
-	var user_data=_users[uid];
-	user_data.bStarted=false;
-	user_data.wait_time=0;
-	$("table#users tbody").append("<tr id=\"u_"+user_data.uid+"\"></tr>");
-	$("tr#u_"+user_data.uid).append("<td></td><td class=\"name\"></td><td class=\"time\">0</td><td class=\"last_msg\"></td><td class=\"group\"></td>");
+    var user_data=_users[uid];
+    user_data.bStarted=false;
+    user_data.wait_time=0;
+    $("table#users tbody").append("<tr id=\"u_"+user_data.uid+"\"></tr>");
+    $("tr#u_"+user_data.uid).append("<td></td><td class=\"name\"></td><td class=\"time\">0</td><td class=\"last_msg\"></td><td class=\"group\"></td>");
     update_user_data(_users[uid]);
 }
 
@@ -319,29 +335,29 @@ $(document).on('ready', function(e){
 </head>
 <body>
 <table border="0">
-	<tr>
-		<td>
-			<table id="users" border="1">
-			<tbody>
-			<tr>
-			<td>n</td><td>Name</td><td>Time</td><td>Last Message</td><td>Group</td>
-			</tr>
-			</tbody>
-			</table>
-		</td>
-		<td align="left" valign="top">
-			<textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="20"></textarea><br>
-			<input type="button" id="btn_start" value="Start">
-			<input type="button" id="btn_stop" value="Stop">
+    <tr>
+        <td>
+            <table id="users" border="1">
+            <tbody>
+            <tr>
+            <td>n</td><td>Name</td><td>Time</td><td>Last Message</td><td>Group</td>
+            </tr>
+            </tbody>
+            </table>
+        </td>
+        <td align="left" valign="top">
+            <textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="20"></textarea><br>
+            <input type="button" id="btn_start" value="Start">
+            <input type="button" id="btn_stop" value="Stop">
             <input type="button" id="btn_pause" value="Pause"><br>
-			<input type="button" id="btn_clearLog" value="clear log">
+            <input type="button" id="btn_clearLog" value="clear log">
             <input type="button" id="btn_print_error" value="Print errors"><br>
             <input type="checkbox" id="chk_debug">Debug<br>
             <a href="sql.php">execute SQL</a>
             <a href="table.php">Tables</a>
             <a href="text_mgr.php">Text Manager</a><br>
-		</td>
-	</tr>
+        </td>
+    </tr>
 </table>
 </body>
 </html>

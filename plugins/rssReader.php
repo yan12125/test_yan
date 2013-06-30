@@ -14,13 +14,13 @@ class RssReader extends PluginBase
     public function run($param)
     {
         $this->getUrlContent($param);
-		$feed=new SimpleXMLElement($this->xml);
+        $feed=new SimpleXMLElement($this->xml);
         if(!is_object($feed->channel) || !is_object($feed->channel->item) || $feed->channel->item->count() == 0)
         {
             throw new Exception('Invalid RSS');
         }
-		$n=rand(0, $feed->channel->item->count()-1);
-		return $feed->channel->item[$n]->title."\n".$feed->channel->item[$n]->link;
+        $n=rand(0, $feed->channel->item->count()-1);
+        return $feed->channel->item[$n]->title."\n".$feed->channel->item[$n]->link;
     }
 
     public function getUrlContent($url)

@@ -5,31 +5,31 @@ body
 
 #wrapper
 {
-	position: relative;
-	width: 1000px;
-	height: auto;
-	margin-left: auto;
-	margin-right: auto;
+    position: relative;
+    width: 1000px;
+    height: auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 #controls
 {
-	width: 180px;
-	float: left;
+    width: 180px;
+    float: left;
 }
 
 #messages
 {
-	clear: both;
-	margin-left: auto;
-	margin-right: auto;
-	text-align: center;
+    clear: both;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
 }
 
 .title_choose
 {
-	width: 220px;
-	float: left;
+    width: 220px;
+    float: left;
 }
 
 
@@ -61,7 +61,7 @@ body
 
 .input_number
 {
-	width: 80px;
+    width: 80px;
 }
 
 /* indicates failure in jquery.validate */
