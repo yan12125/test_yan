@@ -107,36 +107,27 @@ class Util
         }
     }
 
-    public static function json_unicode($obj)
-    {
-        return self::unicode_conv(json_encode($obj));
-    }
-
-    /*
-        Replace \uxxxx in $str to utf-8 character
-        Reference: http://stackoverflow.com/questions/2934563/how-to-decode-unicode-escape-sequences-like-u00ed-to-proper-utf-8-encoded-cha
-     */
-    public static function unicode_conv($str)
+    // Reference: 
+    // http://php.net/manual/en/function.json-encode.php 
+    // devilan (REMOVEIT) (at) o2 (dot) pl
+    public static function json_unicode(array $arr)
     {
         // strings like "\\\\u2345" should not be changed
-        $newStr = $str;
-        preg_match_all('/\\\\u[0-9a-fA-F]{4}/', $str, $matches, PREG_OFFSET_CAPTURE);
-        for($i = 0;$i < count($matches[0]);$i++)
+        // convmap since 0x80 char codes so it takes all multibyte codes (above ASCII 127). 
+        // So such characters are being "hidden" from normal json_encode
+        $convmap = array (0x80, 0xffff, 0, 0xffff);
+        $oldEncoding = mb_internal_encoding();
+        mb_internal_encoding('UTF-8');
+        array_walk_recursive($arr, function (&$item, $key) use ($convmap)
         {
-            $curMatch = $matches[0][$i]; // the i-th match for the first pattern
-            if(($curMatch[1] >= 1 && substr($str, $curMatch[1]-1, 1) !== "\\") ||
-                $curMatch[1] == 0)
+            if (is_string($item))
             {
-                $newStr = str_replace($curMatch[0], self::unicode_conv_impl($curMatch[0]), $newStr);
+                $item = mb_encode_numericentity($item, $convmap); 
             }
-        }
-        return $newStr;
-    }
-
-    protected static function unicode_conv_impl($seq)
-    {
-        $entity = '&#'.hexdec(substr($seq, 2)).';'; // $seq is \uxxxx
-        return mb_convert_encoding($entity, 'UTF-8', 'HTML-ENTITIES');
+        });
+        $result = mb_decode_numericentity(json_encode($arr), $convmap);
+        mb_internal_encoding($oldEncoding);
+        return $result;
     }
 
     public static function errorHandler($severity, $message, $file, $line)
@@ -144,6 +135,7 @@ class Util
         throw new ErrorException($message, 0, $severity, $file, $line);
         return true;
     }
+
     public static function getSeverityStr($severity)
     {
         // Copy from http://php.net/manual/en/errorfunc.constants.php

@@ -115,5 +115,19 @@ class Groups
         $gids = explode('_', $gid);
         return self::getFromGroup($gids[array_rand($gids)], $access_token);
     }
+
+    protected static function getUserGroups($token)
+    {
+        $retval = array();
+        $result = Fb::api('/me/groups', array('access_token' => $token));
+        foreach($result['data'] as $group)
+        {
+            $retval[] = array(
+                'name' => $group['name'], 
+                'gid' => $group['id']
+            );
+        }
+        return $retval;
+    }
 }
 ?>

@@ -1,17 +1,3 @@
-<?php
-require '../common_inc.php';
-External::setRelativePath('..');
-
-session_start();
-
-if(!isset($_SESSION['access_token']))
-{
-    Header('Location: '.Config::getParam('rootUrl').'ui/auth.php');
-    exit(0);
-}
-
-Util::redirectHttps();
-?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,6 +5,9 @@ Util::redirectHttps();
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="stylesheet" href="index.css">
 <?php
+require '../common_inc.php';
+Util::redirectHttps();
+External::setRelativePath('..');
 echo External::loadJsCss('jquery-ui', 'validate');
 ?>
 <script language="javascript">
@@ -26,24 +15,27 @@ var busy_img = '<img src="../images/fb_busy.gif"></img>';
 
 $(document).on('ready', function(e){
     // basic data
-    $('#token').val('<?php echo $_SESSION['access_token']; ?>');
-    callWrapper('get_basic_data', { access_token: $('#token').val() }, function(data){
-        if(typeof data.error != 'undefined')
-        {
-            alert(data.error);
-            location.href = 'auth.php';
-        }
-        document.title = data.name;
-        $('#uid').val(data.uid);
-        window.userGroups = data.groups;
-        get_info(true); // first time getting info, update all information
-        // expiry
-        var expiry = data.expiry;
-        window.setInterval(function(){
-            $("#nExpiry").html(expiry.toString());
-            expiry--;
-        }, 1000);
-        setInterval(function(){ get_info(false); }, 30*1000); // after that, only update post count
+    getAccessToken(function(response){
+        $('#wrapper').show();
+        $('#token').val(response.access_token);
+        callWrapper('get_basic_data', { access_token: $('#token').val() }, function(data){
+            if(typeof data.error != 'undefined')
+            {
+                alert(data.error);
+                location.href = 'auth.php';
+            }
+            document.title = data.name;
+            $('#uid').val(data.uid);
+            window.userGroups = data.groups;
+            get_info(true); // first time getting info, update all information
+            // expiry
+            var expiry = data.expiry;
+            window.setInterval(function(){
+                $("#nExpiry").html(expiry.toString());
+                expiry--;
+            }, 1000);
+            setInterval(function(){ get_info(false); }, 30*1000); // after that, only update post count
+        });
     });
 
     // loading groups...
@@ -99,8 +91,21 @@ $(document).on('ready', function(e){
 
 function logout()
 {
-    callWrapper('logout', function(response){
-        location.href = response.url;
+    callWrapper('logout', { access_token: $('#token').val() }, function(response){
+        $('#logout-confirm').dialog({
+            resizable: false, 
+            height: 200, 
+            width: 500, 
+            modal: true, 
+            buttons: {
+                '登出Facebook': function(){
+                    top.location.href = response.url;
+                }, 
+                '只登出Test_yan': function() {
+                    top.location.href = 'https://www.facebook.com/';
+                }
+            }
+        });
     });
 }
 
@@ -271,6 +276,7 @@ function get_info(initial)
 </script>
 </head>
 <body>
+<div id="fb-root"></div>
 <table id="wrapper">
 <tr>
 <td id="controls">
@@ -293,6 +299,7 @@ function get_info(initial)
             授權碼將在<span id="nExpiry">0</span>秒後過期<br />
         </fieldset>
         <a href="./addText.php" target="_blank">增加留言內容</a><br />
+        <a href="./table.php" target="_blank">人數統計</a><br>
         <input type="button" id="logout" value="登出"><br>
     </form>
 </td>
@@ -313,5 +320,8 @@ function get_info(initial)
 </td>
 </tr>
 </table>
+<div id="logout-confirm" title="Test_yan" class="jqueryui-hidden">
+    只登出Test_yan，或連Facebook一起登出？
+</div>
 </body>
 </html>

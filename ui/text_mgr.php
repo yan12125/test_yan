@@ -6,36 +6,64 @@
 <?php
 require '../common_inc.php';
 External::setRelativePath('..');
-echo External::loadJsCss();
+echo External::loadJsCss('jquery-ui');
 ?>
 <script>
 $(document).on('ready', function(e){
+    $(window).on('resize', function(e){
+        resizeAll()
+    });
+    $('#save, #discard').button({'disabled': true});
+    $('#discard').on('click', function(e){
+        loadText($('.title.selected')[0]);
+    });
+    updateTitles();
+});
+
+function resizeAll()
+{
+    // $(document).height() and $(window).height() are different!
+    // http://stackoverflow.com/questions/1304378/jquery-web-page-height
+    $('#titles').height($(window).height());
+    $('#texts').width($(window).width() - $('#controls').offset().left - 20);
+}
+
+function updateTitles()
+{
+    $('#titles').html('');
     callWrapper('list_titles', function(data){
         for(var i = 0;i < data.length;i++)
         {
             $('#titles').append('<div class="title">'+data[i].title+'</div>');
         }
-        // $(document).height() and $(window).height() are different!
-        // http://stackoverflow.com/questions/1304378/jquery-web-page-height
-        $('#titles').height($(window).height());
-        $('#texts').width($(window).width() - $('#controls').offset().left - 20);
         $('.title').on('click', function(e){
-            $('#texts').text('');
-            var title = $(this).text();
-            $('.title').removeClass('selected');
-            $(this).addClass('selected');
-            $('#caption').text(title);
-            callWrapper('get_texts', { 'title': title }, function(data){
-                $('#texts').text(data.join("\n"));
-            });
+            loadText(this);
         });
+        resizeAll();
     });
-});
+}
+
+function loadText(titleButton)
+{
+    $('#save, #discard').button('option', 'disabled', false);
+    $('#texts').val('Loading...');
+    var title = $(titleButton).text();
+    $('.title').removeClass('selected');
+    $(titleButton).addClass('selected');
+    $('#caption').text(title);
+    callWrapper('get_texts', { 'title': title }, function(response){
+        // use val() instead of text()
+        // http://stackoverflow.com/questions/8854288
+        $('#texts').val(response.text);
+        $('#handler').text(response.handler);
+    });
+}
 </script>
 <style>
 body
 {
     margin: 0px;
+    overflow-y: hidden;
 }
 
 #titles
@@ -68,7 +96,7 @@ body
 
 #texts
 {
-    height: 300px;
+    height: 400px;
     overflow-x: scroll;
     overflow-y: scroll;
     white-space: nowrap;
@@ -80,12 +108,22 @@ body
     font-size: 24px;
     font-weight: bold;
 }
+
+.right
+{
+    text-align: right;
+}
 </style>
 <body>
     <div id="titles"></div>
     <div id="controls">
         <div id="caption">請選擇標題</div>
-        <textarea id="texts"></textarea>
+        <textarea id="texts"></textarea><br>
+        外掛：<span id="handler">None</span><br>
+        <div class="right">
+            <input type="button" value="存檔" id="save">
+            <input type="button" value="放棄修改" id="discard">
+        </div>
     </div>
 </body>
 </html>

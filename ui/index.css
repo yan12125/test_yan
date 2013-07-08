@@ -5,6 +5,7 @@ body
 
 #wrapper
 {
+    display: none;
     position: relative;
     width: 1000px;
     height: auto;
@@ -75,3 +76,7 @@ label.error,span.error
     margin-left: 10px;
 }
 
+.jqueryui-hidden
+{
+    display: none;
+}

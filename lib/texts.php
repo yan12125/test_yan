@@ -19,24 +19,25 @@ class Texts
         $stmt = Db::prepare('select count(*) from texts where title=?');
         $stmt->execute(array($title));
         $num = $stmt->fetch(PDO::FETCH_NUM);
-        if($num[0] > 0)
-        {
-            return array('status' => 'title_exists');
-        }
-        else
-        {
-            return true;
-        }
+        return $num[0] > 0;
     }
 
-    public static function addText($title, $texts)
+    public static function addTitle($title)
     {
-        $result = self::checkTitle($title);
-        if($result !== true)
+        if(self::checkTitle($title)) // title exists
         {
-            return $result;
+            return array('error' => 'title_exists');
         }
-        $query="INSERT INTO texts (title,handler,text) VALUES (?,NULL,?)";
+        $stmt = Db::prepare('insert texts (title,handler,text) values(?,NULL,"")');
+        $stmt->execute(array($title));
+    }
+
+    public static function updateText($title, $texts)
+    {
+        if(self::checkTitle($title))
+        {
+            throw new Exception('Specified title does not exists.');
+        }
         $textArr = explode("\n", str_replace("\r\n", "\n", $texts));
 
         // remove empty lines
@@ -46,10 +47,14 @@ class Texts
         }
         // array_filter preserve keys, but we want continuous array for json_encode
         $textArr = array_values(array_filter($textArr, 'remove_empty'));
+        if(count($textArr) == 0)
+        {
+            return array('error' => 'No strings given');
+        }
 
         $texts = Util::json_unicode($textArr);
-        $stmt = Db::prepare($query);
-        if($stmt->execute(array($title, $texts)) === false)
+        $stmt = Db::prepare('update texts set text=? where title=?');
+        if($stmt->execute(array($texts, $title)) === false)
         {
             throw new Exception("PDO execute() failed: ".Db::getErr());
         }
@@ -71,7 +76,7 @@ class Texts
 
     public static function getTexts($title)
     {
-        $stmt = Db::prepare("SELECT text FROM texts WHERE title=?");
+        $stmt = Db::prepare("SELECT handler,text FROM texts WHERE title=?");
         $stmt->execute(array($title));
         $arr = $stmt->fetch(PDO::FETCH_ASSOC);
         if($arr === false) // no title matches
@@ -83,11 +88,14 @@ class Texts
         $json_text = json_decode($text, true);
         if(is_array($json_text))
         {
-            return $json_text;
+            return array(
+                'handler' => is_null($arr['handler'])?'None':$arr['handler'], 
+                'text' => implode("\n", $json_text)
+            );
         }
         else
         {
-            return $text;
+            return array('msg' => $text);
         }
     }
 

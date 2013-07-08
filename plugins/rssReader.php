@@ -41,6 +41,13 @@ class RssReader extends PluginBase
             )));
         }
         curl_close($ch);
+        if(!mb_check_encoding($this->xml, 'UTF-8'))
+        {
+            throw new Exception(json_encode(array(
+                'msg' => 'Invalid UTF-8 detected', 
+                'base64_data' => base64_encode($this->xml)
+            )));
+        }
     }
 
     public function handleException($e)

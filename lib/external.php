@@ -6,10 +6,7 @@ class External
     protected static $relativePath = '.';
 
     protected static $list = array(
-        'php-sql-parser' => array(
-            'path' => 'php-sql-parser/', 
-            'files' => array('php-sql-parser.php')
-        ), 
+        'php-sql-parser' => array('path' => 'php-sql-parser/', 'files' => array('php-sql-parser.php')), 
         'facebook' => array('files' => array('facebook.php')), 
         'codemirror' => array('files' => array('codemirror.js', 'codemirror.css', 'sql.js')), 
         'jquery' => array('files' => array('jquery.js')), 

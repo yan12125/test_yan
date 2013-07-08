@@ -112,7 +112,19 @@ class Post
         {
             return;
         }
-        $responses = $req->run();
+        $responses = array();
+        try
+        {
+            $responses = $req->run();
+        }
+        catch(FacebookApiException $e)
+        {
+            for($i = 0;$i < count($this->uids);$i++)
+            {
+                $this->handleFacebookError($this->uids[$i], $e->getMessage());
+            }
+            return;
+        }
         $notInResponse = 0;
         for($i = 0;$i < count($this->uids);$i++)
         {
@@ -126,7 +138,7 @@ class Post
             $this->response[$uid]['ret_obj'] = $responses[$realIndex];
             if(isset($responses[$realIndex]['error']))
             {
-                $this->handleFacebookError($uid, $responses[$realIndex]['error']);
+                $this->handleFacebookError($uid, $responses[$realIndex]['error']['message']);
                 continue;
             }
             if(isset($responses[$realIndex]['id']))
@@ -141,9 +153,8 @@ class Post
         }
     }
 
-    protected function handleFacebookError($uid, $e)
+    protected function handleFacebookError($uid, $err)
     {
-        $err = $e['message'];
         $this->response[$uid]['fbErr'] = $err;
         $this->response[$uid]['error'] = '';
         $this->config[$uid]['truncated_msg'] = false;
@@ -180,6 +191,7 @@ class Post
         if(empty($this->response[$uid]['error']))
         {
             $this->response[$uid]['error'] = $this->response[$uid]['fbErr'];
+            unset($this->response[$uid]['fbErr']);
         }
     }
 
@@ -213,6 +225,10 @@ class Post
                 continue;
             }
             $this->response[$uid]['user_data'][$field] = $this->userData[$uid][$field];
+        }
+        if(isset($this->response[$uid]['error']))
+        {
+            $this->response[$uid]['time'] = date('H:i:s');
         }
 
         // remove unnecessary fields

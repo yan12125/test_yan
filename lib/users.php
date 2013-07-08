@@ -267,22 +267,8 @@ class Users
         return $interval;
     }
 
-    public static function logout()
+    public static function logout($token)
     {
-        if(session_id() === '')
-        {
-            session_start();
-        }
-        if(isset($_SESSION['access_token']))
-        {
-            $token = $_SESSION['access_token'];
-            session_destroy();
-        }
-        else
-        {
-            session_destroy();
-            throw new Exception('Not logged in.');
-        }
         return array('url' => 'https://www.facebook.com/logout.php?'.
             http_build_query(array(
                 'next' => Config::getParam('rootUrl'), 

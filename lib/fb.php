@@ -14,6 +14,8 @@ class Fb
         // Disable ssl verify to hide messages in error.log
         // Reference: http://stackoverflow.com/questions/7374223/invalid-or-no-certificate-authority-found-using-bundled-information
         Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYPEER] = false;
+        // In alternate.php, timeout is 30s, and I want a shorter interval here
+        Facebook::$CURL_OPTS[CURLOPT_TIMEOUT] = 20;
         self::$fb = new Facebook(array(
             'appId' => $appConf['appId'], 
             'secret' => $appConf['appSecret']

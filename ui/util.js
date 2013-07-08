@@ -40,3 +40,43 @@ function callWrapper(_action, _data, _success)
 var Util = {
     relative_path: '.'
 };
+
+function getAccessToken(cb)
+{
+    var parseLoginStatus = function(response, authUrl){
+        if(response.status != 'connected')
+        {
+            top.location.href = authUrl;
+            return;
+        }
+        var url = top.location.href;
+        if(url.indexOf('?') !== -1)
+        {
+            top.location.href = url.substring(0, url.indexOf('?'));
+        }
+        if(response.authResponse.expiresIn >= 7201)
+        {
+            cb({
+                'access_token': response.authResponse.accessToken, 
+                'expires': response.authResponse.expiredIn
+            });
+            return;
+        }
+        callWrapper('exchange_token', {
+            access_token: response.authResponse.accessToken
+        }, function(response){
+            if(typeof cb == 'function')
+            {
+                cb(response);
+            }
+        });
+    };
+    $.getScript('//connect.facebook.net/en_UK/all.js', function(){
+        callWrapper('get_app_info', function(data){
+            FB.init({ appId: data.appId });
+            FB.getLoginStatus(function(response){
+                parseLoginStatus(response, data.authUrl);
+            });
+        });
+    });
+}

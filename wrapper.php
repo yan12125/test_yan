@@ -44,7 +44,8 @@ try
             echo json_encode(Users::viewUsers($_POST['page'], $_POST['rows']));
             break;
         case 'logout':
-            echo json_encode(Users::logout());
+            Util::checkPOST(array('access_token'));
+            echo json_encode(Users::logout($_POST['access_token']));
             break;
         case 'get_basic_data':
             Util::checkPOST(array('access_token'));
@@ -66,9 +67,13 @@ try
         case "list_titles":
             echo Util::json_unicode(Texts::listTitles());
             break;
-        case 'add_text':
+        case 'update_text':
             Util::checkPOST(array('title', 'texts'));
-            echo json_encode(Texts::addText($_POST['title'], $_POST['texts']));
+            echo json_encode(Texts::updateText($_POST['title'], $_POST['texts']));
+            break;
+        case 'add_title':
+            Util::checkPOST(array('title'));
+            echo json_encode(Texts::addTitle($_POST['title']));
             break;
         case 'check_title':
             Util::checkPOST(array('title'));
@@ -76,7 +81,10 @@ try
             break;
         case 'get_texts':
             Util::checkPOST(array('title'));
-            echo json_encode(Texts::getTexts($_POST['title']));
+            echo Util::json_unicode(Texts::getTexts($_POST['title']));
+            break;
+        case 'get_plugins':
+            echo json_encode(Texts::getPlugins());
             break;
         /*
          * db.php
@@ -91,6 +99,16 @@ try
         case 'post_uids':
             Util::checkPOST(array('uids'));
             echo Util::json_unicode(Post::postUids($_POST['uids'], $_POST));
+            break;
+        /*
+         * auth.php
+         */
+        case 'get_app_info':
+            echo json_encode(Auth::getAppInfo());
+            break;
+        case 'exchange_token':
+            Util::checkPOST(array('access_token'));
+            echo json_encode(Auth::exchangeToken($_POST['access_token']));
             break;
     }
 }

@@ -47,6 +47,8 @@ class FbBatch
         }
         $results = Fb::api('/', 'POST', $params);
         $this->queries = array();
+        // Facebook api may return null here (might be failed json_decode?)
+        // but I don't want to handle it
         foreach($results as &$item)
         {
             $item = json_decode($item['body'], true);
