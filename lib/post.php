@@ -228,7 +228,7 @@ class Post
         }
         if(isset($this->response[$uid]['error']))
         {
-            $this->response[$uid]['time'] = date('H:i:s');
+            $this->response[$uid]['time'] = Util::timestr();
         }
 
         // remove unnecessary fields

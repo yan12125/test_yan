@@ -70,7 +70,7 @@ class External
         $modules = func_get_args();
         array_unshift($modules, 'jquery', 'ajaxq');
         $files = self::load('client', $modules);
-        array_push($files, 'ui/util.js');
+        array_push($files, 'ui/util.js', 'ui/common.css');
         $output = '';
         foreach($files as $file)
         {

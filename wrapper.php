@@ -68,8 +68,8 @@ try
             echo Util::json_unicode(Texts::listTitles());
             break;
         case 'update_text':
-            Util::checkPOST(array('title', 'texts'));
-            echo json_encode(Texts::updateText($_POST['title'], $_POST['texts']));
+            Util::checkPOST(array('title', 'texts', 'handler', 'access_token'));
+            echo json_encode(Texts::updateText($_POST['title'], $_POST['texts'], $_POST['handler'], $_POST['access_token']));
             break;
         case 'add_title':
             Util::checkPOST(array('title'));
@@ -138,7 +138,7 @@ catch(Exception $e)
         "code" => $e->getCode(), 
         "err_class_name" => $errClass, 
         "class_name" => $classNames, 
-        "time" => date('H:i:s'), 
+        "time" => Util::timestr(), 
         "trace" => $trace, 
     );
 

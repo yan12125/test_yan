@@ -24,7 +24,7 @@ class Db
     {
         self::loadDB();
         $ret = call_user_func_array(array(self::$db, $name), $args);
-        if($ret == null && $name == 'query')
+        if($ret === false && $name == 'query')
         {
             throw new Exception(self::getErr());
         }

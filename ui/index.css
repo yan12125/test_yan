@@ -1,11 +1,5 @@
-body
-{
-    overflow-y: scroll;
-}
-
 #wrapper
 {
-    display: none;
     position: relative;
     width: 1000px;
     height: auto;
@@ -74,9 +68,4 @@ body
 label.error,span.error
 {
     margin-left: 10px;
-}
-
-.jqueryui-hidden
-{
-    display: none;
 }

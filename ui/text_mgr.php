@@ -10,36 +10,63 @@ echo External::loadJsCss('jquery-ui');
 ?>
 <script>
 $(document).on('ready', function(e){
-    $(window).on('resize', function(e){
-        resizeAll()
+    getAccessToken(function(data){
+        $('#token').val(data.access_token);
+        $(window).on('resize', function(e){
+            resizeAll();
+        });
+        $('#save, #discard').button({'disabled': true});
+        $('#new_title').button();
+        $('#save').on('click', function(e){
+            updateText($('.title.selected')[0]);
+        });
+        $('#discard').on('click', function(e){
+            loadText($('.title.selected')[0]);
+        });
+        $('#new_title').on('click', function(e){
+            newTitle();
+        });
+        updateTitles();
+        loadPlugins();
     });
-    $('#save, #discard').button({'disabled': true});
-    $('#discard').on('click', function(e){
-        loadText($('.title.selected')[0]);
-    });
-    updateTitles();
 });
 
 function resizeAll()
 {
     // $(document).height() and $(window).height() are different!
     // http://stackoverflow.com/questions/1304378/jquery-web-page-height
+    // two steps below can't be exchanged! View in chrome debugger
+    $('#texts').width($(window).width() - $('#controls').offset().left - 40);
     $('#titles').height($(window).height());
-    $('#texts').width($(window).width() - $('#controls').offset().left - 20);
 }
 
-function updateTitles()
+function updateTitles(cb)
 {
     $('#titles').html('');
     callWrapper('list_titles', function(data){
         for(var i = 0;i < data.length;i++)
         {
-            $('#titles').append('<div class="title">'+data[i].title+'</div>');
+            $('#titles').append('<div class="title">'+data[i]+'</div>');
         }
         $('.title').on('click', function(e){
             loadText(this);
         });
         resizeAll();
+        if(typeof cb == 'function')
+        {
+            cb();
+        }
+    });
+}
+
+function loadPlugins()
+{
+    callWrapper('get_plugins', function(plugins){
+        for(var i = 0;i < plugins.length;i++)
+        {
+            var p = plugins[i];
+            $('#handler').append('<option value="'+p+'">'+p+'</option>');
+        }
     });
 }
 
@@ -54,8 +81,66 @@ function loadText(titleButton)
     callWrapper('get_texts', { 'title': title }, function(response){
         // use val() instead of text()
         // http://stackoverflow.com/questions/8854288
-        $('#texts').val(response.text);
-        $('#handler').text(response.handler);
+        $('#texts').val(response.text).focus();
+        $('#handler').val(response.handler);
+    });
+}
+
+function updateText(titleButton)
+{
+    callWrapper('update_text', {
+        title: $(titleButton).text(), 
+        texts: $('#texts').val(), 
+        handler: $('#handler').val(), 
+        access_token: $('#token').val()
+    }, function(response){
+        if(response.status == 'success')
+        {
+            loadText(titleButton);
+            $('#dialog').text('內容成功更新');
+        }
+        else
+        {
+            $('#dialog').text(response.error);
+        }
+        $('#dialog').dialog({
+            modal: true
+        });
+    });
+}
+
+function newTitle()
+{
+    var newTitle_impl = function(){
+        var _title = $('#title_new').val();
+        callWrapper('add_title', { title: _title }, function(response){
+            if(response.status == 'success')
+            {
+                updateTitles(function(){
+                    var titleButton = $('.title').filter(function(){
+                        return $(this).text() == _title;
+                    });
+                    loadText(titleButton[0]);
+                });
+            }
+            else
+            {
+                $('#dialog').text(response.error);
+                $('#dialog').dialog({
+                    modal: true
+                });
+            }
+        });
+    };
+    $('#title_new').val('');
+    $('#new_title_dialog').dialog({
+        modal: true, 
+        buttons: {
+            'OK': function(){
+                newTitle_impl();
+                $(this).dialog('close');
+            }
+        }
     });
 }
 </script>
@@ -63,7 +148,6 @@ function loadText(titleButton)
 body
 {
     margin: 0px;
-    overflow-y: hidden;
 }
 
 #titles
@@ -77,7 +161,7 @@ body
 {
     margin: 10px;
     padding: 3px;
-    background-color: #ff99bb;
+    background-color: #00FFFF; /* Cyan */
     width: 200px;
     text-align: center;
     cursor: pointer;
@@ -85,7 +169,7 @@ body
 
 .title:hover, .title.selected
 {
-    background-color: #ff0044;
+    background-color: #00CED1; /* DarkTurquoise */
 }
 
 #controls
@@ -97,8 +181,6 @@ body
 #texts
 {
     height: 400px;
-    overflow-x: scroll;
-    overflow-y: scroll;
     white-space: nowrap;
     font-size: 16px;
 }
@@ -108,22 +190,27 @@ body
     font-size: 24px;
     font-weight: bold;
 }
-
-.right
-{
-    text-align: right;
-}
 </style>
 <body>
-    <div id="titles"></div>
-    <div id="controls">
-        <div id="caption">請選擇標題</div>
-        <textarea id="texts"></textarea><br>
-        外掛：<span id="handler">None</span><br>
-        <div class="right">
-            <input type="button" value="存檔" id="save">
-            <input type="button" value="放棄修改" id="discard">
-        </div>
+<div id="fb-root"></div>
+<div id="titles"></div>
+<div id="controls">
+    <div id="caption">請選擇一個標題</div>
+    <textarea id="texts"></textarea><br>
+    外掛：
+    <select id="handler">
+        <option value="__none__">(None)</option>
+    </select><br>
+    <div class="right">
+        <input type="button" value="新增內容" id="new_title">
+        <input type="button" value="存檔" id="save">
+        <input type="button" value="放棄修改" id="discard">
     </div>
+    <input type="hidden" id="token">
+</div>
+<div id="dialog" title="Text Manager" class="jqueryui-hidden"></div>
+<div id="new_title_dialog" title="新增內容" class="jqueryui-hidden">
+    請輸入標題：<input type="text" id="title_new">
+</div>
 </body>
 </html>

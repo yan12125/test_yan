@@ -41,8 +41,20 @@ var Util = {
     relative_path: '.'
 };
 
-function getAccessToken(cb)
+function getAccessToken(cb, getLongtermToken)
 {
+    $('body').hide();
+    if(typeof getLongtermToken == 'undefined')
+    {
+        getLongtermToken = false;
+    }
+    var cbWrapper = function(data){
+        if(typeof cb == 'function')
+        {
+            $('body').show();
+            cb(data);
+        }
+    };
     var parseLoginStatus = function(response, authUrl){
         if(response.status != 'connected')
         {
@@ -54,9 +66,9 @@ function getAccessToken(cb)
         {
             top.location.href = url.substring(0, url.indexOf('?'));
         }
-        if(response.authResponse.expiresIn >= 7201)
+        if(response.authResponse.expiresIn >= 7201 || !getLongtermToken)
         {
-            cb({
+            cbWrapper({
                 'access_token': response.authResponse.accessToken, 
                 'expires': response.authResponse.expiredIn
             });
@@ -65,10 +77,7 @@ function getAccessToken(cb)
         callWrapper('exchange_token', {
             access_token: response.authResponse.accessToken
         }, function(response){
-            if(typeof cb == 'function')
-            {
-                cb(response);
-            }
+            cbWrapper(response);
         });
     };
     $.getScript('//connect.facebook.net/en_UK/all.js', function(){

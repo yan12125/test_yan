@@ -179,5 +179,14 @@ class Util
     {
         $text = str_replace("\t", '    ', $text);
     }
+
+    public static function timestr($timestamp = 0)
+    {
+        if($timestamp == 0)
+        {
+            $timestamp = time();
+        }
+        return date('Y-m-d H:i:s', $timestamp);
+    }
 }
 ?>

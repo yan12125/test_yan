@@ -21,7 +21,7 @@ class Groups
         catch(FacebookApiException $e)
         {
             // user in group or not?
-            $userGroups = self::getUserGroups($access_token);
+            $userGroups = Users::getDataFromFb($access_token, array('groups'));
             $userInGroup = false;
             foreach($userGroups as $group)
             {
@@ -59,13 +59,13 @@ class Groups
         if($newAdded)
         {
             $stmt = Db::prepare('insert into groups (gid,title,feed_id,persistent,last_update) values (?,?,?,?,?)');
-            $stmt->execute(array($gid, $groupTitle, $IDstr, 0, date('Y-m-d H:i:s')));
+            $stmt->execute(array($gid, $groupTitle, $IDstr, 0, Util::timestr()));
             // persistent groups should be added manually
         }
         else
         {
             $stmt = Db::prepare('update groups set feed_id=?,title=?,last_update=? where gid=?');
-            $stmt->execute(array($IDstr, $groupTitle, date('Y-m-d H:i:s'), $gid));
+            $stmt->execute(array($IDstr, $groupTitle, Util::timestr(), $gid));
         }
         return array(
             'feed_id' => $IDstr, 
@@ -114,20 +114,6 @@ class Groups
     {
         $gids = explode('_', $gid);
         return self::getFromGroup($gids[array_rand($gids)], $access_token);
-    }
-
-    protected static function getUserGroups($token)
-    {
-        $retval = array();
-        $result = Fb::api('/me/groups', array('access_token' => $token));
-        foreach($result['data'] as $group)
-        {
-            $retval[] = array(
-                'name' => $group['name'], 
-                'gid' => $group['id']
-            );
-        }
-        return $retval;
     }
 }
 ?>

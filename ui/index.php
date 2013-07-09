@@ -16,13 +16,11 @@ var busy_img = '<img src="../images/fb_busy.gif"></img>';
 $(document).on('ready', function(e){
     // basic data
     getAccessToken(function(response){
-        $('#wrapper').show();
         $('#token').val(response.access_token);
         callWrapper('get_basic_data', { access_token: $('#token').val() }, function(data){
             if(typeof data.error != 'undefined')
             {
                 alert(data.error);
-                location.href = 'auth.php';
             }
             document.title = data.name;
             $('#uid').val(data.uid);
@@ -36,7 +34,7 @@ $(document).on('ready', function(e){
             }, 1000);
             setInterval(function(){ get_info(false); }, 30*1000); // after that, only update post count
         });
-    });
+    }, true); // longterm token required
 
     // loading groups...
     $('#choose_groups').html(busy_img);
@@ -85,29 +83,11 @@ $(document).on('ready', function(e){
     });
 
     $('#logout').on('click', function(e){
-        logout();
+        callWrapper('logout', { access_token: $('#token').val() }, function(response){
+            top.location.href = response.url;
+        });
     })
 });
-
-function logout()
-{
-    callWrapper('logout', { access_token: $('#token').val() }, function(response){
-        $('#logout-confirm').dialog({
-            resizable: false, 
-            height: 200, 
-            width: 500, 
-            modal: true, 
-            buttons: {
-                '登出Facebook': function(){
-                    top.location.href = response.url;
-                }, 
-                '只登出Test_yan': function() {
-                    top.location.href = 'https://www.facebook.com/';
-                }
-            }
-        });
-    });
-}
 
 function getTitles(userTitles)
 {
@@ -115,7 +95,7 @@ function getTitles(userTitles)
         for(var i=0;i<textgroups.length;i++)
         {
             var titles_div = $('.title_choose');
-            var title_text=textgroups[i]['title'];
+            var title_text=textgroups[i];
             titles_div.eq(i%titles_div.length).append("<input type=\"checkbox\" value=\""+
                 title_text+"\" /><span>"+title_text+"</span><br />\n");
             if($.inArray(title_text, userTitles) > -1)
@@ -298,9 +278,9 @@ function get_info(initial)
             狀態：<span id="status">未開始發文</span><br />
             授權碼將在<span id="nExpiry">0</span>秒後過期<br />
         </fieldset>
-        <a href="./addText.php" target="_blank">增加留言內容</a><br />
-        <a href="./table.php" target="_blank">人數統計</a><br>
-        <input type="button" id="logout" value="登出"><br>
+        <a href="./table.php" target="_blank">統計資料</a><br>
+        <a href="./text_mgr.php" target="_blank">洗版內容一覽</a><br>
+        <input type="button" id="logout" value="登出Facebook"><br>
     </form>
 </td>
 <td>
@@ -320,8 +300,5 @@ function get_info(initial)
 </td>
 </tr>
 </table>
-<div id="logout-confirm" title="Test_yan" class="jqueryui-hidden">
-    只登出Test_yan，或連Facebook一起登出？
-</div>
 </body>
 </html>

@@ -106,7 +106,7 @@ class Users
                 // real parsing
                 if(preg_match('/Session has expired at unix time (\d+)/', $err, $matches) > 0)
                 {
-                    $curRow['msg'] = '授權碼已在'.date('Y/m/d H:i:s', $matches[1]).'過期';
+                    $curRow['msg'] = '授權碼已在'.Util::timestr($matches[1]).'過期';
                 }
                 else if(preg_match('/Sessions for user with id .* are not allowed/', $err) > 0)
                 {
@@ -121,13 +121,13 @@ class Users
             {
                 $curRow['valid'] = 'Yes';
                 $expiry = $token_response[$i]['expires_at'];
-                $timestr = date('Y/m/d H:i:s', $expiry);
+                $timestr = Util::timestr($expiry);
                 $curRow['msg'] = '有效期限：'.$timestr;
             }
             if($curUser['status'] == 'banned')
             {
                 $unlockTime = strtotime($curUser['banned_time'] . ' +2 days');
-                $curRow['msg'] .= ' 解鎖時間：' . date('Y-m-d H:i:s', $unlockTime);
+                $curRow['msg'] .= ' 解鎖時間：' . Util::timestr($unlockTime);
             }
             $rows[] = $curRow;
         }
@@ -237,7 +237,7 @@ class Users
             // if from started to banned...
             if($newStatus=='banned'&&$oldStatus=='started')
             {
-                self::setData($uid, array('banned_time'=>date("Y-m-d H:i:s")));
+                self::setData($uid, array('banned_time' => Util::timestr()));
             }
             return array('status' => $newStatus);
         }
@@ -277,61 +277,95 @@ class Users
         );
     }
 
+    public static function getDataFromFb($access_token, array $items)
+    {
+        $getToken = (array_search('token', $items) !== false);
+        $getGroups = (array_search('groups', $items) !== false);
+        $req = new FbBatch($access_token);
+        if($getToken)
+        {
+            $req->push('/me');
+            $req->push('/debug_token', array(
+                'input_token' => $access_token, 
+                'access_token' => Fb::getAppToken()
+            ));
+        }
+        if($getGroups)
+        {
+            $req->push('/me/groups');
+        }
+        $results = $req->run();
+        if($getToken && $getGroups)
+        {
+            $userData = $results[0];
+            $tokenInfo = $results[1];
+            $groups = $results[2];
+        }
+        else if($getToken && !$getGroups)
+        {
+            $userData = $results[0];
+            $tokenInfo = $results[1];
+        }
+        else if(!$getToken && $getGroups)
+        {
+            $groups = $results[0];
+        }
+        $retval = array();
+        if($getToken)
+        {
+            // processing user data
+            if(!isset($userData['name']) || !isset($userData['id']))
+            {
+                throw new Exception('Faile to load user data: '.json_encode($userData));
+            }
+            // update access_token if user has registered
+            try
+            {
+                self::setData($userData['id'], array('access_token' => $access_token));
+            }
+            catch(Exception $e)
+            {
+                if($e->getMessage() != 'user_not_found')
+                {
+                    throw $e;
+                }
+            }
+            // expiry
+            if(isset($tokenInfo['error']))
+            {
+                throw new Exception($tokenInfo['error']);
+            }
+            $retval = array_merge($retval, array(
+                'name' => $userData['name'], 
+                'uid' => $userData['id'], 
+                'expiry' => $tokenInfo['data']['expires_at'] - time()
+            ));
+        }
+        if($getGroups)
+        {
+            // assume valid access_token here
+            $groupsArr = array();
+            foreach($groups['data'] as $group)
+            {
+                $groupsArr[] = array(
+                    'name' => $group['name'], 
+                    'gid' => $group['id']
+                );
+            }
+            $retval = array_merge($retval, array('groups' => $groupsArr));
+        }
+        return $retval;
+    }
+
     public static function getBasicData($access_token)
     {
-        // called when login from index.php
-        $req = new FbBatch($access_token);
-        $req->push('/me');
-        $req->push('/debug_token', array(
-            'input_token' => $access_token, 
-            'access_token' => Fb::getAppToken()
-        ));
-        $req->push('/me/groups');
-        $results = $req->run();
-        $userData = $results[0];
-        $tokenInfo = $results[1];
-        // processing user data
-        if(!isset($userData['name']) || !isset($userData['id']))
-        {
-            throw new Exception('Faile to load user data: '.json_encode($userData));
-        }
-        // update access_token if user has registered
-        try
-        {
-            self::setData($userData['id'], array('access_token' => $access_token));
-        }
-        catch(Exception $e)
-        {
-            if($e->getMessage() != 'user_not_found')
-            {
-                throw $e;
-            }
-        }
-        // expiry
-        if(isset($tokenInfo['error']))
-        {
-            throw new Exception($tokenInfo['error']);
-        }
-        $groups = array();
-        foreach($results[2]['data'] as $group)
-        {
-            $groups[] = array(
-                'name' => $group['name'], 
-                'gid' => $group['id']
-            );
-        }
-        return array(
-            'name' => $userData['name'], 
-            'uid' => $userData['id'], 
-            'expiry' => $tokenInfo['data']['expires_at'] - time(), 
-            'groups' => $groups
-        );
+        return self::getDataFromFb($access_token, array('token', 'groups'));
     }
 
     public static function stripGroup($access_token, $gid)
     {
         // get uid from token
-        $userData = self::getBasicData($access_token);
+        $userData = self::getDataFromFb($access_token, array('token'));
         $uid = $userData['uid'];
         $groups = explode('_', self::getData($uid, 'groups'));
         $index = array_search($gid, $groups);

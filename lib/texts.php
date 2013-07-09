@@ -3,19 +3,18 @@ class Texts
 {
     public static function listTitles()
     {
-        if(($stmt = Db::query("SELECT title FROM texts where locked=0"))!==false)
-        {
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        else
-        {
-            throw new Exception('PDO query() failed: '.Db::getErr());
-        }
+        $stmt = Db::query("SELECT title FROM texts where locked=0");
+        $arr = $stmt->fetchAll(PDO::FETCH_NUM);
+        $titles = array_map(function($item){
+            return $item[0];
+        }, $arr);
+        return $titles;
     }
 
     public static function checkTitle($title)
     {
-        // check for duplicated titles
+        // check that specified title exists or not
+        // return true if such title exists
         $stmt = Db::prepare('select count(*) from texts where title=?');
         $stmt->execute(array($title));
         $num = $stmt->fetch(PDO::FETCH_NUM);
@@ -24,19 +23,41 @@ class Texts
 
     public static function addTitle($title)
     {
+        $title = trim($title);
+        if($title == '')
+        {
+            throw new Exception('標題不得為空白！');
+        }
         if(self::checkTitle($title)) // title exists
         {
-            return array('error' => 'title_exists');
+            throw new Exception('指定的標題已存在！');
         }
         $stmt = Db::prepare('insert texts (title,handler,text) values(?,NULL,"")');
-        $stmt->execute(array($title));
+        if($stmt->execute(array($title)) !== false)
+        {
+            return array('status' => 'success');
+        }
+        else
+        {
+            return array('error' => Db::getErr());
+        }
     }
 
-    public static function updateText($title, $texts)
+    public static function updateText($title, $texts, $handler, $access_token)
     {
-        if(self::checkTitle($title))
+        if(!self::checkTitle($title))
         {
-            throw new Exception('Specified title does not exists.');
+            throw new Exception('指定的標題不存在！');
+        }
+        $validHandlers = self::getPlugins();
+        array_unshift($validHandlers, '__none__');
+        if(array_search($handler, $validHandlers) === false)
+        {
+            throw new Exception('指定的外掛不存在！');
+        }
+        if($handler == '__none__')
+        {
+            $handler = null;
         }
         $textArr = explode("\n", str_replace("\r\n", "\n", $texts));
 
@@ -53,11 +74,16 @@ class Texts
         }
 
         $texts = Util::json_unicode($textArr);
-        $stmt = Db::prepare('update texts set text=? where title=?');
-        if($stmt->execute(array($texts, $title)) === false)
+        $stmt = Db::prepare('update texts set text=?,handler=? where title=?');
+        if($stmt->execute(array($texts, $handler, $title)) === false)
         {
             throw new Exception("PDO execute() failed: ".Db::getErr());
         }
+
+        // logging
+        $userData = Users::getDataFromFb($access_token, array('token'));
+        $stmt = Db::prepare('insert texts_log (uid,title,update_time) values (?,?,?)');
+        $stmt->execute(array($userData['uid'], $title, Util::timestr()));
         return array('status' => 'success');
     }
 
@@ -89,7 +115,7 @@ class Texts
         if(is_array($json_text))
         {
             return array(
-                'handler' => is_null($arr['handler'])?'None':$arr['handler'], 
+                'handler' => is_null($arr['handler'])?'__none__':$arr['handler'], 
                 'text' => implode("\n", $json_text)
             );
         }
@@ -176,16 +202,32 @@ class Texts
         }
         catch(Exception $e)
         {
-            if(method_exists($instance, 'handleException'))
-            {
-                $errStr = json_encode($instance->handleException($e));
-                throw new Exception($errStr);
-            }
-            else
-            {
-                throw $e;
-            }
+            // __construct should not throw an exception, and
+            // all plugins should have a handleException method
+            $errStr = json_encode($instance->handleException($e));
+            throw new Exception($errStr);
         }
+    }
+
+    public static function getPlugins()
+    {
+        $pluginDir = opendir(APP_ROOT.'plugins');
+        $plugins = array();
+        while(true)
+        {
+            $entry = readdir($pluginDir);
+            if($entry === false)
+            {
+                break;
+            }
+            if(!preg_match("/(.*)\\.php$/", $entry, $matches))
+            {
+                continue;
+            }
+            $plugins[] = ucfirst($matches[1]);
+        }
+        closedir($pluginDir);
+        return $plugins;
     }
 }
 ?>
