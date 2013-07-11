@@ -28,30 +28,6 @@ class Util
     }
 
     /*
-        Truncate $str to the first $len chars
-        * View chinese characters as two characters
-        * Add ... if truncated
-        Reference: http://stackoverflow.com/questions/4601032/php-iterate-on-string-characters
-    */
-    public static function truncate(&$str, $len)
-    {
-        $char_arr = preg_split('/(?<!^)(?!$)/u', $str);
-        $cur_len = 0;
-        $ret_val = '';
-        foreach($char_arr as $char)
-        {
-            $cur_len += mb_strwidth($char, "UTF-8");
-            if($cur_len >= $len)
-            {
-                $ret_val .= '...';
-                break;
-            }
-            $ret_val .= $char;
-        }
-        $str = $ret_val;
-    }
-
-    /*
      * check required arguments in $_POST
      * $params: array of field names of required arguments
      */
@@ -187,6 +163,19 @@ class Util
             $timestamp = time();
         }
         return date('Y-m-d H:i:s', $timestamp);
+    }
+
+    public static function tryParseJson($str)
+    {
+        $json = json_decode($str, true);
+        if(is_null($json))
+        {
+            return $str;
+        }
+        else
+        {
+            return $json;
+        }
     }
 }
 ?>

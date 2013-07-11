@@ -43,10 +43,7 @@ class RssReader extends PluginBase
         curl_close($ch);
         if(!mb_check_encoding($this->xml, 'UTF-8'))
         {
-            throw new Exception(json_encode(array(
-                'msg' => 'Invalid UTF-8 detected', 
-                'base64_data' => base64_encode($this->xml)
-            )));
+            throw new Exception('Invalid UTF-8 detected');
         }
     }
 
@@ -69,7 +66,14 @@ class RssReader extends PluginBase
                 'line' => $e->getLine()
             );
         }
-        $output['xml'] = $this->xml;
+        if(mb_check_encoding($this->xml, 'UTF-8'))
+        {
+            $output['xml'] = $this->xml;
+        }
+        else
+        {
+            $output['xml_base64'] = base64_encode($this->xml);
+        }
         $output['url'] = $this->url;
         return $output;
     }

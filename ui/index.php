@@ -10,6 +10,7 @@ Util::redirectHttps();
 External::setRelativePath('..');
 echo External::loadJsCss('jquery-ui', 'validate');
 ?>
+<base target="_blank">
 <script language="javascript">
 var busy_img = '<img src="../images/fb_busy.gif"></img>';
 
@@ -278,8 +279,9 @@ function get_info(initial)
             狀態：<span id="status">未開始發文</span><br />
             授權碼將在<span id="nExpiry">0</span>秒後過期<br />
         </fieldset>
-        <a href="./table.php" target="_blank">統計資料</a><br>
-        <a href="./text_mgr.php" target="_blank">洗版內容一覽</a><br>
+        <a href="./table.php">統計資料</a><br>
+        <a href="./text_mgr.php">洗版內容一覽</a><br>
+        <a href="https://github.com/yan12125/test_yan/">程式原始碼</a>
         <input type="button" id="logout" value="登出Facebook"><br>
     </form>
 </td>

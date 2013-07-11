@@ -142,16 +142,7 @@ catch(Exception $e)
         "trace" => $trace, 
     );
 
-    $err = $e->getMessage();
-    $err_json = json_decode($err, true);
-    if(!is_null($err_json))
-    {
-        $response_error['error'] = $err_json;
-    }
-    else
-    {
-        $response_error['error'] = $err;
-    }
+    $response_error['error'] = Util::tryParseJson($e->getMessage());
 
     if($errClass == 'ErrorException')
     {

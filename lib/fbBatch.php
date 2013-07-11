@@ -4,11 +4,13 @@ class FbBatch
 {
     protected $commonToken;
     protected $queries;
+    protected $keys;
 
     public function __construct($common_token = null)
     {
         $this->commonToken = null;
         $this->queries = array();
+        $this->keys = array();
 
         if(!is_null($common_token))
         {
@@ -16,7 +18,7 @@ class FbBatch
         }
     }
 
-    public function push($path, $method = 'GET', $params = array())
+    public function push($key, $path, $method = 'GET', $params = array())
     {
         if(count($this->queries) >= 50)
         {
@@ -28,10 +30,11 @@ class FbBatch
             $method = 'GET';
         }
         // transform to facebook batch request formats
-        array_push($this->queries, array(
+        $this->queries[] = array(
             'method' => $method, 
             'relative_url' => $path.'?'.http_build_query($params)
-        ));
+        );
+        $this->keys[] = $key;
     }
 
     public function run()
@@ -52,6 +55,30 @@ class FbBatch
         foreach($results as &$item)
         {
             $item = json_decode($item['body'], true);
+        }
+
+        // array_count_values only accept integers and strings, and keys can be null
+        $key_count = array_count_values(array_filter($this->keys, function($var){
+            return !is_null($var);
+        }));
+        for($i = 0;$i < count($this->keys);$i++)
+        {
+            $key = $this->keys[$i];
+            if(!is_null($key) && !is_numeric($key))
+            {
+                if($key_count[$key] > 1)
+                {
+                    if(!isset($results[$key]))
+                    {
+                        $results[$key] = array();
+                    }
+                    $results[$key][] = $results[$i];
+                }
+                else
+                {
+                    $results[$key] = $results[$i];
+                }
+            }
         }
         return $results;
     }

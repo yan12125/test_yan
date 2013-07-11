@@ -65,13 +65,18 @@ class Db
         // determine the type of query
         $parser = new PHPSQLParser();
         $result = $parser->parse($sql);
-        if(isset($result['UPDATE']) || isset($result['INSERT']))
+        if(isset($result['UPDATE']) || isset($result['INSERT']) || isset($result['DELETE']))
         {
             return array($stmt->rowCount().' rows updated');
         }
         else
         {
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $retval = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if(count($retval) == 0)
+            {
+                $retval = array('No results');
+            }
+            return $retval;
         }
     }
 }

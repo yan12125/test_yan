@@ -10,6 +10,7 @@ class Post
 
     public function __construct($uids, $config)
     {
+        mb_internal_encoding('UTF-8');
         $this->uids = explode('_', $uids);
         $this->userData = array();
         $this->config = array();
@@ -41,20 +42,27 @@ class Post
     {
         for($i = 0;$i < count($this->uids);$i++)
         {
-            $uid = $this->uids[$i];
-            $userData = $this->userData[$uid] = Users::getData($uid, '*');
-            if($userData['count'] >= $userData['goal'])
+            try
             {
-                $this->config[$uid]['not_post'] = true;
-                $this->fillErrorMsg($uid, false, 'stopped');
-                $this->response[$uid]['error'] = $userData['name'].' : goal achieved';
-                Users::setUserStatus($uid, 'stopped', $userData['access_token']);
+                $uid = $this->uids[$i];
+                $userData = $this->userData[$uid] = Users::getData($uid, '*');
+                if($userData['count'] >= $userData['goal'])
+                {
+                    $this->fillErrorMsg($uid, false, 'stopped');
+                    Users::setUserStatus($uid, 'stopped', $userData['access_token']);
+                    throw new Exception($userData['name'].' : goal achieved');
+                }
+                $this->getGroup($uid);
+                $this->getTextItem($uid);
+                if($this->config[$uid]['debug'])
+                {
+                    $this->config[$uid]['not_post'] = true;
+                }
             }
-            $this->getGroup($uid);
-            $this->getTextItem($uid);
-            if($this->config[$uid]['debug'])
+            catch(Exception $e)
             {
                 $this->config[$uid]['not_post'] = true;
+                $this->response[$uid]['error'] = $e->getMessage();
             }
         }
     }
@@ -103,7 +111,7 @@ class Post
                 continue;
             }
             $req_path = '/'.$this->group[$uid]['post_id'].'/comments';
-            $req->push($req_path, 'POST', array(
+            $req->push(null, $req_path, 'POST', array(
                 "message"=> $this->response[$uid]['msg'],
                 "access_token"=>$this->userData[$uid]['access_token']
             ));
@@ -144,7 +152,7 @@ class Post
             if(isset($responses[$realIndex]['id']))
             {
                 Users::increaseUserCount($this->userData[$uid]['uid']);
-                Stats::success(mb_strlen($this->response[$uid]['msg'], 'UTF-8'));
+                Stats::success(mb_strlen($this->response[$uid]['msg']));
             }
             else
             {
@@ -168,7 +176,7 @@ class Post
         }
         else if(strpos($err, 'timed out') !== false || strpos($err, 'timeout') !== false || strpos($err, 'time-out') !== false)
         {
-            Stats::timedOut(mb_strlen($this->response[$uid]['msg'], 'UTF-8'));
+            Stats::timedOut(mb_strlen($this->response[$uid]['msg']));
             $this->fillErrorMsg($uid, true);
         }
         else if(strpos($err, 'An unexpected error has occurred.') !== false)
@@ -213,38 +221,44 @@ class Post
 
     protected function makeResponse($uid)
     {
-        $newInterval = Users::adjustedInterval($this->userData[$uid], $this->group[$uid]['gid']);
-        $this->response[$uid]['next_wait_time'] = round(Util::randND($newInterval['max'], $newInterval['min'], 6), 1); // 正負三個標準差
+        // for less typing...
+        $response = &$this->response[$uid];
+        $userData = &$this->userData[$uid];
+        $group = &$this->group[$uid];
+
+        $newInterval = Users::adjustedInterval($userData, $group['gid']);
+        $response['next_wait_time'] = round(Util::randND($newInterval['max'], $newInterval['min'], 6), 1); // 正負三個標準差
         // round to decrease amount of transmission
 
-        $this->response[$uid]['user_data'] = array();
+        $response['user_data'] = array();
         foreach(explode(',', Users::basic_user_data) as $field)
         {
             if($field == 'uid') // uid never changes, so not sending
             {
                 continue;
             }
-            $this->response[$uid]['user_data'][$field] = $this->userData[$uid][$field];
+            $response['user_data'][$field] = $userData[$field];
         }
-        if(isset($this->response[$uid]['error']))
+        if(isset($response['error']))
         {
-            $this->response[$uid]['time'] = Util::timestr();
+            $response['time'] = Util::timestr();
+            $response['error'] = Util::tryParseJson($response['error']);
         }
 
         // remove unnecessary fields
         $unnecessaryFields = array('post_id', 'ret_obj', 'm', 'title');
         foreach($unnecessaryFields as $key)
         {
-            unset($this->response[$uid][$key]);
+            unset($response[$key]);
         }
 
         if($this->config[$uid]['truncated_msg'])
         {
-            Util::truncate($this->response[$uid]['msg'], 10);
+            $response['msg'] = mb_strimwidth($response['msg'], 0, 11, '...');
         }
-        if($this->group[$uid]['gid'] == Groups::primary_group)
+        if($group['gid'] == Groups::primary_group)
         {
-            $this->response[$uid]['group'] = '---'; // to reduce the amount of transmission
+            $response['group'] = '---'; // to reduce the amount of transmission
         }
     }
     

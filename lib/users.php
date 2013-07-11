@@ -55,7 +55,9 @@ class Users
         $req = new FbBatch(Fb::getAppToken());
         foreach($users_chunked[$page - 1] as $user)
         {
-            $req->push('/debug_token', array('input_token' => $user['access_token']));
+            $req->push(null, '/debug_token', array(
+                'input_token' => $user['access_token']
+            ));
         }
         $token_response = $req->run();
         foreach($token_response as &$item)
@@ -284,35 +286,21 @@ class Users
         $req = new FbBatch($access_token);
         if($getToken)
         {
-            $req->push('/me');
-            $req->push('/debug_token', array(
+            $req->push('token', '/me', array('fields' => 'id,name'));
+            $req->push('token', '/debug_token', array(
                 'input_token' => $access_token, 
                 'access_token' => Fb::getAppToken()
             ));
         }
         if($getGroups)
         {
-            $req->push('/me/groups');
+            $req->push('groups', '/me/groups', array('fields' => 'id,name'));
         }
         $results = $req->run();
-        if($getToken && $getGroups)
-        {
-            $userData = $results[0];
-            $tokenInfo = $results[1];
-            $groups = $results[2];
-        }
-        else if($getToken && !$getGroups)
-        {
-            $userData = $results[0];
-            $tokenInfo = $results[1];
-        }
-        else if(!$getToken && $getGroups)
-        {
-            $groups = $results[0];
-        }
         $retval = array();
         if($getToken)
         {
+            list($userData, $tokenInfo) = $results['token'];
             // processing user data
             if(!isset($userData['name']) || !isset($userData['id']))
             {
@@ -343,6 +331,7 @@ class Users
         }
         if($getGroups)
         {
+            $groups = $results['groups'];
             // assume valid access_token here
             $groupsArr = array();
             foreach($groups['data'] as $group)
