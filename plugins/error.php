@@ -9,7 +9,7 @@ class Error extends PluginBase
 
     public function handleException($e)
     {
-        return array('message' => $e->getMessage());
+        return $e->getMessage();
     }
 }
 ?>

@@ -27,6 +27,15 @@
     float: left;
 }
 
+.title_choose a
+{
+    text-decoration: none;
+}
+
+.title_choose a:hover
+{
+    text-decoration: underline;
+}
 
 #choose_groups img
 {
@@ -49,7 +58,7 @@
     overflow-y: scroll;
 }
 
-.selected_item /* <span> in more_options */
+.selected_item /* selected items in more_options */
 {
     font-weight: bold;
 }
@@ -68,4 +77,11 @@
 label.error,span.error
 {
     margin-left: 10px;
+}
+
+.busy_img
+{
+    background-image: url('../images/fb_busy.gif');
+    background-position: 10px center;
+    background-repeat: no-repeat;
 }

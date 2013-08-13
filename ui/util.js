@@ -1,5 +1,5 @@
 // Like htmlspecialchars() in PHP
-// reference: http://stackoverflow.com/questions/1787322/htmlspecialchars-equivalent-in-javascript
+// reference: http://stackoverflow.com/questions/1787322
 function escapeHtml(text)
 {
     return text
@@ -41,51 +41,38 @@ var Util = {
     relative_path: '.'
 };
 
-function getAccessToken(cb, getLongtermToken)
+function getAccessToken(cb)
 {
-    $('body').hide();
-    if(typeof getLongtermToken == 'undefined')
+    if(typeof parse_str == 'function')
     {
-        getLongtermToken = false;
+        var arr = {};
+        parse_str(location.search.substring(1), arr);
+        if(arr.access_token)
+        {
+            cb({ access_token: arr.access_token });
+            return;
+        }
     }
-    var cbWrapper = function(data){
-        if(typeof cb == 'function')
-        {
-            $('body').show();
-            cb(data);
-        }
-    };
-    var parseLoginStatus = function(response, authUrl){
-        if(response.status != 'connected')
-        {
-            top.location.href = authUrl;
-            return;
-        }
-        var url = top.location.href;
-        if(url.indexOf('?') !== -1)
-        {
-            top.location.href = url.substring(0, url.indexOf('?'));
-        }
-        if(response.authResponse.expiresIn >= 7201 || !getLongtermToken)
-        {
-            cbWrapper({
-                'access_token': response.authResponse.accessToken, 
-                'expires': response.authResponse.expiredIn
-            });
-            return;
-        }
-        callWrapper('exchange_token', {
-            access_token: response.authResponse.accessToken
-        }, function(response){
-            cbWrapper(response);
-        });
-    };
-    $.getScript('//connect.facebook.net/en_UK/all.js', function(){
-        callWrapper('get_app_info', function(data){
-            FB.init({ appId: data.appId });
-            FB.getLoginStatus(function(response){
-                parseLoginStatus(response, data.authUrl);
-            });
-        });
+    callWrapper('get_token', function(response){
+        cb(response);
     });
 }
+
+$.fn.extend({
+    setBusy: function (isBusy) {
+        if(isBusy)
+        {
+            this.html(escapeHtml('           ')).addClass('busy_img');
+        }
+        else
+        {
+            this.text('').removeClass('busy_img');
+        }
+        return this;
+    }, 
+    hasText: function(text){
+        return this.filter(function(){
+            return $(this).text() == text;
+        });
+    }
+});

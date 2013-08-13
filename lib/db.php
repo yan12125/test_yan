@@ -58,7 +58,7 @@ class Db
 
     public static function queryToArray($sql)
     {
-        Util::ip_only('127.0.0.1');
+        Util::ip_only();
         External::loadPhp('php-sql-parser');
         $stmt = self::prepare($sql);
         $ret = $stmt->execute();

@@ -42,7 +42,7 @@ function viewUsers()
         { caption: '姓名', name: 'name', width: 200 }, 
         { caption: '狀態', name: 'status', width: 70 }, 
         { caption: '授權碼有效', name: 'valid', width: 70 }, 
-        { caption: '訊息', name: 'msg', width: 600 }
+        { caption: '訊息', name: 'msg', width: $(document).width() - 400 }
     ];
     createTable('view_users', columns, '所有使用者');
 }

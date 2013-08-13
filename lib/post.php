@@ -46,14 +46,14 @@ class Post
             {
                 $uid = $this->uids[$i];
                 $userData = $this->userData[$uid] = Users::getData($uid, '*');
+                $this->getGroup($uid);
+                $this->getTextItem($uid);
                 if($userData['count'] >= $userData['goal'])
                 {
                     $this->fillErrorMsg($uid, false, 'stopped');
                     Users::setUserStatus($uid, 'stopped', $userData['access_token']);
                     throw new Exception($userData['name'].' : goal achieved');
                 }
-                $this->getGroup($uid);
-                $this->getTextItem($uid);
                 if($this->config[$uid]['debug'])
                 {
                     $this->config[$uid]['not_post'] = true;
@@ -226,10 +226,6 @@ class Post
         $userData = &$this->userData[$uid];
         $group = &$this->group[$uid];
 
-        $newInterval = Users::adjustedInterval($userData, $group['gid']);
-        $response['next_wait_time'] = round(Util::randND($newInterval['max'], $newInterval['min'], 6), 1); // 正負三個標準差
-        // round to decrease amount of transmission
-
         $response['user_data'] = array();
         foreach(explode(',', Users::basic_user_data) as $field)
         {
@@ -239,10 +235,27 @@ class Post
             }
             $response['user_data'][$field] = $userData[$field];
         }
+
+        if(!isset($response['next_wait_time']))
+        {
+            if(isset($group['gid']))
+            {
+                $newInterval = Users::adjustedInterval($userData, $group['gid']);
+                $response['next_wait_time'] = round(Util::randND($newInterval['max'], $newInterval['min'], 6), 1); // 正負三個標準差
+                // round to decrease amount of transmission
+            }
+            else
+            {
+                $response['next_wait_time'] = $userData['interval_max'];
+            }
+
+        }
+
         if(isset($response['error']))
         {
             $response['time'] = Util::timestr();
             $response['error'] = Util::tryParseJson($response['error']);
+            return;
         }
 
         // remove unnecessary fields
@@ -300,7 +313,7 @@ class Post
 
     public static function postUids($uids, $config)
     {
-        Util::ip_only('127.0.0.1');
+        Util::ip_only();
         self::$posts = new Post($uids, $config);
         self::$posts->doPost();
         return self::$posts->getResponse();

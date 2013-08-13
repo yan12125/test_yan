@@ -101,14 +101,10 @@ try
             echo Util::json_unicode(Post::postUids($_POST['uids'], $_POST));
             break;
         /*
-         * auth.php
+         * fb.php
          */
-        case 'get_app_info':
-            echo json_encode(Auth::getAppInfo());
-            break;
-        case 'exchange_token':
-            Util::checkPOST(array('access_token'));
-            echo json_encode(Auth::exchangeToken($_POST['access_token']));
+        case 'get_token':
+            echo json_encode(Fb::getTokenFromSession());
             break;
     }
 }

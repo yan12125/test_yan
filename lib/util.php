@@ -55,14 +55,54 @@ class Util
         return $i;
     }
 
-    public static function ip_only($ip)
+    public static function ip_only()
     {
+        if(func_num_args() == 0)
+        {
+            $IPs = json_decode(Db::getConfig('allow_ips'));
+        }
+        else
+        {
+            $IPs = func_get_args();
+        }
         $remote_ip = $_SERVER['REMOTE_ADDR'];
-        if($ip !== $remote_ip)
+        $ok = false;
+        for($i = 0;$i < count($IPs);$i++)
+        {
+            if(self::ipCIDRCheck($remote_ip, $IPs[$i]))
+            {
+                self::redirectHttps();
+                $ok = true;
+            }
+        }
+        if(!$ok)
         {
             throw new Exception("IP {$remote_ip} forbidden");
         }
-        self::redirectHttps();
+    }
+
+    // Reference: http://php.net/manual/en/ref.network.php#74656
+    public static function ipCIDRCheck ($IP, $CIDR)
+    {
+        $components = explode ("/", $CIDR);
+        $net = $components[0];
+        if(count($components) == 2)
+        {
+            $mask = $components[1];
+        }
+        else if(count($components) == 1)
+        {
+            $mask = 32;
+        }
+        
+        $ip_net = ip2long ($net);
+        $ip_mask = ~((1 << (32 - $mask)) - 1);
+
+        $ip_ip = ip2long ($IP);
+
+        $ip_ip_net = $ip_ip & $ip_mask;
+
+        return ($ip_ip_net == $ip_net);
     }
 
     // not used anymore
@@ -162,19 +202,72 @@ class Util
         {
             $timestamp = time();
         }
-        return date('Y-m-d H:i:s', $timestamp);
+        return date('Y/m/d H:i:s', $timestamp);
     }
 
     public static function tryParseJson($str)
     {
-        $json = json_decode($str, true);
-        if(is_null($json))
+        if(is_string($str))
         {
-            return $str;
+            $json = json_decode($str, true);
+            if(is_null($json))
+            {
+                return $str;
+            }
+            else
+            {
+                return $json;
+            }
         }
         else
         {
-            return $json;
+            return $str;
+        }
+    }
+
+    public static function getPageUrl($strip_fields = array())
+    {
+        $url = 'https://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
+        if(count($strip_fields) != 0)
+        {
+            $urlC = parse_url($url); // url Components
+            if(isset($urlC['query']))
+            {
+                parse_str($urlC['query'], $param);
+                for($i = 0;$i < count($strip_fields);$i++)
+                {
+                    unset($param[$strip_fields[$i]]);
+                }
+                $url = $urlC['scheme'].'://'.$urlC['host'].$urlC['path'];
+                if(count($param) != 0)
+                {
+                    $url .= '?'.http_build_query($param);
+                }
+            }
+        }
+        return $url;
+    }
+
+    public static function checkPHP()
+    {
+        // check PHP version
+        if(PHP_MAJOR_VERSION < 5 || PHP_MINOR_VERSION < 3)
+        {
+            echo 'Require PHP 5.3 or higher.';
+            exit(0);
+        }
+
+        // check extensions
+        $required = array('curl', 'PDO', 'pdo_mysql', 'openssl', 'mbstring', 'iconv');
+        $loaded = get_loaded_extensions();
+        $diff = array_diff($required, $loaded);
+        if(count($diff) != 0)
+        {
+            foreach($diff as $ext)
+            {
+                echo "Extension {$ext} required.\n";
+            }
+            exit(0);
         }
     }
 }

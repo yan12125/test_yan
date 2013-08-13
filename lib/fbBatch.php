@@ -5,14 +5,18 @@ class FbBatch
     protected $commonToken;
     protected $queries;
     protected $keys;
+    protected static $lastQueryResult;
+    protected static $lastParam;
 
     public function __construct($common_token = null)
     {
-        $this->commonToken = null;
-        $this->queries = array();
-        $this->keys = array();
-
-        if(!is_null($common_token))
+        self::$lastParam = self::$lastQueryResult = null;
+        $this->queries = $this->keys = array();
+        if(is_null($common_token))
+        {
+            $this->commonToken = Fb::getAppToken();
+        }
+        else
         {
             $this->commonToken = $common_token;
         }
@@ -43,15 +47,8 @@ class FbBatch
         {
             return array();
         }
-        $params = array('batch' => json_encode($this->queries));
-        if(!empty($this->commonToken))
-        {
-            $params['access_token'] = $this->commonToken;
-        }
-        $results = Fb::api('/', 'POST', $params);
+        $results = self::makeRequest();
         $this->queries = array();
-        // Facebook api may return null here (might be failed json_decode?)
-        // but I don't want to handle it
         foreach($results as &$item)
         {
             $item = json_decode($item['body'], true);
@@ -83,9 +80,50 @@ class FbBatch
         return $results;
     }
 
+    protected function makeRequest()
+    {
+        self::$lastParam = $params = array(
+            'batch' => json_encode($this->queries), 
+            'access_token' => $this->commonToken
+        );
+
+        $ch = curl_init();
+        curl_setopt_array($ch , array(
+            CURLOPT_URL => 'https://graph.facebook.com/', 
+            CURLOPT_RETURNTRANSFER => true, 
+            CURLOPT_BINARYTRANSFER => true, 
+            CURLOPT_POST => true, 
+            CURLOPT_POSTFIELDS => http_build_query($params), 
+            CURLOPT_TIMEOUT => 20
+        ));
+        $result = curl_exec($ch);
+        if($result === false)
+        {
+            throw new Exception(curl_error($ch));
+        }
+        self::$lastQueryResult = $result;
+        $json = json_decode($result, true);
+        if(is_null($json))
+        {
+            throw new Exception('Invalid result from facebook');
+        }
+        if(isset($json['error']))
+        {
+            throw new Exception(json_encode($json['error']));
+        }
+        return $json;
+    }
+
     public function getCount()
     {
         return count($this->queries);
+    }
+
+    public static function report_fields(&$output)
+    {
+        $output['fb_result'] = Util::tryParseJson(self::$lastQueryResult);
+        self::$lastParam['batch'] = Util::tryParseJson(self::$lastParam['batch']);
+        $output['last_param'] = self::$lastParam;
     }
 }
 ?>

@@ -14,7 +14,8 @@ class External
         'jqGrid' => array('files' => array('jquery.jqGrid.min.js', 'grid.locale-tw.js', 'ui.jqgrid.css')), 
         'validate' => array('files' => array('jquery.validate.js', 'messages_zh_TW.js')), 
         'ajaxq' => array('files' => array('jquery.ajaxq.js')), 
-        'simple_html_dom' => array('files' => array('simple_html_dom.php'))
+        'simple_html_dom' => array('files' => array('simple_html_dom.php')), 
+        'parse_str' => array('files' => array('parse_str.js'))
     );
 
     protected static function load($type, $names)

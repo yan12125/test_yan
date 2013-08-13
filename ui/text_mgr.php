@@ -1,12 +1,15 @@
+<?php
+require '../common_inc.php';
+Fb::login();
+?>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Text Manager</title>
 <?php
-require '../common_inc.php';
 External::setRelativePath('..');
-echo External::loadJsCss('jquery-ui');
+echo External::loadJsCss('jquery-ui', 'parse_str');
 ?>
 <script>
 $(document).on('ready', function(e){
@@ -21,12 +24,14 @@ $(document).on('ready', function(e){
             updateText($('.title.selected')[0]);
         });
         $('#discard').on('click', function(e){
-            loadText($('.title.selected')[0]);
+            loadText($('.title.selected').text());
         });
         $('#new_title').on('click', function(e){
             newTitle();
         });
-        updateTitles();
+        updateTitles(function(titles){
+            selectTitleByUrl(titles);
+        });
         loadPlugins();
     });
 });
@@ -34,7 +39,7 @@ $(document).on('ready', function(e){
 function resizeAll()
 {
     // $(document).height() and $(window).height() are different!
-    // http://stackoverflow.com/questions/1304378/jquery-web-page-height
+    // http://stackoverflow.com/questions/1304378
     // two steps below can't be exchanged! View in chrome debugger
     $('#texts').width($(window).width() - $('#controls').offset().left - 40);
     $('#titles').height($(window).height());
@@ -43,20 +48,36 @@ function resizeAll()
 function updateTitles(cb)
 {
     $('#titles').html('');
-    callWrapper('list_titles', function(data){
-        for(var i = 0;i < data.length;i++)
+    callWrapper('list_titles', function(titles){
+        for(var i = 0;i < titles.length;i++)
         {
-            $('#titles').append('<div class="title">'+data[i]+'</div>');
+            $('#titles').append('<div class="title">'+titles[i]+'</div>');
         }
         $('.title').on('click', function(e){
-            loadText(this);
+            loadText($(this).text());
         });
         resizeAll();
         if(typeof cb == 'function')
         {
-            cb();
+            cb(titles);
         }
     });
+}
+
+function selectTitleByUrl(titles)
+{
+    // title may contain special chars such as ?
+    // so encode in index.php and decode here
+    var arr = {};
+    parse_str(location.search.substring(1), arr);
+    if(loadText(arr.title))
+    {
+        $('#titles').scrollTop(
+            $('#titles').scrollTop() + 
+            $('.title.selected').offset().top - 
+            $('#titles').height()/2
+        );
+    }
 }
 
 function loadPlugins()
@@ -70,11 +91,16 @@ function loadPlugins()
     });
 }
 
-function loadText(titleButton)
+function loadText(title)
 {
+    var titleArr = $('.title').map(function(i, e){ return $(e).text(); });
+    if($.inArray(title, titleArr) == -1)
+    {
+        return false;
+    }
+    var titleButton = $('.title').hasText(title);
     $('#save, #discard').button('option', 'disabled', false);
     $('#texts').val('Loading...');
-    var title = $(titleButton).text();
     $('.title').removeClass('selected');
     $(titleButton).addClass('selected');
     $('#caption').text(title);
@@ -84,6 +110,7 @@ function loadText(titleButton)
         $('#texts').val(response.text).focus();
         $('#handler').val(response.handler);
     });
+    return true;
 }
 
 function updateText(titleButton)
@@ -96,7 +123,7 @@ function updateText(titleButton)
     }, function(response){
         if(response.status == 'success')
         {
-            loadText(titleButton);
+            loadText($(titleButton).text());
             $('#dialog').text('內容成功更新');
         }
         else
@@ -117,10 +144,7 @@ function newTitle()
             if(response.status == 'success')
             {
                 updateTitles(function(){
-                    var titleButton = $('.title').filter(function(){
-                        return $(this).text() == _title;
-                    });
-                    loadText(titleButton[0]);
+                    loadText(_title);
                 });
             }
             else

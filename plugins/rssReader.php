@@ -36,7 +36,7 @@ class RssReader extends PluginBase
         if(empty($this->xml))
         {
             throw new Exception(json_encode(array(
-                'msg' => 'Failed to retrieve '.$this->url, 
+                'msg' => 'Failed to retrieve specified url', 
                 'curl_error' => curl_error($ch)
             )));
         }
@@ -62,7 +62,7 @@ class RssReader extends PluginBase
         {
             $output = array(
                 'source' => 'RSS Reader', 
-                'message' => $e->getMessage(), 
+                'message' => Util::tryParseJson($e->getMessage()), 
                 'line' => $e->getLine()
             );
         }

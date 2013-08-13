@@ -313,7 +313,7 @@ $(document).on('ready', function(e){
         window.debug = ($('#chk_debug').attr('checked') === 'checked');
     });
     // confirm when closing page
-    // http://stackoverflow.com/questions/7080269/javascript-before-leaving-the-page
+    // http://stackoverflow.com/questions/7080269
     $(window).on('beforeunload', function(e){
         var still_running = false;
         for(var uid in users)

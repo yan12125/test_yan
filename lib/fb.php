@@ -12,7 +12,7 @@ class Fb
         $appConf = Config::getParamArr(array('appId', 'appSecret', 'fb_prefix'));
         External::loadPhp('facebook');
         // Disable ssl verify to hide messages in error.log
-        // Reference: http://stackoverflow.com/questions/7374223/invalid-or-no-certificate-authority-found-using-bundled-information
+        // Reference: http://stackoverflow.com/questions/7374223
         Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYPEER] = false;
         // In alternate.php, timeout is 30s, and I want a shorter interval here
         Facebook::$CURL_OPTS[CURLOPT_TIMEOUT] = 20;
@@ -29,7 +29,7 @@ class Fb
         return call_user_func_array(array(self::$fb, $name), $args);
     }
 
-    // not using get total count because it's too slow
+    // used in stats.php
     public static function getCount($access_token)
     {
         // July 2013 breaking changes
@@ -73,6 +73,114 @@ class Fb
                 throw new Exception('Failed to get App access token. '.$response);
             }
         }
+    }
+
+    protected static function getAuthUrl($redirect_uri)
+    {
+        $conf = Config::getParamArr(array('appId', 'rootUrl'));
+        $params = http_build_query(array(
+            'client_id' => $conf['appId'], 
+            'scope' => 'publish_stream,user_groups', 
+            'redirect_uri' => $redirect_uri
+        ));
+        $authUrl='https://graph.facebook.com/oauth/authorize?'.$params;
+        return $authUrl;
+    }
+
+    public static function getToken($code, $redirect_uri)
+    {
+        $context = stream_context_create(array(
+            'http' => array('ignore_errors' => true),
+        ));
+        $conf = Config::getParamArr(array('appId', 'appSecret', 'rootUrl'));
+        $params = http_build_query(array(
+            'client_id' => $conf['appId'], 
+            'redirect_uri' => $redirect_uri,  
+            'client_secret' => $conf['appSecret'], 
+            'code' => $code
+        ));
+        $tokenUrl='https://graph.facebook.com/oauth/access_token?'.$params;
+        $authPage = file_get_contents($tokenUrl, false, $context);
+        parse_str($authPage, $arr_result);
+        if(!isset($arr_result['access_token']))
+        {
+            $arr_result = json_decode($authPage, true);
+            return array(
+                'error' => 'retrieve_access_token_failed', 
+                'result' => $authPage, 
+                'result_json' => $arr_result, 
+                'redirect_uri' => $redirect_uri
+            );
+        }
+
+        if($arr_result['expires'] < 7201)
+        {
+            $arr_result = self::exchangeToken($arr_result['access_token']);
+        }
+        return $arr_result;
+    }
+
+    public static function login()
+    {
+        Util::redirectHttps();
+        if(isset($_GET['access_token']))
+        {
+            return;
+        }
+        session_start();
+        if(isset($_SESSION['access_token']))
+        {
+            return;
+        }
+        if(!isset($_GET['code']) || !isset($_SESSION['redirect_uri']))
+        {
+            if(isset($_GET['error']))
+            {
+                header('Location: https://www.facebook.com/');
+                exit(0);
+            }
+            $_SESSION['redirect_uri'] = Util::getPageUrl();
+            header('Location: '.self::getAuthUrl($_SESSION['redirect_uri']));
+            exit(0);
+        }
+        $token = self::getToken($_GET['code'], $_SESSION['redirect_uri']);
+        if(!isset($token['access_token']))
+        {
+            echo json_encode($token);
+            exit(0);
+        }
+        $_SESSION['access_token'] = $token['access_token'];
+        $_SESSION['expires'] = $token['expires'];
+        header('Location: '.Util::getPageUrl(array('code')));
+    }
+
+    public static function getTokenFromSession()
+    {
+        session_start();
+        $data = array(
+            'access_token' => $_SESSION['access_token'], 
+            'expires' => $_SESSION['expires']
+        );
+        session_destroy();
+        return $data;
+    }
+
+    protected static function exchangeToken($token)
+    {
+        $conf = Config::getParamArr(array('appId', 'appSecret'));
+        $params = http_build_query(array(
+            'client_id' => $conf['appId'], 
+            'client_secret' => $conf['appSecret'], 
+            'grant_type' => 'fb_exchange_token', 
+            'fb_exchange_token' => $token
+        ));
+        $url_newToken='https://graph.facebook.com/oauth/access_token?'.$params;
+        parse_str(file_get_contents($url_newToken), $arr_result);
+        if($arr_result['expires'] < 7201) // 2 hours
+        {
+             throw new Exception('token_expired_soon');
+        }
+        return $arr_result;
     }
 }
 ?>

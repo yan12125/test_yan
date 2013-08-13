@@ -1,3 +1,7 @@
+<?php
+require '../common_inc.php';
+Fb::login();
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,15 +9,11 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="stylesheet" href="index.css">
 <?php
-require '../common_inc.php';
-Util::redirectHttps();
 External::setRelativePath('..');
 echo External::loadJsCss('jquery-ui', 'validate');
 ?>
 <base target="_blank">
 <script language="javascript">
-var busy_img = '<img src="../images/fb_busy.gif"></img>';
-
 $(document).on('ready', function(e){
     // basic data
     getAccessToken(function(response){
@@ -38,11 +38,11 @@ $(document).on('ready', function(e){
     }, true); // longterm token required
 
     // loading groups...
-    $('#choose_groups').html(busy_img);
+    $('#choose_groups').setBusy(true);
     // three buttons below are in title selection area
     var selectRandom = function(probability){
         var checkboxes = $('.title_choose :checkbox');
-        var titleTexts = $('.title_choose span');
+        var titleTexts = $('.title_choose a');
         checkboxes.attr("checked", false);
         titleTexts.removeClass('selected_item');
         for(var i = 0;i < checkboxes.length;i++)
@@ -54,15 +54,12 @@ $(document).on('ready', function(e){
             }
         }
     };
-    $('#selectAll').on('click', function(e){
-        selectRandom(1);
-    });
-    $('#selectRandom').on('click', function(e){
-        selectRandom(0.5);
-    });
-    $('#selectNone').on('click', function(e){
-        selectRandom(0);
-    });
+    $('#btnStart').on('click', function(e){ start2(); });
+    $('#btnStop').on('click', function(e){ stop2(); });
+    $('#addUser').on('click', function(e){ add_user(); });
+    $('#selectAll').on('click', function(e){ selectRandom(1); });
+    $('#selectRandom').on('click', function(e){ selectRandom(0.5); });
+    $('#selectNone').on('click', function(e){ selectRandom(0); });
 
     // initialize validation
     var common_rule = {
@@ -97,8 +94,10 @@ function getTitles(userTitles)
         {
             var titles_div = $('.title_choose');
             var title_text=textgroups[i];
-            titles_div.eq(i%titles_div.length).append("<input type=\"checkbox\" value=\""+
-                title_text+"\" /><span>"+title_text+"</span><br />\n");
+            var textUrl = './text_mgr.php?title='+encodeURIComponent(title_text)+'&access_token='+$('#token').val();
+            titles_div.eq(i%titles_div.length)
+                .append('<input type="checkbox" value="'+title_text+'">')
+                .append('<a href="'+textUrl+'">'+title_text+'</a><br>');
             if($.inArray(title_text, userTitles) > -1)
             {
                 titles_div.find("input[value=\""+title_text+"\"]")
@@ -114,7 +113,7 @@ function getTitles(userTitles)
 
 function parseGroups(allGroups, userGroups)
 {
-    $('#choose_groups').html('');
+    $('#choose_groups').setBusy(false);
     for(var i = 0;i < allGroups.length;i++)
     {
         var gid = allGroups[i].gid;
@@ -127,18 +126,15 @@ function parseGroups(allGroups, userGroups)
             }
             // retrieve group feed from facebook
             var $statusText = $(this).next().next();
-            $statusText.removeClass('error').html(busy_img);
+            $statusText.removeClass('error').setBusy(true);
             callWrapper('get_group_info', { gid: this.value, access_token: $('#token').val() }, function(response){
-                if(typeof response['error'] != 'undefined')
+                $statusText.setBusy(false);
+                if(response.error)
                 {
-                    $statusText.addClass('error').html('無法讀取社團內容: '+response['error']);
+                    $statusText.addClass('error').html('無法讀取社團內容: '+response.error);
                     var gid = this.data.split('&')[1].split('=')[1];
                     $('#choose_groups input[value="'+gid+'"]').attr('checked', false) // revert selection
                         .next().removeClass('selected_item');
-                }
-                else
-                {
-                    $statusText.html('');
                 }
             });
         });
@@ -182,16 +178,16 @@ function stop2()
 
 function add_user(cb)
 {
-    var titleList = $('.title_choose :checkbox:checked').map(function(index, element){
-        return $(element).val();
+    var titleList = $('.title_choose :checkbox:checked').map(function(i, e){
+        return $(e).val();
     });
     if(titleList.length == 0)
     {
         alert('至少要選一像留言內容！');
         return;
     }
-    var userGroups = $('#choose_groups :checkbox:checked').map(function(index, element){
-        return $(element).val();
+    var userGroups = $('#choose_groups :checkbox:checked').map(function(i, e){
+        return $(e).val();
     });
     if(userGroups.length == 0)
     {
@@ -217,9 +213,9 @@ function get_info(initial)
 {
     callWrapper("get_user_info", { "uid": $('#uid').val() }, function(response){
         var msg="";
-        if(typeof response["error"] != "undefined")
+        if(response.error)
         {
-            var err = response['error'];
+            var err = response.error;
             if(err == 'user_not_found')
             {
                 // default setting for new users
@@ -237,7 +233,7 @@ function get_info(initial)
             }
         }
 
-        if(response["status"]=="started")
+        if(response.status == "started")
         {
             $("#status").html("代洗中");
             $("#btnStart").attr("disabled", true);
@@ -245,13 +241,13 @@ function get_info(initial)
         }
         if(initial)
         {
-            $('input[name="interval_max"]').val(response["interval_max"]);
-            $('input[name="interval_min"]').val(response["interval_min"]);
-            $('input[name="goal"]').val(response["goal"]);
-            getTitles(JSON.parse(response['titles']));
-            parseGroups(window.userGroups, response['groups']);
+            $('input[name="interval_max"]').val(response.interval_max);
+            $('input[name="interval_min"]').val(response.interval_min);
+            $('input[name="goal"]').val(response.goal);
+            getTitles(JSON.parse(response.titles));
+            parseGroups(window.userGroups, response.groups);
         }
-        $("#count").html(response["count"]);
+        $("#count").html(response.count);
     });
 }
 </script>
@@ -270,9 +266,9 @@ function get_info(initial)
             時間間隔下限: <input type="text" name="interval_min" class="input_number" value="80"/><br />
             發文次數: <input type="text" name="goal" class="input_number" value="2147483647"/><br />
             已發文數：<span id="count">0</span><br />
-            <input type="button" value="開始" id="btnStart" onclick="start2();" />
-            <input type="button" value="停止" id="btnStop" onclick="stop2();" disabled="disabled"/>
-            <input type="button" value="更新資料" onclick="add_user();" /><br />
+            <input type="button" value="開始" id="btnStart">
+            <input type="button" value="停止" id="btnStop" disabled="disabled">
+            <input type="button" value="更新資料" id="addUser"><br>
         </fieldset>
         <fieldset id="information">
             <legend>洗版資訊</legend>
@@ -291,7 +287,8 @@ function get_info(initial)
         <div>
             <input type="button" value="全選" id="selectAll">
             <input type="button" value="隨便選" id="selectRandom">
-            <input type="button" value="全部不選" id="selectNone"><br />
+            <input type="button" value="全部不選" id="selectNone">
+            欲知詳細內容，請點標題<br />
             <div class="title_choose"></div>
             <div class="title_choose"></div>
             <div class="title_choose"></div>

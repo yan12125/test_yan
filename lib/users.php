@@ -30,9 +30,8 @@ class Users
 
     public static function listUsersSimple($IDs)
     {
-        Util::ip_only('127.0.0.1');
-        $users = self::listUsers(Users::basic_user_data, false, $IDs);
-        return $users;
+        Util::ip_only();
+        return self::listUsers(Users::basic_user_data, false, $IDs);
     }
 
     public static function viewUsers($page, $nRows)
@@ -52,7 +51,7 @@ class Users
         }
 
         // check all access_token's in one batch request
-        $req = new FbBatch(Fb::getAppToken());
+        $req = new FbBatch();
         foreach($users_chunked[$page - 1] as $user)
         {
             $req->push(null, '/debug_token', array(
@@ -91,11 +90,7 @@ class Users
                 $err = $token_response[$i]['error']['message'];
 
                 // remove redundant prefix
-                $redundant = 'Error validating access token: ';
-                if(strstr($err, $redundant) != false)
-                {
-                    $err = substr($err, strlen($redundant));
-                }
+                $err = str_replace('Error validating access token: ', '', $err);
 
                 // error message from facebook may contain uid, mask it
                 if(strstr($err, $curUser['uid']) != false)
