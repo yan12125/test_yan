@@ -61,13 +61,8 @@ class Texts
         }
         $textArr = explode("\n", str_replace("\r\n", "\n", $texts));
 
-        // remove empty lines
-        function remove_empty($item)
-        {
-            return trim($item) != '';
-        }
         // array_filter preserve keys, but we want continuous array for json_encode
-        $textArr = array_values(array_filter($textArr, 'remove_empty'));
+        $textArr = array_values(array_filter($textArr, array('Util', 'not_empty')));
         if(count($textArr) == 0)
         {
             return array('error' => 'No strings given');
@@ -178,7 +173,7 @@ class Texts
             // no need to escape html special chars because facebook will do it
             $ret_val['msg'] = $json_texts[$m];
         }
-        if(isset($ret_val['msg']) && trim($ret_val['msg']) == "")
+        if(isset($ret_val['msg']) && !Util::not_empty($ret_val['msg']))
         {
             $ret_val['error'] = 'Empty string!';
         }

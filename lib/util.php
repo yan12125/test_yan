@@ -270,5 +270,12 @@ class Util
             exit(0);
         }
     }
+
+    public static function not_empty($str)
+    {
+        // facebook doesn't accept \xA0 (\xC2\xA0 in utf-8)
+        // but some utf-8 chars ended with \xA0, so not use trim()
+        return trim($str) != '' && $str !== "\xC2\xA0";
+    }
 }
 ?>
