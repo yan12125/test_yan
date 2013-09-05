@@ -306,7 +306,7 @@ $(document).on('ready', function(e){
     $("#btn_print_error").on('click', function(e){
         for(var i = 0;i < errors.length;i++)
         {
-            console.log(i + '\t' + errors[i].error);
+            console.log(i + '\t' + errors[i].time +'\t' + errors[i].error);
         }
     });
     $("#chk_debug").on('click', function(e){
