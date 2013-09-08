@@ -110,52 +110,8 @@ try
 }
 catch(Exception $e)
 {
-    $errClass = get_class($e);
-    $trace = $e->getTrace();
-    $classNames = array();
-    foreach($trace as &$item)
-    {
-        // not set in error handler
-        if(isset($item['file']))
-        {
-            $item['file'] = basename($item['file']);
-        }
-        // determine which class cause the error
-        if(isset($item['class']))
-        {
-            if($item['class'] == 'Util' && $item['function'] == 'errorHandler')
-            {
-                continue;
-            }
-            $classNames[] = $item['class'];
-        }
-    }
-    $response_error=array(
-        "code" => $e->getCode(), 
-        "err_class_name" => $errClass, 
-        "class_name" => $classNames, 
-        "time" => Util::timestr(), 
-        "trace" => $trace, 
-    );
-
-    $response_error['error'] = Util::tryParseJson($e->getMessage());
-
-    if($errClass == 'ErrorException')
-    {
-        $response_error['severity'] = Util::getSeverityStr($e->getSeverity());
-    }
-
-    for($i = 0;$i < count($classNames);$i++)
-    {
-        if(method_exists($classNames[$i], 'report_fields'))
-        {
-            // some tricks required to use call_user_func with reference values
-            // http://stackoverflow.com/questions/295016
-            $fReportFields = array($classNames[$i], 'report_fields');
-            call_user_func_array($fReportFields, array(&$response_error));
-        }
-    }
-
+    $response_error = array();
+    Util::handleException($e, $response_error);
     try
     {
         echo json_encode($response_error);

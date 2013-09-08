@@ -1,6 +1,9 @@
 <?php
 class Texts
 {
+    protected static $lastPluginError;
+    protected static $lastPlugin;
+
     public static function listTitles()
     {
         $stmt = Db::query("SELECT title FROM texts where locked=0");
@@ -190,8 +193,13 @@ class Texts
     protected static function callPlugin($handler, $param)
     {
         $instance = null;
+        self::$lastPlugin = $handler;
         try
         {
+            if(!self::isValidPlugin($handler))
+            {
+                throw new Exception('Invalid plugin name');
+            }
             $instance = new $handler();
             return array('msg' => $instance->run($param));
         }
@@ -199,7 +207,28 @@ class Texts
         {
             // __construct should not throw an exception, and
             // all plugins should have a handleException method
-            $errStr = json_encode($instance->handleException($e));
+            self::$lastPluginError = $err = $instance->handleException($e);
+            $errStr = '';
+            if(is_string($err))
+            {
+                $errStr .= $handler . ': ' . $err;
+            }
+            else if(isset($err['message']))
+            {
+                if(isset($err['source']))
+                {
+                    $errStr = $err['source'];
+                }
+                else
+                {
+                    $errStr = $handler;
+                }
+                $errStr .= ': ' . $err['message'];
+            }
+            else
+            {
+                $errStr = 'Error from the plugin "' . $handler . '"';
+            }
             throw new Exception($errStr);
         }
     }
@@ -219,10 +248,34 @@ class Texts
             {
                 continue;
             }
-            $plugins[] = ucfirst($matches[1]);
+            $className = ucfirst($matches[1]);
+            if(self::isValidPlugin($className))
+            {
+                $plugins[] = $className;
+            }
         }
         closedir($pluginDir);
         return $plugins;
+    }
+
+    public static function isValidPlugin($className)
+    {
+        // http://stackoverflow.com/questions/8806912
+        if(class_exists($className))
+        {
+            $reflector = new ReflectionClass($className);
+            if($reflector->isSubclassOf('PluginBase'))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static function report_fields(&$output)
+    {
+        $output['last_plugin_error'] = self::$lastPluginError;
+        $output['last_plugin'] = self::$lastPlugin;
     }
 }
 ?>

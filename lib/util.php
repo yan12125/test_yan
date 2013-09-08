@@ -277,5 +277,53 @@ class Util
         // but some utf-8 chars ended with \xA0, so not use trim()
         return trim($str) != '' && $str !== "\xC2\xA0";
     }
+
+    public static function handleException(Exception $e, &$output)
+    {
+        // basic parameters
+        $errClass = get_class($e);
+        $output['err_class'] = $errClass;
+        $output['code'] = $e->getCode();
+        $output['time'] = Util::timestr();
+        $output['error'] = Util::tryParseJson($e->getMessage());
+        if($errClass == 'ErrorException')
+        {
+            $response_error['severity'] = Util::getSeverityStr($e->getSeverity());
+        }
+
+        // trace
+        $trace = $e->getTrace();
+        $classNames = array();
+        foreach($trace as &$item)
+        {
+            // not set in error handler
+            if(isset($item['file']))
+            {
+                $item['file'] = basename($item['file']);
+            }
+            // determine which class cause the error
+            if(isset($item['class']))
+            {
+                if($item['class'] == 'Util' && $item['function'] == 'errorHandler')
+                {
+                    continue;
+                }
+                $classNames[] = $item['class'];
+            }
+        }
+        $output['class_names'] = $classNames;
+        $output['trace'] = $trace;
+
+        for($i = 0;$i < count($classNames);$i++)
+        {
+            if(method_exists($classNames[$i], 'report_fields'))
+            {
+                // some tricks required to use call_user_func with reference values
+                // http://stackoverflow.com/questions/295016
+                $fReportFields = array($classNames[$i], 'report_fields');
+                call_user_func_array($fReportFields, array(&$output));
+            }
+        }
+    }
 }
 ?>

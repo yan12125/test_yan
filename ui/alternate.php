@@ -13,7 +13,7 @@
 <?php
 require '../common_inc.php';
 External::setRelativePath('..');
-echo External::loadJsCss();
+echo External::loadJsCss('shortcut');
 ?>
 <script>
 var users={};
@@ -284,31 +284,48 @@ function mainLoop()
     }
 }
 
+function stop()
+{
+    for(var uid in users)
+    {
+        users[uid].bStarted = false;
+        users[uid].wait_time = 0;
+        $('#users td.time').text('0');
+    }
+}
+
+function pause_or_resume()
+{
+    $('#btn_pause').val(window.pause?'Pause':'Resume');
+    window.pause = !window.pause;
+}
+
+function clearLog()
+{
+    $("#results").text('');
+}
+
+function printError()
+{
+    for(var i = 0;i < errors.length;i++)
+    {
+        // https://developers.google.com/chrome-developer-tools/docs/console-api
+        console.log('%c' + i + '\t%c' + errors[i].time +'    %c' + errors[i].error, 
+                    'color: gray', 'color: green', 'color: black');
+    }
+}
+
 $(document).on('ready', function(e){
-    $("#btn_start").on('click', function(e) {
-        update_userList();
-    });
-    $("#btn_stop").on('click', function(e){
-        for(var uid in users)
-        {
-            users[uid].bStarted = false;
-            users[uid].wait_time = 0;
-            $('#users td.time').text('0');
-        }
-    });
-    $('#btn_pause').on('click', function(e){
-        $(this).val(window.pause?'Pause':'Resume');
-        window.pause = !window.pause;
-    });
-    $("#btn_clearLog").on('click', function(e){
-        $("#results").text('');
-    });
-    $("#btn_print_error").on('click', function(e){
-        for(var i = 0;i < errors.length;i++)
-        {
-            console.log(i + '\t' + errors[i].time +'\t' + errors[i].error);
-        }
-    });
+    $("#btn_start").on('click', update_userList);
+    $("#btn_stop").on('click', stop);
+    $('#btn_pause').on('click', pause_or_resume);
+    $("#btn_clearLog").on('click', clearLog);
+    $("#btn_print_error").on('click', printError);
+    shortcut.add('Ctrl+S', update_userList);
+    shortcut.add('Ctrl+T', stop);
+    shortcut.add('Ctrl+P', pause_or_resume);
+    shortcut.add('Ctrl+C', clearLog);
+    shortcut.add('Ctrl+E', printError);
     $("#chk_debug").on('click', function(e){
         window.debug = ($('#chk_debug').attr('checked') === 'checked');
     });
@@ -347,11 +364,11 @@ $(document).on('ready', function(e){
         </td>
         <td align="left" valign="top">
             <textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="20"></textarea><br>
-            <input type="button" id="btn_start" value="Start">
-            <input type="button" id="btn_stop" value="Stop">
-            <input type="button" id="btn_pause" value="Pause"><br>
-            <input type="button" id="btn_clearLog" value="clear log">
-            <input type="button" id="btn_print_error" value="Print errors"><br>
+            <input type="button" id="btn_start" value="Start (Ctrl+S)">
+            <input type="button" id="btn_stop" value="Stop (Ctrl+T)">
+            <input type="button" id="btn_pause" value="Pause (Ctrl+P)"><br>
+            <input type="button" id="btn_clearLog" value="clear log (Ctrl+C)">
+            <input type="button" id="btn_print_error" value="Print errors (C+E)"><br>
             <input type="checkbox" id="chk_debug">Debug<br>
             <a href="sql.php">execute SQL</a>
             <a href="table.php">Tables</a>

@@ -9,7 +9,11 @@ class Error extends PluginBase
 
     public function handleException($e)
     {
-        return $e->getMessage();
+        return array(
+            'source' => 'Given source name', 
+            'uuid' => uniqid(), 
+            'message' => $e->getMessage()
+        );
     }
 }
 ?>

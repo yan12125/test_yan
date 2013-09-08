@@ -62,7 +62,7 @@ class Post
             catch(Exception $e)
             {
                 $this->config[$uid]['not_post'] = true;
-                $this->response[$uid]['error'] = $e->getMessage();
+                Util::handleException($e, $this->response[$uid]);
             }
         }
     }
