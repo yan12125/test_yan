@@ -3,12 +3,19 @@ class RssReader extends PluginBase
 {
     protected $xml;
     protected $url;
+    protected $ch;
 
     public function __construct()
     {
         libxml_use_internal_errors(true); // handle errors manually
         $this->xml = null;
         $this->url = null;
+        $this->ch = curl_init();
+    }
+
+    public function __destruct()
+    {
+        curl_close($this->ch);
     }
 
     public function run($param)
@@ -26,21 +33,16 @@ class RssReader extends PluginBase
     public function getUrlContent($url)
     {
         $this->url = $url;
-        $ch = curl_init();
-        curl_setopt_array($ch, array(
+        curl_setopt_array($this->ch, array(
             CURLOPT_URL => $this->url, 
             CURLOPT_RETURNTRANSFER => true, 
             CURLOPT_FOLLOWLOCATION => true
         ));
-        $this->xml = curl_exec($ch);
+        $this->xml = curl_exec($this->ch);
         if(empty($this->xml))
         {
-            throw new Exception(json_encode(array(
-                'msg' => 'Failed to retrieve specified url', 
-                'curl_error' => curl_error($ch)
-            )));
+            throw new Exception('Failed to retrieve specified url');
         }
-        curl_close($ch);
         if(!mb_check_encoding($this->xml, 'UTF-8'))
         {
             throw new Exception('Invalid UTF-8 detected');
@@ -62,7 +64,7 @@ class RssReader extends PluginBase
         {
             $output = array(
                 'source' => 'RSS Reader', 
-                'message' => Util::tryParseJson($e->getMessage()), 
+                'message' => $e->getMessage(), 
                 'line' => $e->getLine()
             );
         }
@@ -75,6 +77,7 @@ class RssReader extends PluginBase
             $output['xml_base64'] = base64_encode($this->xml);
         }
         $output['url'] = $this->url;
+        $output['curl_error'] = curl_error($this->ch);
         return $output;
     }
 }

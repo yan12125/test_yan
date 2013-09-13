@@ -36,42 +36,64 @@ function createTable(_action, columns, _caption)
     $("#list").jqGrid('navGrid','#pager',{edit:false,add:false,del:false});
 }
 
-function viewUsers()
-{
-    var columns = [
-        { caption: '姓名', name: 'name', width: 200 }, 
-        { caption: '狀態', name: 'status', width: 70 }, 
-        { caption: '授權碼有效', name: 'valid', width: 70 }, 
-        { caption: '訊息', name: 'msg', width: $(document).width() - 400 }
-    ];
-    createTable('view_users', columns, '所有使用者');
-}
-
-function getStats()
-{
-    var columns = [
-        { caption: '留言字數', name: 'length', width: 70 }, 
-        { caption: '成功數', name: 'success', width: 70 }, 
-        { caption: '失敗數', name: 'timed_out', width: 70 }, 
-        { caption: '成功率', name: 'ratio', width: 70 }
-    ];
-    createTable('report_stats', columns, '發文字數統計');
-}
-
-function runningState()
-{
-    var columns = [
-        { caption: '項目', name: 'name', width: 100 }, 
-        { caption: '數值', name: 'value', width: 100 }, 
-    ];
-    createTable('running_state', columns, '洗版狀況');
-}
+$(document).on('ready', function (e) {
+    var parameters = {
+        'viewUsers': {
+            caption: '所有使用者', 
+            action: 'view_users', 
+            columns: [
+                { caption: '姓名', name: 'name', width: 200 }, 
+                { caption: '狀態', name: 'status', width: 70 }, 
+                { caption: '授權碼有效', name: 'valid', width: 70 }, 
+                { caption: '訊息', name: 'msg', width: $(document).width() - 400 }
+            ]
+        }, 
+        'getStats': {
+            caption: '發文字數統計', 
+            action: 'report_stats', 
+            columns: [
+                { caption: '留言字數', name: 'length', width: 70 }, 
+                { caption: '成功數', name: 'success', width: 70 }, 
+                { caption: '失敗數', name: 'timed_out', width: 70 }, 
+                { caption: '成功率', name: 'ratio', width: 70 }
+            ]
+        }, 
+        'runningState': {
+            caption: '洗版狀況', 
+            action: 'running_state', 
+            columns: [
+                { caption: '項目', name: 'name', width: 100 }, 
+                { caption: '數值', name: 'value', width: 100 }, 
+            ]
+        }, 
+        'textsLog': {
+            caption: '洗版內容修改紀錄', 
+            action: 'texts_log', 
+            columns: [
+                { caption: '姓名', name: 'name', width: 200 }, 
+                { caption: '標題', name: 'title', width: 200 }, 
+                { caption: '修改時間', name: 'update_time', width: 200 }
+            ]
+        }
+    };
+    $('input[type=button]').each(function (index, elem) {
+        if(parameters[elem.id])
+        {
+            var cur_action = parameters[elem.id];
+            $(elem).val(cur_action.caption);
+            $(elem).on('click', function (e) {
+                createTable(cur_action.action, cur_action.columns, cur_action.caption);
+            });
+        }
+    });
+});
 </script>
 </head>
 <body>
-<input type="button" onclick="viewUsers();" value="所有使用者">
-<input type="button" onclick="getStats();" value="發文字數統計">
-<input type="button" onclick="runningState();" value="洗版狀況">
+<input type="button" id="viewUsers">
+<input type="button" id="getStats">
+<input type="button" id="runningState">
+<input type="button" id="textsLog">
 <div id="wrapper">選擇一個表格</div>
 </body>
 </html>

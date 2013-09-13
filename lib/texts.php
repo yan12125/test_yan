@@ -223,6 +223,7 @@ class Texts
                 {
                     $errStr = $handler;
                 }
+                // $err['message'] should be a string
                 $errStr .= ': ' . $err['message'];
             }
             else
@@ -270,6 +271,24 @@ class Texts
             }
         }
         return false;
+    }
+
+    public static function textsLog($page, $rows)
+    {
+        // SQL Inner Join
+        // http://www.dotblogs.com.tw/hatelove/archive/2010/01/23/sql-join-concept.aspx
+        $stmt = Db::query('SELECT name,title,update_time FROM users,texts_log WHERE users.uid = texts_log.uid ORDER BY update_time');
+        $data = $stmt->fetchAll();
+        $data_chunked = array_chunk($data, $rows);
+        if($page > count($data_chunked) || $page <= 0)
+        {
+            throw new Exception('Invalid page number');
+        }
+        return array(
+            'records' => count($data), 
+            'total' => count($data_chunked), 
+            'rows' => $data_chunked[$page - 1]
+        );
     }
 
     public static function report_fields(&$output)

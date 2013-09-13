@@ -44,8 +44,7 @@ class Users
         $users = self::listUsers('name,uid,access_token,status,banned_time', true);
         $N = count($users);
         $users_chunked = array_chunk($users, $nRows);
-        $nPages = count($users_chunked);
-        if($page > $nPages || $page <= 0)
+        if($page > count($users_chunked) || $page <= 0)
         {
             throw new Exception('Invalid page number.');
         }

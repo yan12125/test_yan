@@ -86,6 +86,10 @@ try
         case 'get_plugins':
             echo json_encode(Texts::getPlugins());
             break;
+        case 'texts_log': 
+            Util::checkPOST(array('page', 'rows'));
+            echo json_encode(Texts::textsLog($_POST['page'], $_POST['rows']));
+            break;
         /*
          * db.php
          */

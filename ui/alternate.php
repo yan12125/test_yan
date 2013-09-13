@@ -296,7 +296,7 @@ function stop()
 
 function pause_or_resume()
 {
-    $('#btn_pause').val(window.pause?'Pause':'Resume');
+    $('#btn_pause').val(window.pause?'Pause (Ctrl+P)':'Resume (Ctrl+P)');
     window.pause = !window.pause;
 }
 
