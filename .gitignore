@@ -11,3 +11,5 @@ test*
 *.orig
 
 3rdparty
+
+*.pyc

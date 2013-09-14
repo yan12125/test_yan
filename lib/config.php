@@ -44,16 +44,12 @@ class Config
         )));
     }
 
-    public static function getParamArr(array $keys, $delete = false)
+    public static function getParamArr(array $keys)
     {
         $result = array();
         foreach($keys as $key)
         {
             $result[$key] = self::getParam($key);
-            if($delete === true)
-            {
-                unset(self::$params[$key]);
-            }
         }
         return $result;
     }

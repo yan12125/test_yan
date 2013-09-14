@@ -97,6 +97,9 @@ try
             Util::checkPOST(array('query'));
             echo json_encode(Db::queryToArray($_POST['query']));
             break;
+        case 'get_mysql_credentials':
+            echo json_encode(Db::getMysqlCredentials());
+            break;
         /*
          * post.php
          */

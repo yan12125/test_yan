@@ -3,13 +3,22 @@ class Db
 {
     protected static $db = null;
 
+    public static function getMysqlCredentials($local_only = true)
+    {
+        if($local_only)
+        {
+            Util::ip_only();
+        }
+        return Config::getParamArr(array('sqlhost', 'dbname', 'sqlPort', 'sqlusername', 'mysqlPass'));
+    }
+
     protected static function loadDB()
     {
         if(!is_null(self::$db))
         {
             return;
         }
-        $dbConf = Config::getParamArr(array('sqlhost', 'dbname', 'sqlPort', 'sqlusername', 'mysqlPass'), true);
+        $dbConf = self::getMysqlCredentials(false);
         $dsn = 'mysql:'.http_build_query(array(
             'host' => $dbConf['sqlhost'], 
             'dbname' => $dbConf['dbname'], 
