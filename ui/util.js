@@ -58,6 +58,22 @@ function getAccessToken(cb)
     });
 }
 
+// create the same result as timestr() in lib/util.php
+function timestr(timestamp)
+{
+    var s = null;
+    if(typeof timestamp == 'undefined')
+    {
+        s = new Date();
+    }
+    else
+    {
+        // Date() accepts timestamps in milliseconds
+        s = new Date(timestamp * 1000);
+    }
+    return sprintf("%4d/%02d/%02d %02d:%02d:%02d", s.getFullYear(), s.getMonth(), s.getDate(), s.getHours(), s.getMinutes(), s.getSeconds());
+}
+
 $.fn.extend({
     setBusy: function (isBusy) {
         if(isBusy)

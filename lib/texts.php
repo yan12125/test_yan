@@ -224,7 +224,7 @@ class Texts
                     $errStr = $handler;
                 }
                 // $err['message'] should be a string
-                $errStr .= ': ' . $err['message'];
+                $errStr .= ': ' . rtrim($err['message'], "\n");
             }
             else
             {

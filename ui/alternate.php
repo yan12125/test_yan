@@ -13,7 +13,7 @@
 <?php
 require '../common_inc.php';
 External::setRelativePath('..');
-echo External::loadJsCss('shortcut');
+echo External::loadJsCss('shortcut', 'sprintf');
 ?>
 <script>
 var users={};
@@ -82,7 +82,7 @@ function handleServerError(uids, status, error, xhr)
 {
     $("#results").append(error + "\n");
     var errObj = {
-        'time': new Date().toLocaleTimeString(), 
+        'time': timestr(), 
         'status': status, 
         'error': error, 
         'uids': uids
