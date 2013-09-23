@@ -13,7 +13,7 @@
 <?php
 require '../common_inc.php';
 External::setRelativePath('..');
-echo External::loadJsCss('shortcut', 'sprintf');
+echo External::loadJsCss('sprintf');
 ?>
 <script>
 var users={};
@@ -296,7 +296,7 @@ function stop()
 
 function pause_or_resume()
 {
-    $('#btn_pause').val(window.pause?'Pause (Ctrl+P)':'Resume (Ctrl+P)');
+    $('#btn_pause').val(window.pause?'Pause':'Resume');
     window.pause = !window.pause;
 }
 
@@ -316,16 +316,12 @@ function printError()
 }
 
 $(document).on('ready', function(e){
-    $("#btn_start").on('click', update_userList);
-    $("#btn_stop").on('click', stop);
-    $('#btn_pause').on('click', pause_or_resume);
-    $("#btn_clearLog").on('click', clearLog);
-    $("#btn_print_error").on('click', printError);
-    shortcut.add('Ctrl+S', update_userList);
-    shortcut.add('Ctrl+T', stop);
-    shortcut.add('Ctrl+P', pause_or_resume);
-    shortcut.add('Ctrl+C', clearLog);
-    shortcut.add('Ctrl+E', printError);
+    var ids = [ '#btn_start', '#btn_stop', '#btn_pause', '#btn_clearLog', '#btn_print_error' ];
+    var functions = [ update_userList, stop, pause_or_resume, clearLog, printError ];
+    for(var i = 0; i < ids.length; i++)
+    {
+        $(ids[i]).on('click', functions[i]);
+    }
     $("#chk_debug").on('click', function(e){
         window.debug = ($('#chk_debug').attr('checked') === 'checked');
     });
@@ -364,11 +360,11 @@ $(document).on('ready', function(e){
         </td>
         <td align="left" valign="top">
             <textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="20"></textarea><br>
-            <input type="button" id="btn_start" value="Start (Ctrl+S)">
-            <input type="button" id="btn_stop" value="Stop (Ctrl+T)">
-            <input type="button" id="btn_pause" value="Pause (Ctrl+P)"><br>
-            <input type="button" id="btn_clearLog" value="clear log (Ctrl+C)">
-            <input type="button" id="btn_print_error" value="Print errors (C+E)"><br>
+            <input type="button" id="btn_start" value="Start">
+            <input type="button" id="btn_stop" value="Stop">
+            <input type="button" id="btn_pause" value="Pause"><br>
+            <input type="button" id="btn_clearLog" value="clear log">
+            <input type="button" id="btn_print_error" value="Print errors"><br>
             <input type="checkbox" id="chk_debug">Debug<br>
             <a href="sql.php">execute SQL</a>
             <a href="table.php">Tables</a>

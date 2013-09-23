@@ -16,7 +16,6 @@ class External
         'ajaxq' => array('files' => array('jquery.ajaxq.js')), 
         'simple_html_dom' => array('files' => array('simple_html_dom.php')), 
         'parse_str' => array('files' => array('parse_str.js')), 
-        'shortcut' => array('files' => array('shortcut.js')), 
         'sprintf' => array('files' => array('sprintf.js'))
     );
 
