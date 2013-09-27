@@ -141,7 +141,6 @@ function post2(uids)
         type: "POST", 
         data: _data, 
         dataType: "json", 
-        timeout: 30*1000, // in milliseconds
         success: function(response, status, xhr)
         {
             if(realPostUids.length == 1)
