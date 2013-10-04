@@ -258,7 +258,10 @@ class Users
         // only limit interval in 挑戰留言2147483647
         if( ($gid == Groups::primary_group) && ($interval['min']+$interval['max'] < 150) )
         {
-            $interval['min'] = $interval['max'] = 75;
+            if(Db::getConfig('adjust_interval') == '1')
+            {
+                $interval['min'] = $interval['max'] = 75;
+            }
         }
         return $interval;
     }
