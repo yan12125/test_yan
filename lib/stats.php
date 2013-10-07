@@ -29,16 +29,31 @@ class Stats
         $stmt = Db::query('select count(uid) from users where status="started"');
         $userCount = $stmt->fetch(PDO::FETCH_NUM);
         $totalCount = 0;
-        if(!is_null($token))
-        {
-            $totalCount = Fb::getCount($token[0]);
-        }
-        return array(
+        $results = array(
             array('name' => '每天發文數', 'value' => self::postRate()), 
             array('name' => '洗版人數', 'value' => number_format($userCount[0])), 
             array('name' => 'App洗版數', 'value' => number_format($num[0])), 
-            array('name' => '總留言數', 'value' => number_format($totalCount))
         );
+        $commentsInfo = Fb::getCommentsInfo($token[0]);
+        if(!is_null($token))
+        {
+            $results = array_merge($results, array(
+                array(
+                    'name' => '總留言數', 
+                    'value' => $commentsInfo['total_count']
+                ), 
+                array(
+                   'name' => '最新留言', 
+                   'value' => Util::timestr($commentsInfo['last_comment_time']) . "\n" .
+                              $commentsInfo['last_comment']
+                ), 
+                array(
+                    'name' => 'FB伺服器時間', 
+                    'value' => Util::timestr($commentsInfo['server_time'])
+                )
+            ));
+        }
+        return $results;
     }
 
     protected static function addResult($status, $length)

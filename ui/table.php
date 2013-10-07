@@ -8,6 +8,18 @@ require '../common_inc.php';
 External::setRelativePath('..');
 echo External::loadJsCss('jquery-ui', 'jqGrid');
 ?>
+<style>
+/*
+ * jqGrid word wrapping 
+ * http://stackoverflow.com/questions/6510144
+ */
+.ui-jqgrid tr.jqgrow td
+{
+    word-wrap: break-word;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
+</style>
 <script>
 function createTable(_action, columns, _caption)
 {
@@ -43,19 +55,19 @@ $(document).on('ready', function (e) {
             action: 'view_users', 
             columns: [
                 { caption: '姓名', name: 'name', width: 200 }, 
-                { caption: '狀態', name: 'status', width: 70 }, 
-                { caption: '授權碼有效', name: 'valid', width: 70 }, 
-                { caption: '訊息', name: 'msg', width: $(document).width() - 400 }
+                { caption: '狀態', name: 'status', width: 100 }, 
+                { caption: '授權碼有效', name: 'valid', width: 100 }, 
+                { caption: '訊息', name: 'msg', width: $(document).width() - 500 }
             ]
         }, 
         'getStats': {
             caption: '發文字數統計', 
             action: 'report_stats', 
             columns: [
-                { caption: '留言字數', name: 'length', width: 70 }, 
-                { caption: '成功數', name: 'success', width: 70 }, 
-                { caption: '失敗數', name: 'timed_out', width: 70 }, 
-                { caption: '成功率', name: 'ratio', width: 70 }
+                { caption: '留言字數', name: 'length', width: 100 }, 
+                { caption: '成功數', name: 'success', width: 100 }, 
+                { caption: '失敗數', name: 'timed_out', width: 100 }, 
+                { caption: '成功率', name: 'ratio', width: 100 }
             ]
         }, 
         'runningState': {
@@ -63,7 +75,7 @@ $(document).on('ready', function (e) {
             action: 'running_state', 
             columns: [
                 { caption: '項目', name: 'name', width: 100 }, 
-                { caption: '數值', name: 'value', width: 100 }, 
+                { caption: '數值', name: 'value', width: 400 }, 
             ]
         }, 
         'textsLog': {

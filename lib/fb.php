@@ -2,6 +2,7 @@
 class Fb
 {
     protected static $fb = null;
+    protected static $post_id = '198971170174405_198971283507727';
 
     protected static function loadFB()
     {
@@ -30,15 +31,27 @@ class Fb
     }
 
     // used in stats.php
-    public static function getCount($access_token)
+    public static function getCommentsInfo($access_token)
     {
         // July 2013 breaking changes
-        $post_id = '198971170174405_198971283507727';
-        $result = self::api("/{$post_id}/comments", array(
-            'summary' => true, 
-            'access_token' => $access_token
+        // total count can't be accessed by FQL anymore
+        $queries = new FbBatch($access_token);
+        $queries->push(null, '/'.self::$post_id.'/comments', array(
+            'summary' => true
         ));
-        return (integer)$result['summary']['total_count'];
+        // "now()": http://stackoverflow.com/questions/3952954
+        // "anon": http://stackoverflow.com/questions/9580055
+        $queries->push(null, '/fql', array(
+            'q' => 'SELECT time,text,now() FROM comment WHERE post_id = "'.self::$post_id.'" ORDER BY time DESC LIMIT 1'
+        ));
+        $results = $queries->run();
+        return array(
+            'total_count' => (integer)$results[0]['summary']['total_count'], 
+            'last_comment_time' => $results[1]['data'][0]['time'], 
+            'last_comment' => $results[1]['data'][0]['text'], 
+            'server_time' => $results[1]['data'][0]['anon'], 
+            'data' => json_encode($results)
+        );
     }
 
     public static function getAppToken()
