@@ -27,7 +27,9 @@ class RssReader extends PluginBase
             throw new Exception('Invalid RSS');
         }
         $n=rand(0, $feed->channel->item->count()-1);
-        return $feed->channel->item[$n]->title."\n".$feed->channel->item[$n]->link;
+        $url = $feed->channel->item[$n]->link;
+        $title = $feed->channel->item[$n]->title;
+        return $title."\n".$this->getRedirectedUrl($url);
     }
 
     public function getUrlContent($url)
@@ -46,6 +48,39 @@ class RssReader extends PluginBase
         if(!mb_check_encoding($this->xml, 'UTF-8'))
         {
             throw new Exception('Invalid UTF-8 detected');
+        }
+    }
+
+    private function getRedirectedUrl($url, $count = 0)
+    {
+        // to prevent a redirection loop
+        if($count >= 10)
+        {
+            return $url;
+        }
+        // PHP cUrl HTTP HEAD
+        // http://stackoverflow.com/questions/770179
+        $ch = curl_init();
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => $url, 
+            CURLOPT_CUSTOMREQUEST => 'HEAD', 
+            CURLOPT_HEADER => true, 
+            CURLOPT_HTTPHEADER => array('Connection: close'), 
+            CURLOPT_RETURNTRANSFER => true, 
+            CURLOPT_BINARYTRANSFER => true, 
+            CURLOPT_FOLLOWLOCATION => false
+        ));
+        $results = curl_exec($ch);
+        curl_close($ch);
+        $matches = array();
+        if(preg_match('/HTTP\/1.1 (302|301)/', $results))
+        {
+            preg_match('/(Location:|URI:)(.*?)\n/', $results, $matches);
+            return $this->getRedirectedUrl(trim($matches[2]), $count + 1);
+        }
+        else
+        {
+            return $url;
         }
     }
 
