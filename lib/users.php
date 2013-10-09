@@ -5,17 +5,10 @@ class Users
     const basic_user_data = 'uid,name,status';
     const detailed_user_data = 'uid,name,status,interval_max,interval_min,count,goal,titles,groups';
 
-    protected static function listUsers($field, $listDisabled, $IDs = '')
+    protected static function listUsers($field, $status, $IDs = '')
     {
         $curIDs = explode('_', $IDs);
-        if($listDisabled)
-        {
-            $query = "select {$field} from users order by status";
-        }
-        else
-        {
-            $query = "select {$field} from users where status!='disabled' order by status";
-        }
+        $query = "select {$field} from users where status in ({$status}) order by status";
         $stmt = Db::query($query); // problem occurs when select multiple columns
         $users=$stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach($users as &$user)
@@ -31,17 +24,17 @@ class Users
     public static function listUsersSimple($IDs)
     {
         Util::ip_only();
-        return self::listUsers(Users::basic_user_data, false, $IDs);
+        return self::listUsers(Users::basic_user_data, '"started","stopped","banned","expired"', $IDs);
     }
 
-    public static function viewUsers($page, $nRows)
+    protected static function viewUsers($page, $nRows, $status)
     {
         if($nRows > 45) // batch limit is 50
         {
             throw new Exception('Can\'t get more than 45 rows in a time');
         }
 
-        $users = self::listUsers('name,uid,access_token,status,banned_time', true);
+        $users = self::listUsers('name,uid,access_token,status,banned_time', $status);
         $N = count($users);
         $users_chunked = array_chunk($users, $nRows);
         if($page > count($users_chunked) || $page <= 0)
@@ -128,6 +121,16 @@ class Users
             $rows[] = $curRow;
         }
         return array('rows' => $rows, 'records' => $N, 'total' => ceil($N/$nRows));
+    }
+
+    public static function viewRunningUsers($page, $nRows)
+    {
+        return self::viewUsers($page, $nRows, '"started"');
+    }
+
+    public static function viewOtherUsers($page, $nRows)
+    {
+        return self::viewUsers($page, $nRows, '"stopped","disabled","banned","expired"');
     }
 
     public static function addUser($userData)

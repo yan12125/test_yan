@@ -21,7 +21,7 @@ echo External::loadJsCss('jquery-ui', 'jqGrid');
 }
 </style>
 <script>
-function createTable(_action, columns, _caption)
+function createTable(_action, columns, _caption, _rowNum)
 {
     $('#wrapper').html('<table id="list"></table><div id="pager"></div>');
     var options = {
@@ -31,7 +31,7 @@ function createTable(_action, columns, _caption)
         datatype: "json",
         colNames: [],
         colModel: [],
-        rowNum: 40,
+        rowNum: _rowNum, 
         pager: '#pager',
         caption: _caption, 
         height: 500
@@ -46,19 +46,32 @@ function createTable(_action, columns, _caption)
     }
     $("#list").jqGrid(options);
     $("#list").jqGrid('navGrid','#pager',{edit:false,add:false,del:false});
+    $('#list').setGridParam({ rowNum: _rowNum });
 }
 
 $(document).on('ready', function (e) {
     var parameters = {
-        'viewUsers': {
-            caption: '所有使用者', 
-            action: 'view_users', 
+        'viewRunningUsers': {
+            caption: '洗版中使用者', 
+            action: 'view_running_users', 
             columns: [
                 { caption: '姓名', name: 'name', width: 200 }, 
                 { caption: '狀態', name: 'status', width: 100 }, 
                 { caption: '授權碼有效', name: 'valid', width: 100 }, 
                 { caption: '訊息', name: 'msg', width: $(document).width() - 500 }
-            ]
+            ], 
+            row_num: 30
+        }, 
+        'viewOtherUsers': {
+            caption: '其他使用者', 
+            action: 'view_other_users', 
+            columns: [
+                { caption: '姓名', name: 'name', width: 200 }, 
+                { caption: '狀態', name: 'status', width: 100 }, 
+                { caption: '授權碼有效', name: 'valid', width: 100 }, 
+                { caption: '訊息', name: 'msg', width: $(document).width() - 500 }
+            ], 
+            row_num: 30
         }, 
         'getStats': {
             caption: '發文字數統計', 
@@ -68,7 +81,8 @@ $(document).on('ready', function (e) {
                 { caption: '成功數', name: 'success', width: 100 }, 
                 { caption: '失敗數', name: 'timed_out', width: 100 }, 
                 { caption: '成功率', name: 'ratio', width: 100 }
-            ]
+            ], 
+            row_num: 40
         }, 
         'runningState': {
             caption: '洗版狀況', 
@@ -76,7 +90,8 @@ $(document).on('ready', function (e) {
             columns: [
                 { caption: '項目', name: 'name', width: 100 }, 
                 { caption: '數值', name: 'value', width: 400 }, 
-            ]
+            ], 
+            row_num: 10
         }, 
         'textsLog': {
             caption: '洗版內容修改紀錄', 
@@ -85,7 +100,8 @@ $(document).on('ready', function (e) {
                 { caption: '姓名', name: 'name', width: 200 }, 
                 { caption: '標題', name: 'title', width: 200 }, 
                 { caption: '修改時間', name: 'update_time', width: 200 }
-            ]
+            ], 
+            row_num: 40
         }
     };
     $('input[type=button]').each(function (index, elem) {
@@ -94,7 +110,7 @@ $(document).on('ready', function (e) {
             var cur_action = parameters[elem.id];
             $(elem).val(cur_action.caption);
             $(elem).on('click', function (e) {
-                createTable(cur_action.action, cur_action.columns, cur_action.caption);
+                createTable(cur_action.action, cur_action.columns, cur_action.caption, cur_action.row_num);
             });
         }
     });
@@ -102,7 +118,8 @@ $(document).on('ready', function (e) {
 </script>
 </head>
 <body>
-<input type="button" id="viewUsers">
+<input type="button" id="viewRunningUsers">
+<input type="button" id="viewOtherUsers">
 <input type="button" id="getStats">
 <input type="button" id="runningState">
 <input type="button" id="textsLog">

@@ -39,9 +39,13 @@ try
             Util::checkPOST(array('uid', 'status', 'access_token'));
             echo json_encode(Users::setUserStatus($_POST['uid'], $_POST['status'], $_POST['access_token']));
             break;
-        case 'view_users':
+        case 'view_running_users':
             Util::checkPOST(array('page', 'rows'));
-            echo json_encode(Users::viewUsers($_POST['page'], $_POST['rows']));
+            echo json_encode(Users::viewRunningUsers($_POST['page'], $_POST['rows']));
+            break;
+        case 'view_other_users':
+            Util::checkPOST(array('page', 'rows'));
+            echo json_encode(Users::viewOtherUsers($_POST['page'], $_POST['rows']));
             break;
         case 'logout':
             Util::checkPOST(array('access_token'));
