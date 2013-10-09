@@ -41,9 +41,8 @@ class Fb
         ));
         // "now()": http://stackoverflow.com/questions/3952954
         // "anon": http://stackoverflow.com/questions/9580055
-        $queries->push(null, '/fql', array(
-            'q' => 'SELECT time,text,now() FROM comment WHERE post_id = "'.self::$post_id.'" ORDER BY time DESC LIMIT 1'
-        ));
+        $commentQuery = 'SELECT time,text,now() FROM comment WHERE post_id = "'.self::$post_id.'" ORDER BY time DESC LIMIT 1';
+        $queries->pushFql(null, $commentQuery);
         $results = $queries->run();
         return array(
             'total_count' => (integer)$results[0]['summary']['total_count'], 

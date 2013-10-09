@@ -41,6 +41,11 @@ class FbBatch
         $this->keys[] = $key;
     }
 
+    public function pushFql($key, $query)
+    {
+        $this->push($key, 'fql', 'GET', array('q' => $query));
+    }
+
     public function run()
     {
         if(empty($this->queries))

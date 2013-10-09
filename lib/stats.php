@@ -40,7 +40,7 @@ class Stats
             $results = array_merge($results, array(
                 array(
                     'name' => '總留言數', 
-                    'value' => $commentsInfo['total_count']
+                    'value' => number_format($commentsInfo['total_count'])
                 ), 
                 array(
                    'name' => '最新留言', 
