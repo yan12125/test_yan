@@ -22,13 +22,29 @@ class RssReader extends PluginBase
     {
         $this->getUrlContent($param);
         $feed=new SimpleXMLElement($this->xml);
-        if(!is_object($feed->channel) || !is_object($feed->channel->item) || $feed->channel->item->count() == 0)
+        $url = $title = '';
+        // RSS
+        if(is_object($feed->channel) && 
+           is_object($feed->channel->item) && 
+           $feed->channel->item->count() != 0)
         {
-            throw new Exception('Invalid RSS');
+            $n=rand(0, $feed->channel->item->count()-1);
+            $url = $feed->channel->item[$n]->link;
+            $title = $feed->channel->item[$n]->title;
         }
-        $n=rand(0, $feed->channel->item->count()-1);
-        $url = $feed->channel->item[$n]->link;
-        $title = $feed->channel->item[$n]->title;
+        // Atom
+        else if(is_object($feed->entry) &&
+                $feed->entry->count() != 0)
+        {
+            $n = rand(0, $feed->entry->count() - 1);
+            $item = $feed->entry[$n];
+            $url = $item->link['href'];
+            $title = $item->title;
+        }
+        if($title == '' || $url == '')
+        {
+            throw new Exception('Invalid RSS or ATOM format!');
+        }
         return $title."\n".$this->getRedirectedUrl($url);
     }
 

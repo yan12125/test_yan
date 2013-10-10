@@ -276,7 +276,7 @@ function get_info(initial)
             授權碼將在<span id="nExpiry">0</span>秒後過期<br />
         </fieldset>
         <a href="./table.php">統計資料</a><br>
-        <a href="./text_mgr.php">洗版內容一覽</a><br>
+        <a href="./text_mgr.php?login=true">洗版內容一覽</a><br>
         <a href="https://github.com/yan12125/test_yan/">程式原始碼</a>
         <input type="button" id="logout" value="登出Facebook"><br>
     </form>
