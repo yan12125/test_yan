@@ -277,7 +277,7 @@ class Texts
     {
         // SQL Inner Join
         // http://www.dotblogs.com.tw/hatelove/archive/2010/01/23/sql-join-concept.aspx
-        $stmt = Db::query('SELECT name,title,update_time FROM users,texts_log WHERE users.uid = texts_log.uid ORDER BY update_time');
+        $stmt = Db::query('SELECT name,title,update_time FROM users,texts_log WHERE users.uid = texts_log.uid ORDER BY update_time DESC');
         $data = $stmt->fetchAll();
         $data_chunked = array_chunk($data, $rows);
         if($page > count($data_chunked) || $page <= 0)

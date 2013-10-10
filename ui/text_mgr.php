@@ -1,6 +1,9 @@
 <?php
 require '../common_inc.php';
-Fb::login();
+if(isset($_GET['login']) && $_GET['login'] == 'true')
+{
+    Fb::login();
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -14,12 +17,19 @@ echo External::loadJsCss('jquery-ui', 'parse_str');
 <script>
 $(document).on('ready', function(e){
     getAccessToken(function(data){
-        $('#token').val(data.access_token);
+        if(data.access_token !== '')
+        {
+            $('#token').val(data.access_token);
+            $('#new_title').removeAttr('disabled');
+            $('#login').attr('disabled', 'disabled');
+        }
         $(window).on('resize', function(e){
             resizeAll();
         });
-        $('#save, #discard').button({'disabled': true});
-        $('#new_title').button();
+        $('input[type="button"]').button();
+        $('#login').on('click', function(e){
+            location.href = 'https://' + location.host + location.pathname + '?login=true';
+        });
         $('#save').on('click', function(e){
             updateText($('.title.selected')[0]);
         });
@@ -99,7 +109,11 @@ function loadText(title)
         return false;
     }
     var titleButton = $('.title').hasText(title);
-    $('#save, #discard').button('option', 'disabled', false);
+    $('#discard').button('option', 'disabled', false);
+    if($('#token').val() !== '')
+    {
+        $('#save').button('option', 'disabled', false);
+    }
     $('#texts').val('Loading...');
     $('.title').removeClass('selected');
     $(titleButton).addClass('selected');
@@ -226,8 +240,9 @@ body
         <option value="__none__">(None)</option>
     </select><br>
     <div class="right">
-        <input type="button" value="新增內容" id="new_title">
-        <input type="button" value="存檔" id="save">
+        <input type="button" value="登入" id="login">
+        <input type="button" value="新增內容" id="new_title" disabled="disabled">
+        <input type="button" value="存檔" id="save" disabled="disabled">
         <input type="button" value="放棄修改" id="discard">
     </div>
     <input type="hidden" id="token">

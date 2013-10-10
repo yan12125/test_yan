@@ -168,11 +168,16 @@ class Fb
 
     public static function getTokenFromSession()
     {
+        // get token from session IF AVAILABLE
+        $data = array('access_token' => '', 'expires' => '');
         session_start();
-        $data = array(
-            'access_token' => $_SESSION['access_token'], 
-            'expires' => $_SESSION['expires']
-        );
+        if(isset($_SESSION['access_token']))
+        {
+            $data = array(
+                'access_token' => $_SESSION['access_token'], 
+                'expires' => $_SESSION['expires']
+            );
+        }
         session_destroy();
         return $data;
     }
