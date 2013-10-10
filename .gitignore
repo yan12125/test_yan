@@ -1,15 +1,14 @@
 .htsecret
-.swp
-.*.swp
+3rdparty
 TODO
 
-facebook.php
-base_facebook.php
+# vim temporary files
+.swp
+.*.swp
+
 test*
 
 # created when merging
 *.orig
-
-3rdparty
 
 *.pyc

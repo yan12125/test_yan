@@ -9,6 +9,11 @@
 {
     border-collapse: collapse;
 }
+
+button
+{
+    width: 200px;
+}
 </style>
 <?php
 require '../common_inc.php';
@@ -20,6 +25,7 @@ var users={};
 var errors=[];
 var debug = false;
 var pause = false;
+var b_slow_stop = false;
 
 function handlePost(uid, response)
 {
@@ -271,16 +277,25 @@ function mainLoop()
         }
         else if(users[uid].wait_time <= 0)
         {
-            postUids.push(uid);
+            if(!b_slow_stop)
+            {
+                postUids.push(uid);
+            }
+            else
+            {
+                users[uid].bStarted = false;
+            }
         }
     }
-    post2(postUids);
-
-    var timestamp = new Date().getTime();
-    timestamp = (timestamp - timestamp%1000)/1000;
-    if(timestamp%30 == 0 && someoneStarted)
+    if(!b_slow_stop)
     {
-        update_userList();
+        post2(postUids);
+        var timestamp = new Date().getTime();
+        timestamp = (timestamp - timestamp%1000)/1000;
+        if(timestamp%30 == 0 && someoneStarted)
+        {
+            update_userList();
+        }
     }
 }
 
@@ -292,6 +307,11 @@ function stop()
         users[uid].wait_time = 0;
         $('#users td.time').text('0');
     }
+}
+
+function slow_stop()
+{
+    b_slow_stop = true;
 }
 
 function pause_or_resume()
@@ -316,8 +336,8 @@ function printError()
 }
 
 $(document).on('ready', function(e){
-    var ids = [ '#btn_start', '#btn_stop', '#btn_pause', '#btn_clearLog', '#btn_print_error' ];
-    var functions = [ update_userList, stop, pause_or_resume, clearLog, printError ];
+    var ids = [ '#btn_start', '#btn_stop', '#btn_slow_stop', '#btn_pause', '#btn_clearLog', '#btn_print_error' ];
+    var functions = [ update_userList, stop, slow_stop, pause_or_resume, clearLog, printError ];
     for(var i = 0; i < ids.length; i++)
     {
         $(ids[i]).on('click', functions[i]);
@@ -360,11 +380,12 @@ $(document).on('ready', function(e){
         </td>
         <td align="left" valign="top">
             <textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="20"></textarea><br>
-            <input type="button" id="btn_start" value="Start">
-            <input type="button" id="btn_stop" value="Stop">
-            <input type="button" id="btn_pause" value="Pause"><br>
-            <input type="button" id="btn_clearLog" value="clear log">
-            <input type="button" id="btn_print_error" value="Print errors"><br>
+            <button id="btn_start">Start</button><br>
+            <button id="btn_stop">Stop</button><br>
+            <button id="btn_slow_stop">Slow Stop</button><br>
+            <button id="btn_pause">Pause</button><br>
+            <button id="btn_clearLog">clear log</button><br>
+            <button id="btn_print_error">Print errors</button><br>
             <input type="checkbox" id="chk_debug">Debug<br>
             <a href="sql.php">execute SQL</a>
             <a href="table.php">Tables</a>
