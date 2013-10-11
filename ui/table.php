@@ -34,7 +34,7 @@ function createTable(_action, columns, _caption, _rowNum)
         rowNum: _rowNum, 
         pager: '#pager',
         caption: _caption, 
-        height: 500
+        height: "auto"
     };
     for(var i = 0;i < columns.length;i++)
     {
