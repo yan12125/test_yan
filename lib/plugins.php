@@ -94,8 +94,8 @@ class Plugins
 
     public static function report_fields(&$output)
     {
-        $output['last_plugin_error'] = self::$lastPluginError;
-        $output['last_plugin'] = self::$lastPlugin;
+        $output['plugin_error'] = self::$lastPluginError;
+        $output['plugin'] = self::$lastPlugin;
     }
 }
 ?>
