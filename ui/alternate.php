@@ -12,6 +12,7 @@
 
 button
 {
+    margin-bottom: 10px;
     width: 200px;
 }
 </style>

@@ -87,12 +87,19 @@ try
             Util::checkPOST(array('title'));
             echo Util::json_unicode(Texts::getTexts($_POST['title']));
             break;
-        case 'get_plugins':
-            echo json_encode(Texts::getPlugins());
-            break;
         case 'texts_log': 
             Util::checkPOST(array('page', 'rows'));
             echo json_encode(Texts::textsLog($_POST['page'], $_POST['rows']));
+            break;
+        case 'get_text_from_texts':
+            Util::checkPOST(array('title', 'handler', 'texts'));
+            echo json_encode(Texts::getTextFromTexts($_POST['title'], $_POST['handler'], $_POST['texts']));
+            break;
+        /*
+         * plugins.php
+         */
+        case 'get_plugins':
+            echo json_encode(Plugins::getPlugins());
             break;
         /*
          * db.php

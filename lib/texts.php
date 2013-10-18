@@ -1,9 +1,6 @@
 <?php
 class Texts
 {
-    protected static $lastPluginError;
-    protected static $lastPlugin;
-
     public static function listTitles()
     {
         $stmt = Db::query("SELECT title FROM texts where locked=0");
@@ -52,7 +49,7 @@ class Texts
         {
             throw new Exception('指定的標題不存在！');
         }
-        $validHandlers = self::getPlugins();
+        $validHandlers = Plugins::getPlugins();
         array_unshift($validHandlers, '__none__');
         if(array_search($handler, $validHandlers) === false)
         {
@@ -149,8 +146,13 @@ class Texts
                 'm' => -1 // used in output in post.php
             );
         }
-        Util::replaceTab($arr['text']);
-        $json_texts=json_decode($arr['text'], true);
+        return self::getTextFromTexts($title, $arr['handler'], $arr['text'], $m);
+    }
+
+    public static function getTextFromTexts($title, $handler, &$texts, $m = -1)
+    {
+        Util::replaceTab($texts);
+        $json_texts=json_decode($texts, true);
         if(!is_array($json_texts) || count($json_texts) == 0) // if not valid json, json_decode return null, and count(null) is 0
         {
             return array(
@@ -167,9 +169,9 @@ class Texts
             'm' => $m, 
             'title' => $title
         );
-        if(!is_null($arr['handler']))
+        if(!is_null($handler) && $handler !== '__none__')
         {
-            $ret_val = array_merge($ret_val, self::callPlugin($arr['handler'], $json_texts[$m]));
+            $ret_val = array_merge($ret_val, Plugins::callPlugin($handler, $json_texts[$m]));
         }
         else
         {
@@ -190,89 +192,6 @@ class Texts
         return Texts::getTextFromTitle($arr_titles[$n]);
     }
 
-    protected static function callPlugin($handler, $param)
-    {
-        $instance = null;
-        self::$lastPlugin = $handler;
-        try
-        {
-            if(!self::isValidPlugin($handler))
-            {
-                throw new Exception('Invalid plugin name');
-            }
-            $instance = new $handler();
-            return array('msg' => $instance->run($param));
-        }
-        catch(Exception $e)
-        {
-            // __construct should not throw an exception, and
-            // all plugins should have a handleException method
-            self::$lastPluginError = $err = $instance->handleException($e);
-            $errStr = '';
-            if(is_string($err))
-            {
-                $errStr .= $handler . ': ' . $err;
-            }
-            else if(isset($err['message']))
-            {
-                if(isset($err['source']))
-                {
-                    $errStr = $err['source'];
-                }
-                else
-                {
-                    $errStr = $handler;
-                }
-                // $err['message'] should be a string
-                $errStr .= ': ' . rtrim($err['message'], "\n");
-            }
-            else
-            {
-                $errStr = 'Error from the plugin "' . $handler . '"';
-            }
-            throw new Exception($errStr);
-        }
-    }
-
-    public static function getPlugins()
-    {
-        $pluginDir = opendir(APP_ROOT.'plugins');
-        $plugins = array();
-        while(true)
-        {
-            $entry = readdir($pluginDir);
-            if($entry === false)
-            {
-                break;
-            }
-            if(!preg_match("/(.*)\\.php$/", $entry, $matches))
-            {
-                continue;
-            }
-            $className = ucfirst($matches[1]);
-            if(self::isValidPlugin($className))
-            {
-                $plugins[] = $className;
-            }
-        }
-        closedir($pluginDir);
-        return $plugins;
-    }
-
-    public static function isValidPlugin($className)
-    {
-        // http://stackoverflow.com/questions/8806912
-        if(class_exists($className))
-        {
-            $reflector = new ReflectionClass($className);
-            if($reflector->isSubclassOf('PluginBase'))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static function textsLog($page, $rows)
     {
         // SQL Inner Join
@@ -289,12 +208,6 @@ class Texts
             'total' => count($data_chunked), 
             'rows' => $data_chunked[$page - 1]
         );
-    }
-
-    public static function report_fields(&$output)
-    {
-        $output['last_plugin_error'] = self::$lastPluginError;
-        $output['last_plugin'] = self::$lastPlugin;
     }
 }
 ?>

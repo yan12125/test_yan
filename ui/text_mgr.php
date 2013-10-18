@@ -39,6 +39,9 @@ $(document).on('ready', function(e){
         $('#new_title').on('click', function(e){
             newTitle();
         });
+        $('#test_text').on('click', function(e){
+            testText();
+        });
         updateTitles(function(titles){
             selectTitleByUrl(titles);
         });
@@ -181,6 +184,28 @@ function newTitle()
         }
     });
 }
+
+function testText()
+{
+    callWrapper('get_text_from_texts', {
+        title: $('#caption').text(), 
+        handler: $('#handler').val(), 
+        texts: JSON.stringify($('#texts').val().split('\n'))
+    }, function(data){
+        if(data.error)
+        {
+            $('#img_ok').css('display', 'none');
+            $('#img_error').css('display', 'inline');
+            $('#test_result').text(data.error);
+        }
+        else
+        {
+            $('#img_ok').css('display', 'inline');
+            $('#img_error').css('display', 'none');
+            $('#test_result').text(data.msg);
+        }
+    });
+}
 </script>
 <style>
 body
@@ -228,6 +253,21 @@ body
     font-size: 24px;
     font-weight: bold;
 }
+
+#img_ok, #img_error
+{
+    height: 32px;
+    width: 32px;
+    display: none;
+    vertical-align: middle;
+}
+
+#test_result
+{
+    // inline-block: http://www.blabla.cn/css_kb/html_span_width_kb.html
+    display: inline-block;
+    width: 400px;
+}
 </style>
 <body>
 <div id="fb-root"></div>
@@ -235,10 +275,14 @@ body
 <div id="controls">
     <div id="caption">請選擇一個標題</div>
     <textarea id="texts"></textarea><br>
-    外掛：
-    <select id="handler">
-        <option value="__none__">(None)</option>
-    </select><br>
+    <div class="left">
+        外掛：<select id="handler"><option value="__none__">(None)</option></select>
+        <button id="test_text">測試外掛</button>
+        <br>
+        <img id="img_ok" src="../images/ok.png">
+        <img id="img_error" src="../images/error.png">
+        <span id="test_result"></span>
+    </div>
     <div class="right">
         <input type="button" value="登入" id="login">
         <input type="button" value="新增內容" id="new_title" disabled="disabled">

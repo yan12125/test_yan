@@ -1,0 +1,5 @@
+ok.png
+http://icongal.com/gallery/image/270544/ok_accept_tick_check_yes_error_terminate_sport_exit_delete_close_quit.png
+
+error.png
+http://icongal.com/gallery/image/268129/close_button_delete_terminate_error_quit_exit_cancel_ok.png
