@@ -75,6 +75,7 @@ class Plugins
             }
         }
         closedir($pluginDir);
+        sort($plugins);
         return $plugins;
     }
 

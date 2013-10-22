@@ -307,7 +307,7 @@ class Post
         }
         if(!is_numeric($output['next_wait_time']))
         {
-            $output['next_wait_time'] = 300;
+            $output['next_wait_time'] = 300 + mt_rand(0, count($this->uids));
         }
     }
 
