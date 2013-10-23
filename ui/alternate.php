@@ -87,7 +87,14 @@ function handlePostError(uids, response)
 
 function handleServerError(uids, status, error, xhr)
 {
-    $("#results").append(error + "\n");
+    if(error)
+    {
+        $("#results").append(error + "\n");
+    }
+    else
+    {
+        $("#results").append("Failed to post.\n");
+    }
     var errObj = {
         'time': timestr(), 
         'status': status, 

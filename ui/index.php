@@ -202,6 +202,8 @@ function add_user(cb)
         "access_token": $('#token').val(), 
         "goal": $('input[name="goal"]').val()
     }, function(){
+        // to update last_count
+        get_info(true);
         if(typeof cb == 'function')
         {
             cb();
@@ -244,6 +246,7 @@ function get_info(initial)
             $('input[name="interval_max"]').val(response.interval_max);
             $('input[name="interval_min"]').val(response.interval_min);
             $('input[name="goal"]').val(response.goal);
+            $('#last_count').text(response.last_count);
             getTitles(JSON.parse(response.titles));
             parseGroups(window.userGroups, response.groups);
         }
@@ -266,6 +269,7 @@ function get_info(initial)
             時間間隔下限: <input type="text" name="interval_min" class="input_number" value="80"/><br />
             發文次數: <input type="text" name="goal" class="input_number" value="2147483647"/><br />
             已發文數：<span id="count">0</span><br />
+            上次留言數：<span id="last_count"></span><br>
             <input type="button" value="開始" id="btnStart">
             <input type="button" value="停止" id="btnStop" disabled="disabled">
             <input type="button" value="更新資料" id="addUser"><br>

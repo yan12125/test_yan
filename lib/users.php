@@ -3,7 +3,7 @@ class Users
 {
     // used in SQL SELECT
     const basic_user_data = 'uid,name,status';
-    const detailed_user_data = 'uid,name,status,interval_max,interval_min,count,goal,titles,groups';
+    const detailed_user_data = 'uid,name,status,interval_max,interval_min,count,goal,titles,groups,last_count';
 
     protected static function listUsers($field, $status, $IDs = '')
     {
