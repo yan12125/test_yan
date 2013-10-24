@@ -23,7 +23,7 @@
 
 .title_choose
 {
-    width: 220px;
+    width: 50%;
     float: left;
 }
 
@@ -55,7 +55,10 @@
 #more_option > div
 {
     height: 400px;
-    overflow-y: scroll;
+    /*
+     * jqGrid will handle it. Set it here make layout errors on Chrome
+     * overflow-y: scroll;
+     */
 }
 
 .selected_item /* selected items in more_options */

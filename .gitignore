@@ -4,6 +4,7 @@ TODO
 
 # vim temporary files
 .swp
+.swo
 .*.swp
 
 test*

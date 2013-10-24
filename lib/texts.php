@@ -3,12 +3,18 @@ class Texts
 {
     public static function listTitles()
     {
-        $stmt = Db::query("SELECT title FROM texts where locked=0");
-        $arr = $stmt->fetchAll(PDO::FETCH_NUM);
-        $titles = array_map(function($item){
-            return $item[0];
-        }, $arr);
-        return $titles;
+        $stmt = Db::query("SELECT `title`,`lines` FROM texts where locked=0");
+        $arr = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $titles = $lines = array();
+        for($i = 0; $i < count($arr); $i++)
+        {
+            $titles[] = $arr[$i]['title'];
+            $lines[] = $arr[$i]['lines'];
+        }
+        return array(
+            'titles' => $titles, 
+            'lines' => $lines
+        );
     }
 
     public static function checkTitle($title)
@@ -74,12 +80,49 @@ class Texts
         {
             throw new Exception("PDO execute() failed: ".Db::getErr());
         }
+        $linesObj = self::updateLines($title, $texts);
 
         // logging
         $userData = Users::getDataFromFb($access_token, array('token'));
         $stmt = Db::prepare('insert texts_log (uid,title,update_time) values (?,?,?)');
         $stmt->execute(array($userData['uid'], $title, Util::timestr()));
-        return array('status' => 'success');
+        return array(
+            'status' => 'success', 
+            'lines' => $linesObj['line_count']
+        );
+    }
+
+    public static function updateLines($title, $texts = '')
+    {
+        if($texts === '')
+        {
+            $stmt = Db::prepare('SELECT text FROM texts WHERE title = ?');
+            $stmt->execute(array($title));
+            $results = $stmt->fetchAll(PDO::FETCH_NUM);
+            if(count($results) === 0)
+            {
+                throw new Exception("Title not found.");
+            }
+            $texts = $results[0][0];
+        }
+        $texts = json_decode($texts, true);
+        $stmt = Db::prepare('UPDATE texts SET `lines` = ? WHERE `title` = ?');
+        $stmt->execute(array(count($texts), $title));
+        return array('line_count' => count($texts));
+    }
+
+    public static function updateAllTitles()
+    {
+        $results = array();
+        $titles = self::listTitles();
+        for($i = 0; $i < count($titles); $i++)
+        {
+            $results[] = array(
+                'title' => $titles[$i], 
+                'line_count' => self::updateLines($titles[$i])['line_count']
+            );
+        }
+        return $results;
     }
 
     protected static function check()

@@ -61,7 +61,8 @@ function resizeAll()
 function updateTitles(cb)
 {
     $('#titles').html('');
-    callWrapper('list_titles', function(titles){
+    callWrapper('list_titles', function(data){
+        var titles = data.titles;
         for(var i = 0;i < titles.length;i++)
         {
             $('#titles').append('<div class="title">'+titles[i]+'</div>');
@@ -141,7 +142,7 @@ function updateText(titleButton)
         if(response.status == 'success')
         {
             loadText($(titleButton).text());
-            $('#dialog').text('內容成功更新');
+            $('#dialog').text('內容成功更新，共'+response.lines+'則');
         }
         else
         {

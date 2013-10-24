@@ -18,6 +18,7 @@ $(document).on('ready', function(e){
     // basic data
     getAccessToken(function(response){
         $('#token').val(response.access_token);
+        $('#text_mgr').attr('href', './text_mgr.php?access_token=' + response.access_token);
         callWrapper('get_basic_data', { access_token: $('#token').val() }, function(data){
             if(typeof data.error != 'undefined')
             {
@@ -89,15 +90,17 @@ $(document).on('ready', function(e){
 
 function getTitles(userTitles)
 {
-    callWrapper('list_titles', function(textgroups){
-        for(var i=0;i<textgroups.length;i++)
+    callWrapper('list_titles', function(data){
+        var titles = data.titles, lines = data.lines;
+        for(var i = 0; i < titles.length; i++)
         {
             var titles_div = $('.title_choose');
-            var title_text=textgroups[i];
+            var title_text = titles[i];
             var textUrl = './text_mgr.php?title='+encodeURIComponent(title_text)+'&access_token='+$('#token').val();
             titles_div.eq(i%titles_div.length)
                 .append('<input type="checkbox" value="'+title_text+'">')
-                .append('<a href="'+textUrl+'">'+title_text+'</a><br>');
+                .append('<a href="'+textUrl+'">'+title_text+'</a>')
+                .append(' ('+lines[i]+')<br>');
             if($.inArray(title_text, userTitles) > -1)
             {
                 titles_div.find("input[value=\""+title_text+"\"]")
@@ -280,7 +283,7 @@ function get_info(initial)
             授權碼將在<span id="nExpiry">0</span>秒後過期<br />
         </fieldset>
         <a href="./table.php">統計資料</a><br>
-        <a href="./text_mgr.php?login=true">洗版內容一覽</a><br>
+        <a id="text_mgr" href="./text_mgr.php?login=true">洗版內容一覽</a><br>
         <a href="https://github.com/yan12125/test_yan/">程式原始碼</a>
         <input type="button" id="logout" value="登出Facebook"><br>
     </form>
@@ -292,8 +295,7 @@ function get_info(initial)
             <input type="button" value="全選" id="selectAll">
             <input type="button" value="隨便選" id="selectRandom">
             <input type="button" value="全部不選" id="selectNone">
-            欲知詳細內容，請點標題<br />
-            <div class="title_choose"></div>
+            欲知詳細內容，請點標題。括號中的數字為內容的數目<br />
             <div class="title_choose"></div>
             <div class="title_choose"></div>
         </div>
