@@ -1,6 +1,8 @@
 <?php
 class Stats
 {
+    public static $globalGoal = 2147483647;
+
     protected static function postRate()
     {
         $stmt = Db::query('select interval_min,interval_max,groups from users where status="started"');
@@ -29,18 +31,23 @@ class Stats
         $stmt = Db::query('select count(uid) from users where status="started"');
         $userCount = $stmt->fetch(PDO::FETCH_NUM);
         $totalCount = 0;
+        $postRate = self::postRate();
         $results = array(
-            array('name' => '每天發文數', 'value' => self::postRate()), 
+            array('name' => '每天發文數', 'value' => $postRate), 
             array('name' => '洗版人數', 'value' => number_format($userCount[0])), 
             array('name' => 'App洗版數', 'value' => number_format($num[0])), 
         );
-        $commentsInfo = Fb::getCommentsInfo($token[0]);
         if(!is_null($token))
         {
+            $commentsInfo = Fb::getCommentsInfo($token[0]);
+            $total_count = $commentsInfo['total_count'];
+            $secsToFinish = round((self::$globalGoal - $total_count)/$postRate*86400);
+            $timeToFinish = new DateTime();
+            $timeToFinish->add(new DateInterval('PT'.$secsToFinish.'S'));
             $results = array_merge($results, array(
                 array(
                     'name' => '總留言數', 
-                    'value' => number_format($commentsInfo['total_count'])
+                    'value' => number_format($total_count)
                 ), 
                 array(
                    'name' => '最新留言', 
@@ -50,6 +57,10 @@ class Stats
                 array(
                     'name' => 'FB伺服器時間', 
                     'value' => Util::timestr($commentsInfo['server_time'])
+                ), 
+                array(
+                    'name' => '預計目標達成時間', 
+                    'value' => Util::timestr($timeToFinish->getTimestamp())
                 )
             ));
         }

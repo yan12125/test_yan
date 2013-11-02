@@ -193,7 +193,8 @@ function update_userList()
     callWrapper("list_users", { "IDs": curIDs.join('_') }, function(response){
         if(response.error)
         {
-            alert('無法取得使用者名單：' + response.error);
+            window.errors.push(response);
+            $('#results').append('無法取得使用者名單：' + response.error + '\n');
             return;
         }
         for(var i = 0;i < response.length;i++)

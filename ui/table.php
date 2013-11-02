@@ -88,7 +88,7 @@ $(document).on('ready', function (e) {
             caption: '洗版狀況', 
             action: 'running_state', 
             columns: [
-                { caption: '項目', name: 'name', width: 100 }, 
+                { caption: '項目', name: 'name', width: 150 }, 
                 { caption: '數值', name: 'value', width: 400 }, 
             ], 
             row_num: 10
