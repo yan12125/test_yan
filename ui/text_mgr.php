@@ -188,6 +188,9 @@ function newTitle()
 
 function testText()
 {
+    $('#img_ok').css('display', 'none');
+    $('#img_error').css('display', 'none');
+    $('#test_result').text('Running...');
     callWrapper('get_text_from_texts', {
         title: $('#caption').text(), 
         handler: $('#handler').val(), 
@@ -195,14 +198,12 @@ function testText()
     }, function(data){
         if(data.error)
         {
-            $('#img_ok').css('display', 'none');
             $('#img_error').css('display', 'inline');
             $('#test_result').text(data.error);
         }
         else
         {
             $('#img_ok').css('display', 'inline');
-            $('#img_error').css('display', 'none');
             $('#test_result').text(data.msg);
         }
     });
