@@ -113,6 +113,14 @@ $(document).on('ready', function (e) {
                 createTable(cur_action.action, cur_action.columns, cur_action.caption, cur_action.row_num);
             });
         }
+        if(location.search !== "")
+        {
+            var action = location.search.substring(1);
+            if(parameters[action])
+            {
+                $('#'+action).click();
+            }
+        }
     });
 });
 </script>
