@@ -23,6 +23,7 @@ $(document).on('ready', function(e){
             $('#new_title').removeAttr('disabled');
             $('#login').attr('disabled', 'disabled');
         }
+        $('#search').removeAttr('disabled'); // a bug???
         $(window).on('resize', function(e){
             resizeAll();
         });
@@ -41,6 +42,12 @@ $(document).on('ready', function(e){
         });
         $('#test_text').on('click', function(e){
             testText();
+        });
+        $('#search_next').on('click', function(e){
+            searchText();
+        });
+        $('#search_term').on('change', function(e){
+            $('#search_results').val('[]');
         });
         updateTitles(function(titles){
             selectTitleByUrl(titles);
@@ -84,14 +91,7 @@ function selectTitleByUrl(titles)
     // so encode in index.php and decode here
     var arr = {};
     parse_str(location.search.substring(1), arr);
-    if(loadText(arr.title))
-    {
-        $('#titles').scrollTop(
-            $('#titles').scrollTop() + 
-            $('.title.selected').offset().top - 
-            $('#titles').height()/2
-        );
-    }
+    loadText(arr.title);
 }
 
 function loadPlugins()
@@ -105,7 +105,7 @@ function loadPlugins()
     });
 }
 
-function loadText(title)
+function loadText(title, cb)
 {
     var titleArr = $('.title').map(function(i, e){ return $(e).text(); });
     if($.inArray(title, titleArr) == -1)
@@ -127,6 +127,16 @@ function loadText(title)
         // http://stackoverflow.com/questions/8854288
         $('#texts').val(response.text).focus();
         $('#handler').val(response.handler);
+
+        $('#titles').scrollTop(
+            $('#titles').scrollTop() + 
+            $('.title.selected').offset().top - 
+            $('#titles').height()/2
+        );
+        if(typeof cb == 'function')
+        {
+            cb();
+        }
     });
     return true;
 }
@@ -208,6 +218,74 @@ function testText()
         }
     });
 }
+
+function searchText()
+{
+    var text_field = $('#texts')[0];
+
+    var searchInText = function(isNewTitle) {
+        // IE with versions <= 8 doesn't work
+        if(typeof text_field.selectionStart == 'undefined')
+        {
+            return -1;
+        }
+        var search_term = $('#search_term').val();
+        var current_content = $('#texts').val();
+        var start_point = isNewTitle?0:text_field.selectionEnd;
+        var idx = current_content.indexOf(search_term, start_point);
+        if(idx != -1)
+        {
+            text_field.selectionStart = idx;
+            text_field.selectionEnd = idx + search_term.length;
+            text_field.focus();
+            // chrome does not auto scroll to the selection
+            return 0;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
+    var search_term = $('#search_term').val();
+    var search_results = JSON.parse($('#search_results').val());
+    var current_content = $('#texts').text();
+
+    // should always do the search again if #search_term has changed
+    // and the latter causes search_results be empty
+    if(search_results.length != 0)
+    {
+        if(searchInText(false) == 0)
+        {
+            return;
+        }
+    }
+    var current_title = $('.title.selected:eq(0)').text();
+    if(search_results.length == 0 || 
+       search_results.back() == current_title)
+    {
+        callWrapper('search_text', {
+            term: $('#search_term').val()
+        }, function(data){
+            if(data.length == 0)
+            {
+                $('#dialog').text('找不到指定的內容').dialog({ modal: true });
+            }
+            $('#search_results').val(JSON.stringify(data));
+            loadText(data[0], function() {
+                searchInText(true);
+            });
+        });
+    }
+    else
+    {
+        var current_title_index = search_results.indexOf(current_title);
+        var next_title = search_results[current_title_index + 1];
+        loadText(next_title, function() {
+            searchInText(true);
+        });
+    }
+}
 </script>
 <style>
 body
@@ -246,7 +324,6 @@ body
 #texts
 {
     height: 400px;
-    white-space: nowrap;
     font-size: 16px;
 }
 
@@ -266,7 +343,7 @@ body
 
 #test_result
 {
-    // inline-block: http://www.blabla.cn/css_kb/html_span_width_kb.html
+    /* inline-block: http://www.blabla.cn/css_kb/html_span_width_kb.html */
     display: inline-block;
     width: 400px;
 }
@@ -286,6 +363,9 @@ body
         <span id="test_result"></span>
     </div>
     <div class="right">
+        <input type="text" id="search_term">
+        <input type="button" value="搜尋下一個" id="search_next">
+        <input type="hidden" id="search_results"><br>
         <input type="button" value="登入" id="login">
         <input type="button" value="新增內容" id="new_title" disabled="disabled">
         <input type="button" value="存檔" id="save" disabled="disabled">

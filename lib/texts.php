@@ -252,5 +252,13 @@ class Texts
             'rows' => $data_chunked[$page - 1]
         );
     }
+
+    public static function searchText($term)
+    {
+        $stmt = Db::prepare('SELECT title FROM texts WHERE text like ? AND locked=0');
+        $stmt->execute(array('%'.$term.'%'));
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return array_map(function ($item) { return $item['title']; }, $data);
+    }
 }
 ?>

@@ -52,7 +52,7 @@ class Stats
                 array(
                    'name' => '最新留言', 
                    'value' => Util::timestr($commentsInfo['last_comment_time']) . "\n" .
-                              $commentsInfo['last_comment']
+                              htmlspecialchars($commentsInfo['last_comment'])
                 ), 
                 array(
                     'name' => 'FB伺服器時間', 

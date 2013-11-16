@@ -95,6 +95,10 @@ try
             Util::checkPOST(array('title', 'handler', 'texts'));
             echo json_encode(Texts::getTextFromTexts($_POST['title'], $_POST['handler'], $_POST['texts']));
             break;
+        case 'search_text':
+            Util::checkPOST(array('term'));
+            echo json_encode(Texts::searchText($_POST['term']));
+            break;
         /*
          * plugins.php
          */

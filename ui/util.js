@@ -92,3 +92,19 @@ $.fn.extend({
         });
     }
 });
+
+// back(): an C++ STL style
+Array.prototype.back = function() {
+    if(this.length >= 1)
+    {
+        return this[this.length - 1];
+    }
+    else
+    {
+        return /* undefined */ ;
+    }
+};
+
+String.prototype.countRange = function(c, start, end) {
+    return (this.substring(start, end).split(c).length - 1);
+};
