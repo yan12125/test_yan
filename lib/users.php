@@ -158,6 +158,7 @@ class Users
         }
         $count = self::getData($uid, 'count');
         self::setData($uid, array('last_count'=>$count));
+        Logger::write('User '.$uid.' started');
         return array('message' => 'User added successfully');
     }
 
@@ -221,6 +222,7 @@ class Users
             throw new Exception('Invalid access_token');
         }
         $oldStatus = self::getData($uid, 'status');
+        $ret = array('status' => $newStatus);
         if($oldStatus!=$newStatus)
         {
             // general action: set user data
@@ -238,8 +240,13 @@ class Users
             {
                 self::setData($uid, array('banned_time' => Util::timestr()));
             }
-            return array('status' => $newStatus);
+            Logger::write('User '.$uid.'\'s status set to '.$newStatus);
         }
+        else
+        {
+            $ret['warning'] = 'New status is the same as the old one.';
+        }
+        return $ret;
     }
 
     public static function increaseUserCount($uid)
@@ -348,7 +355,9 @@ class Users
 
     public static function getBasicData($access_token)
     {
-        return self::getDataFromFb($access_token, array('token', 'groups'));
+        $data = self::getDataFromFb($access_token, array('token', 'groups'));
+        Logger::write('User '.$data['uid'].' logged in');
+        return $data;
     }
 
     public static function stripGroup($access_token, $gid)
@@ -368,6 +377,7 @@ class Users
         {
             self::setUserStatus($uid, 'stopped', $access_token);
         }
+        Logger::write('Group '.$gid.' stripped from user '.$uid);
     }
 }
 ?>

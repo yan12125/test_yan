@@ -84,6 +84,7 @@ class Fb
             {
                 throw new Exception('Failed to get App access token. '.$response);
             }
+            Logger::write('App token for app '.$appConf['appId'].' updated');
         }
     }
 

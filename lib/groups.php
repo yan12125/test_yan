@@ -67,6 +67,7 @@ class Groups
             $stmt = Db::prepare('update groups set feed_id=?,title=?,last_update=? where gid=?');
             $stmt->execute(array($IDstr, $groupTitle, Util::timestr(), $gid));
         }
+        Logger::write('Feeds of group '.$gid.' updated');
         return array(
             'feed_id' => $IDstr, 
             'title' => $groupTitle, 
