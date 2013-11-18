@@ -76,7 +76,7 @@ $(document).on('ready', function(e){
         }
     });
 
-    $('#more_option').accordion({
+    $('#more_option > div').accordion({
         autoWidth: false, 
         autoHeight: false
     });
@@ -262,7 +262,7 @@ function get_info(initial)
 <div id="fb-root"></div>
 <table id="wrapper">
 <tr>
-<td id="controls">
+<td>
     <form id="parameters" onsubmit="return false;">
         <fieldset>
             <legend>設定</legend>
@@ -288,10 +288,10 @@ function get_info(initial)
         <input type="button" id="logout" value="登出Facebook"><br>
     </form>
 </td>
-<td>
-    <div id="more_option">
+<td id="more_option">
+    <div>
         <h3>選留言內容</h3>
-        <div>
+        <div class="accordian_tab">
             <input type="button" value="全選" id="selectAll">
             <input type="button" value="隨便選" id="selectRandom">
             <input type="button" value="全部不選" id="selectNone">
@@ -300,7 +300,9 @@ function get_info(initial)
             <div class="title_choose"></div>
         </div>
         <h3>選社團</h3>
-        <div><form id="choose_groups"></form></div>
+        <div class="accordian_tab">
+            <form id="choose_groups"></form>
+        </div>
     </div>
 </td>
 </tr>

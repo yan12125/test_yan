@@ -7,12 +7,6 @@
     margin-right: auto;
 }
 
-#controls
-{
-    width: 180px;
-    float: left;
-}
-
 #messages
 {
     clear: both;
@@ -35,6 +29,7 @@
 .title_choose a:hover
 {
     text-decoration: underline;
+    color: blue;
 }
 
 #choose_groups img
@@ -47,12 +42,17 @@
     vertical-align: top;
 }
 
-#more_option
+#parameters
 {
-    margin-left: -800px;
+    width: 180px;
 }
 
-#more_option > div
+#more_option
+{
+    width: 100%;
+}
+
+#more_option .accordian_tab
 {
     height: 400px;
     /*
