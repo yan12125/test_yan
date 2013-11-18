@@ -58,7 +58,7 @@ function handlePostError(uids, response)
     window.errors.push(response);
     var involvedUsers = [];
     var hasNewStatus = false;
-    for(var i in uids)
+    for(var i = 0; i < uids.length; i++)
     {
         var uid = uids[i];
         if(response.new_status)
@@ -117,7 +117,7 @@ function handleServerError(uids, status, error, xhr)
             }
         }
     }
-    for(var i in uids)
+    for(var i = 0; i < uids.length; i++)
     {
         var uid = uids[i];
         users[uid].wait_time=300;
@@ -169,7 +169,7 @@ function post2(uids)
                     handlePostError(realPostUids, response);
                     return;
                 }
-                for(var i in realPostUids)
+                for(var i = 0; i < realPostUids.length; i++)
                 {
                     var uid = realPostUids[i];
                     handlePost(uid, response[uid]);
