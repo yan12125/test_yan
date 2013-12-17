@@ -1,6 +1,8 @@
 <?php
 class Util
 {
+    const FIREFOX_UA = 'Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0';
+
     /*
         Usage: Use Box-Muller method to get a random number with a Normal Distribution (ND)
         Parameters: $max, $min : the range of result

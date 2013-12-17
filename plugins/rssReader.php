@@ -24,17 +24,22 @@ class RssReader extends PluginBase
         $feed=new SimpleXMLElement($this->xml);
         $url = $title = '';
         // RSS
-        if(is_object($feed->channel) && 
-           is_object($feed->channel->item) && 
-           $feed->channel->item->count() != 0)
+        if($feed->channel->count() > 0)
         {
-            $n=rand(0, $feed->channel->item->count()-1);
-            $url = $feed->channel->item[$n]->link;
-            $title = $feed->channel->item[$n]->title;
+            if($feed->channel->item->count() > 0)
+            {
+                $n = rand(0, $feed->channel->item->count()-1);
+                $url = $feed->channel->item[$n]->link;
+                $title = $feed->channel->item[$n]->title;
+            }
+            else
+            {
+                $url = $feed->channel->link;
+                $title = $feed->channel->title;
+            }
         }
         // Atom
-        else if(is_object($feed->entry) &&
-                $feed->entry->count() != 0)
+        else if($feed->entry->count() != 0)
         {
             $n = rand(0, $feed->entry->count() - 1);
             $item = $feed->entry[$n];

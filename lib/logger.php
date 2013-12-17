@@ -6,14 +6,14 @@ class Logger
     CONST WARNING = 'warning';
     CONST ERROR   = 'error';
 
-    public static function write($content, $level = self::INFO)
+    public static function write($content, $level = self::INFO, $additional_info = "")
     {
         $timestamp_float = microtime(true); // true indicates returned as a float
 
         $ip = '0.0.0.0';
         if(isset($_SERVER['REMOTE_ADDR']))
         {
-            $ip = $_SERVER['SERVER_ADDR'];
+            $ip = $_SERVER['REMOTE_ADDR'];
         }
 
         $backtrace = debug_backtrace();
@@ -28,8 +28,8 @@ class Logger
             }
         }
 
-        $stmt = Db::prepare('INSERT INTO log (time,ip,function,content,priority) VALUES (?,?,?,?,?)');
-        $stmt->execute(array($timestamp_float, $ip, $function, $content, $level));
+        $stmt = Db::prepare('INSERT INTO log (time,ip,function,content,priority,additional_info) VALUES (?,?,?,?,?,?)');
+        $stmt->execute(array($timestamp_float, $ip, $function, $content, $level, $additional_info));
     }
 }
 ?>

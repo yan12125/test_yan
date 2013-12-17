@@ -50,7 +50,7 @@ $(document).on('ready', function(e){
             $('#search_results').val('[]');
         });
         updateTitles(function(titles){
-            selectTitleByUrl(titles);
+            selectTitleByUrl();
         });
         loadPlugins();
     });
@@ -85,13 +85,22 @@ function updateTitles(cb)
     });
 }
 
-function selectTitleByUrl(titles)
+function selectTitleByUrl()
 {
     // title may contain special chars such as ?
     // so encode in index.php and decode here
     var arr = {};
-    parse_str(location.search.substring(1), arr);
-    loadText(arr.title);
+    var query = location.search;
+    if(query[0] != '?')
+    {
+        // firefox memorizes previous value
+        $('#texts').val('');
+    }
+    else
+    {
+        parse_str(query.substring(1), arr);
+        loadText(arr.title);
+    }
 }
 
 function loadPlugins()
@@ -107,6 +116,9 @@ function loadPlugins()
 
 function loadText(title, cb)
 {
+    $('#img_ok').css('display', 'none');
+    $('#img_error').css('display', 'none');
+    $('#test_result').text('');
     var titleArr = $('.title').map(function(i, e){ return $(e).text(); });
     if($.inArray(title, titleArr) == -1)
     {
@@ -214,7 +226,7 @@ function testText()
         else
         {
             $('#img_ok').css('display', 'inline');
-            $('#test_result').text(data.msg);
+            $('#test_result').html(escapeHtml(data.msg).replace("\n", "<br>"));
         }
     });
 }
@@ -338,7 +350,7 @@ body
     height: 32px;
     width: 32px;
     display: none;
-    vertical-align: middle;
+    vertical-align: top;
 }
 
 #test_result
@@ -356,7 +368,7 @@ body
     <textarea id="texts"></textarea><br>
     <div class="left">
         外掛：<select id="handler"><option value="__none__">(None)</option></select>
-        <button id="test_text">測試外掛</button>
+        <button id="test_text">測試</button>
         <br>
         <img id="img_ok" src="../images/ok.png">
         <img id="img_error" src="../images/error.png">

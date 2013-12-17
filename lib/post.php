@@ -42,9 +42,9 @@ class Post
     {
         for($i = 0;$i < count($this->uids);$i++)
         {
+            $uid = $this->uids[$i];
             try
             {
-                $uid = $this->uids[$i];
                 $userData = $this->userData[$uid] = Users::getData($uid, '*');
                 $this->getGroup($uid);
                 $this->getTextItem($uid);

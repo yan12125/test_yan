@@ -180,7 +180,7 @@ class Texts
                 'title' => $title
             );
         }
-        if($arr['locked'])
+        if($arr['locked'] && $m == -1)
         {
             return array(
                 'error' => 'title_locked', 
