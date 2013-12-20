@@ -36,7 +36,8 @@ class FbBatch
         // transform to facebook batch request formats
         $this->queries[] = array(
             'method' => $method, 
-            'relative_url' => $path.'?'.http_build_query($params)
+            'path' => $path, 
+            'params' => $params
         );
         $this->keys[] = $key;
     }
@@ -52,8 +53,37 @@ class FbBatch
         {
             return array();
         }
-        $results = self::makeRequest();
+
+        $results = $this->makeRequest();
+        if(count($this->queries) == 1)
+        {
+            $retval = $this->parseSingleResult($results);
+        }
+        else
+        {
+            $retval = $this->parseMultipleResults($results);
+        }
+
         $this->queries = array();
+
+        return $retval;
+    }
+
+    protected function parseSingleResult($results)
+    {
+        if(is_null($this->keys[0]))
+        {
+            $key = 0;
+        }
+        else
+        {
+            $key = $this->keys[0];
+        }
+        return array($key => $results);
+    }
+
+    protected function parseMultipleResults($results)
+    {
         foreach($results as &$item)
         {
             $item = json_decode($item['body'], true);
@@ -87,19 +117,41 @@ class FbBatch
 
     protected function makeRequest()
     {
-        self::$lastParam = $params = array(
-            'batch' => json_encode($this->queries), 
-            'access_token' => $this->commonToken
-        );
+        $base_url = 'https://graph.facebook.com';
+        if(count($this->queries) > 1)
+        {
+            $params = array(
+                'batch' => json_encode(array_map(function ($item) {
+                    return array(
+                        'method' => $item['method'], 
+                        'relative_url' => $item['path'].'?'.http_build_query($item['params'])
+                    );
+                }, $this->queries)), 
+                'access_token' => $this->commonToken
+            );
+            $url = $base_url;
+            $isPost = true;
+        }
+        else
+        {
+            $query = $this->queries[0];
+
+            $params = $query['params'];
+            $url = $base_url.$query['path'];
+            $isPost = ($query['method'] == 'POST');
+        }
+        self::$lastParam = $params;
 
         $ch = curl_init();
         curl_setopt_array($ch , array(
-            CURLOPT_URL => 'https://graph.facebook.com/', 
+            CURLOPT_URL => $url, 
             CURLOPT_RETURNTRANSFER => true, 
             CURLOPT_BINARYTRANSFER => true, 
-            CURLOPT_POST => true, 
+            CURLOPT_POST => $isPost, 
             CURLOPT_POSTFIELDS => http_build_query($params), 
-            CURLOPT_TIMEOUT => 20
+            CURLOPT_TIMEOUT => 20, 
+            // http://stackoverflow.com/questions/11004624/ 
+            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
         ));
         $result = curl_exec($ch);
         if($result === false)
