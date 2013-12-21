@@ -179,7 +179,10 @@ class FbBatch
     public static function report_fields(&$output)
     {
         $output['fb_result'] = Util::tryParseJson(self::$lastQueryResult);
-        self::$lastParam['batch'] = Util::tryParseJson(self::$lastParam['batch']);
+        if(isset(self::$lastParam['batch']))
+        {
+            self::$lastParam['batch'] = Util::tryParseJson(self::$lastParam['batch']);
+        }
         $output['last_param'] = self::$lastParam;
     }
 }
