@@ -204,6 +204,7 @@ class Util
         {
             $timestamp = time();
         }
+        // H contains the leading zero
         return date('Y/m/d H:i:s', $timestamp);
     }
 
