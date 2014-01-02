@@ -281,7 +281,7 @@ class Util
         return trim($str) != '' && $str !== "\xC2\xA0";
     }
 
-    public static function handleException(Exception $e, &$output)
+    public static function handleException(Exception $e, &$output, $needTrace = true)
     {
         // basic parameters
         $errClass = get_class($e);
@@ -294,28 +294,29 @@ class Util
             $response_error['severity'] = Util::getSeverityStr($e->getSeverity());
         }
 
-        // trace
-        $trace = $e->getTrace();
-        $classNames = array();
-        foreach($trace as &$item)
+        if($needTrace)
         {
-            // not set in error handler
-            if(isset($item['file']))
+            $trace = $e->getTrace();
+            $classNames = array();
+            foreach($trace as &$item)
             {
-                $item['file'] = basename($item['file']);
-            }
-            // determine which class cause the error
-            if(isset($item['class']))
-            {
-                if($item['class'] == 'Util' && $item['function'] == 'errorHandler')
+                // not set in error handler
+                if(isset($item['file']))
                 {
-                    continue;
+                    $item['file'] = basename($item['file']);
                 }
-                $classNames[] = $item['class'];
+                // determine which class cause the error
+                if(isset($item['class']))
+                {
+                    if($item['class'] == 'Util' && $item['function'] == 'errorHandler')
+                    {
+                        continue;
+                    }
+                    $classNames[] = $item['class'];
+                }
             }
+            $output['trace'] = $trace;
         }
-        $output['class_names'] = $classNames;
-        $output['trace'] = $trace;
 
         for($i = 0;$i < count($classNames);$i++)
         {
