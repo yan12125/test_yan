@@ -91,9 +91,13 @@ $(document).on('ready', function(e){
 function getTitles(userTitles)
 {
     callWrapper('list_titles', function(data){
-        var titles = data.titles, lines = data.lines;
+        var titles = data.titles, lines = data.lines, locked = data.locked;
         for(var i = 0; i < titles.length; i++)
         {
+            if(locked[i] == 1 || lines[i] <= 0)
+            {
+                continue;
+            }
             var titles_div = $('.title_choose');
             var title_text = titles[i];
             var textUrl = './text_mgr.php?title='+encodeURIComponent(title_text)+'&access_token='+$('#token').val();

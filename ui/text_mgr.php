@@ -180,7 +180,10 @@ function newTitle()
 {
     var newTitle_impl = function(){
         var _title = $('#title_new').val();
-        callWrapper('add_title', { title: _title }, function(response){
+        callWrapper('add_title', {
+            title: _title, 
+            access_token: $('#token').val()
+        }, function(response){
             if(response.status == 'success')
             {
                 updateTitles(function(){

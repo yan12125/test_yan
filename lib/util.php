@@ -289,6 +289,33 @@ class Util
         $output['code'] = $e->getCode();
         $output['time'] = Util::timestr();
         $output['error'] = Util::tryParseJson($e->getMessage());
+        if(is_array($output['error']))
+        {
+            if(!isset($output['additional_info']))
+            {
+                $output['additional_info'] = array();
+            }
+            if(isset($output['error']['source']))
+            {
+                $sourceName = $output['error']['source'];
+                $output['additional_info'][$sourceName] = $output['error'];
+                $errorMsg = '';
+                if(isset($output['error']['error']))
+                {
+                    $errorMsg = $output['error']['error'];
+                }
+                $output['error'] = 'Error from component '.$sourceName;
+                if($errorMsg != '')
+                {
+                    $output['error'] .= ': '.$errorMsg;
+                }
+            }
+            else
+            {
+                $output['additional_info'][] = $output['error'];
+                $output['error'] = 'Unexpected error occurred!';
+            }
+        }
         if($errClass == 'ErrorException')
         {
             $response_error['severity'] = Util::getSeverityStr($e->getSeverity());

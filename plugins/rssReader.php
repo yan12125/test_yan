@@ -4,12 +4,14 @@ class RssReader extends PluginBase
     protected $xml;
     protected $url;
     protected $ch;
+    protected $redirectHeader;
 
     public function __construct()
     {
         libxml_use_internal_errors(true); // handle errors manually
         $this->xml = null;
         $this->url = null;
+        $this->redirectHeader = null;
         $this->ch = curl_init();
     }
 
@@ -91,7 +93,7 @@ class RssReader extends PluginBase
             CURLOPT_BINARYTRANSFER => true, 
             CURLOPT_FOLLOWLOCATION => false
         ));
-        $results = curl_exec($ch);
+        $this->redirectHeader = $results = curl_exec($ch);
         curl_close($ch);
         $matches = array();
         if(preg_match('/HTTP\/1.1 (302|301)/', $results))
@@ -134,6 +136,7 @@ class RssReader extends PluginBase
         }
         $output['url'] = $this->url;
         $output['curl_error'] = curl_error($this->ch);
+        $output['redirectHeader'] = $this->redirectHeader;
         return $output;
     }
 }

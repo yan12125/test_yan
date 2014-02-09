@@ -76,8 +76,8 @@ try
             echo json_encode(Texts::updateText($_POST['title'], $_POST['texts'], $_POST['handler'], $_POST['access_token']));
             break;
         case 'add_title':
-            Util::checkPOST(array('title'));
-            echo json_encode(Texts::addTitle($_POST['title']));
+            Util::checkPOST(array('title', 'access_token'));
+            echo json_encode(Texts::addTitle($_POST['title'], $_POST['access_token']));
             break;
         case 'check_title':
             Util::checkPOST(array('title'));

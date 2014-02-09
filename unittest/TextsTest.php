@@ -1,5 +1,4 @@
 <?php
-require_once 'PHPUnit/Framework/TestCase.php';
 require_once './common_inc.php';
 
 class TextsTest extends PHPUnit_Framework_TestCase
@@ -19,7 +18,8 @@ class TextsTest extends PHPUnit_Framework_TestCase
         return array(
             'error' => 'Texts in specified title not valid!', 
             'title' => $title, 
-            'msg' => null
+            'msg' => null, 
+            'source' => 'Texts'
         );
     }
 

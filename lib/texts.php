@@ -3,17 +3,19 @@ class Texts
 {
     public static function listTitles()
     {
-        $stmt = Db::query("SELECT `title`,`lines` FROM texts where locked=0");
+        $stmt = Db::query("SELECT `title`,`lines`,`locked` FROM texts");
         $arr = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $titles = $lines = array();
         for($i = 0; $i < count($arr); $i++)
         {
             $titles[] = $arr[$i]['title'];
             $lines[] = $arr[$i]['lines'];
+            $locked[] = (int)$arr[$i]['locked'];
         }
         return array(
             'titles' => $titles, 
-            'lines' => $lines
+            'lines' => $lines, 
+            'locked' => $locked
         );
     }
 
@@ -27,7 +29,7 @@ class Texts
         return $num[0] > 0;
     }
 
-    public static function addTitle($title)
+    public static function addTitle($title, $access_token)
     {
         $title = trim($title);
         if($title == '')
@@ -41,6 +43,7 @@ class Texts
         $stmt = Db::prepare('insert texts (title,handler,text) values(?,NULL,"")');
         if($stmt->execute(array($title)) !== false)
         {
+            self::logTextModification($title, $access_token);
             return array('status' => 'success');
         }
         else
@@ -82,14 +85,18 @@ class Texts
         }
         $linesObj = self::updateLines($title, $texts);
 
-        // logging
-        $userData = Users::getDataFromFb($access_token, array('token'));
-        $stmt = Db::prepare('insert texts_log (uid,title,update_time) values (?,?,?)');
-        $stmt->execute(array($userData['uid'], $title, Util::timestr()));
+        self::logTextModification($title, $access_token);
         return array(
             'status' => 'success', 
             'lines' => $linesObj['line_count']
         );
+    }
+
+    protected static function logTextModification($title, $access_token)
+    {
+        $userData = Users::getDataFromFb($access_token, array('token'));
+        $stmt = Db::prepare('insert texts_log (uid,title,update_time) values (?,?,?)');
+        $stmt->execute(array($userData['uid'], $title, Util::timestr()));
     }
 
     public static function updateLines($title, $texts = '')
@@ -201,7 +208,8 @@ class Texts
             return array(
                 'error' => 'Texts in specified title not valid!', 
                 'title' => $title, 
-                'msg' => null
+                'msg' => null, 
+                'source' => 'Texts'
             );
         }
         if($m < 0 || $m >= count($json_texts)) // if $m == -1 or invalid, randomly select a number
