@@ -164,10 +164,6 @@ class FbBatch
         {
             throw new Exception('Invalid result from facebook');
         }
-        if(isset($json['error']))
-        {
-            throw new Exception(json_encode($json['error']));
-        }
         return $json;
     }
 

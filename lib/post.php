@@ -125,7 +125,7 @@ class Post
         {
             $responses = $req->run();
         }
-        catch(FacebookApiException $e)
+        catch(Exception $e) // FbBatch doesn't throw FacebookApiException
         {
             for($i = 0;$i < count($this->uids);$i++)
             {
@@ -183,6 +183,10 @@ class Post
         {
             Stats::unexpected();
             $this->fillErrorMsg($uid, true);
+        }
+        else if(strpos($err, 'Sorry, you are blocked from leaving comments due to continued overuse of this feature.') !== false)
+        {
+            $this->fillErrorMsg($uid, false, 'banned');
         }
         else
         {
