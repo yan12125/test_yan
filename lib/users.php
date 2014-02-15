@@ -152,6 +152,7 @@ class Users
             self::setData($uid, array("status"=>"started"));
             $stmt = Db::prepare('UPDATE users SET name=?,access_token=?,IP=?,interval_max=?,interval_min=?,titles=?,goal=?,groups=? WHERE uid=?');
         }
+        Texts::checkTitlesJSON($userData['titles']);
         if(!$stmt->execute(array($userProfile['name'], $token, $_SERVER['REMOTE_ADDR'], $userData['interval_max'], $userData['interval_min'], $userData['titles'], $userData['goal'], $userData['groups'], $uid)))
         {
             throw new Exception(Db::getErr());

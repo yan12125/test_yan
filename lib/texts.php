@@ -1,22 +1,40 @@
 <?php
 class Texts
 {
-    public static function listTitles()
+    protected static function listTitlesImpl($assoc)
     {
         $stmt = Db::query("SELECT `title`,`lines`,`locked` FROM texts");
         $arr = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $titles = $lines = array();
-        for($i = 0; $i < count($arr); $i++)
+        if($assoc) // titles as keys
         {
-            $titles[] = $arr[$i]['title'];
-            $lines[] = $arr[$i]['lines'];
-            $locked[] = (int)$arr[$i]['locked'];
+            $retval = array();
+            for($i = 0; $i < count($arr); $i++)
+            {
+                $row = $arr[$i];
+                $retval[$row['title']] = $row;
+            }
+            return $retval;
         }
-        return array(
-            'titles' => $titles, 
-            'lines' => $lines, 
-            'locked' => $locked
-        );
+        else
+        {
+            $titles = $lines = array();
+            for($i = 0; $i < count($arr); $i++)
+            {
+                $titles[] = $arr[$i]['title'];
+                $lines[] = $arr[$i]['lines'];
+                $locked[] = (int)$arr[$i]['locked'];
+            }
+            return array(
+                'titles' => $titles, 
+                'lines' => $lines, 
+                'locked' => $locked
+            );
+        }
+    }
+
+    public static function listTitles()
+    {
+        return self::listTitlesImpl(false);
     }
 
     public static function checkTitle($title)
@@ -121,7 +139,7 @@ class Texts
     public static function updateAllTitles()
     {
         $results = array();
-        $titles = self::listTitles();
+        $titles = self::listTitlesImpl(false);
         for($i = 0; $i < count($titles['titles']); $i++)
         {
             $curTitle = $titles['titles'][$i];
@@ -268,6 +286,29 @@ class Texts
         $stmt->execute(array('%'.$term.'%'));
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map(function ($item) { return $item['title']; }, $data);
+    }
+
+    public static function checkTitlesJSON($string)
+    {
+        $givenTitles = json_decode($string, true);
+        if(!is_array($givenTitles) || Util::isAssoc($givenTitles))
+        {
+            throw new Exception('Titles should be a JSON array.');
+        }
+        $realTitles = self::listTitlesImpl(true);
+        for($i = 0; $i < count($givenTitles); $i++)
+        {
+            $curTitle = $givenTitles[$i];
+            if(!isset($realTitles[$curTitle]))
+            {
+                throw new Exception("Title '{$curTitle}' not found.");
+            }
+            $row = $realTitles[$curTitle];
+            if($row['locked'] == 1 || $row['lines'] <= 0)
+            {
+                throw new Exception("Title '{$curTitle}' locked or invalid.");
+            }
+        }
     }
 }
 ?>

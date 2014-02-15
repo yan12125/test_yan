@@ -281,6 +281,14 @@ class Util
         return trim($str) != '' && $str !== "\xC2\xA0";
     }
 
+    /**
+     * Reference: http://stackoverflow.com/questions/173400
+     */
+    public static function isAssoc($arr)
+    {
+        return array_keys($arr) !== range(0, count($arr) - 1);
+    }
+
     public static function handleException(Exception $e, &$output, $needTrace = true)
     {
         // basic parameters
