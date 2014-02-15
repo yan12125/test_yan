@@ -122,11 +122,12 @@ class Texts
     {
         $results = array();
         $titles = self::listTitles();
-        for($i = 0; $i < count($titles); $i++)
+        for($i = 0; $i < count($titles['titles']); $i++)
         {
+            $curTitle = $titles['titles'][$i];
             $results[] = array(
-                'title' => $titles[$i], 
-                'line_count' => self::updateLines($titles[$i])['line_count']
+                'title' => $curTitle, 
+                'line_count' => self::updateLines($curTitle)['line_count']
             );
         }
         return $results;

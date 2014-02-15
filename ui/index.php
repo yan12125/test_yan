@@ -94,10 +94,12 @@ function getTitles(userTitles)
         var titles = data.titles, lines = data.lines, locked = data.locked;
         for(var i = 0; i < titles.length; i++)
         {
+            var disabled = false;
             if(locked[i] == 1 || lines[i] <= 0)
             {
-                continue;
+                disabled = true;
             }
+
             var titles_div = $('.title_choose');
             var title_text = titles[i];
             var textUrl = './text_mgr.php?title='+encodeURIComponent(title_text)+'&access_token='+$('#token').val();
@@ -105,10 +107,15 @@ function getTitles(userTitles)
                 .append('<input type="checkbox" value="'+title_text+'">')
                 .append('<a href="'+textUrl+'">'+title_text+'</a>')
                 .append(' ('+lines[i]+')<br>');
-            if($.inArray(title_text, userTitles) > -1)
+            var curTitleElement = titles_div.find('input[value="'+title_text+'"]');
+            if(disabled)
             {
-                titles_div.find("input[value=\""+title_text+"\"]")
-                    .attr("checked", true)
+                curTitleElement.attr('disabled', true)
+                    .next().wrap('<del></del>');
+            }
+            if(!disabled && $.inArray(title_text, userTitles) > -1)
+            {
+                curTitleElement.attr("checked", true)
                     .next().addClass('selected_item');
             }
         }
