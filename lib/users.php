@@ -47,7 +47,8 @@ class Users
         foreach($users_chunked[$page - 1] as $user)
         {
             $req->push(null, '/debug_token', array(
-                'input_token' => $user['access_token']
+                'input_token' => $user['access_token'], 
+                'locale' => 'zh_TW'
             ));
         }
         $token_response = $req->run();
@@ -97,8 +98,8 @@ class Users
                 {
                     $curRow['msg'] = '授權碼已在'.Util::timestr($matches[1]).'過期';
                 }
-                else if(preg_match('/Sessions for user with id .* are not allowed/', $err) > 0)
-                {
+                else if(preg_match('/Sessions for the user  are not allowed because the user is not a confirmed user./', $err) > 0)
+                {               /* Really two spaces here. ↑ Maybe Facebook's bug? */
                     $curRow['msg'] = $statusStr['disabled'];
                 }
                 else
