@@ -306,6 +306,11 @@ class Users
             $req->push('groups', '/me/groups', array('fields' => 'id,name'));
         }
         $results = $req->run();
+        if(isset($results['error']))
+        {
+            throw new Exception(json_encode($results['error']['message']));
+        }
+
         $retval = array();
         if($getToken)
         {

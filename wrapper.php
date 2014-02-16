@@ -8,6 +8,7 @@ try
         exit(0);
     }
     header('Content-type: application/json;charset=UTF-8');
+    header('Connection: close');
     switch($_POST['action'])
     {
         /*

@@ -58,10 +58,13 @@ class Texts
         {
             throw new Exception('指定的標題已存在！');
         }
+
+        // need to log before adding title to filter invalid users
+        self::logTextModification($title, $access_token);
+
         $stmt = Db::prepare('insert texts (title,handler,text) values(?,NULL,"")');
         if($stmt->execute(array($title)) !== false)
         {
-            self::logTextModification($title, $access_token);
             return array('status' => 'success');
         }
         else
@@ -92,8 +95,11 @@ class Texts
         $textArr = array_values(array_filter($textArr, array('Util', 'not_empty')));
         if(count($textArr) == 0)
         {
-            return array('error' => 'No strings given');
+            throw new Exception('No strings given');
         }
+
+        // the same reason as self::addTitle()
+        self::logTextModification($title, $access_token);
 
         $texts = Util::json_unicode($textArr);
         $stmt = Db::prepare('update texts set text=?,handler=? where title=?');
@@ -103,7 +109,6 @@ class Texts
         }
         $linesObj = self::updateLines($title, $texts);
 
-        self::logTextModification($title, $access_token);
         return array(
             'status' => 'success', 
             'lines' => $linesObj['line_count']

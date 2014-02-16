@@ -28,6 +28,10 @@ class FbBatch
         {
             throw new Exception('The limit of batch requests is 50.');
         }
+        if($key == 'error')
+        {
+            throw new Exception("\"error\" can't be used as a key");
+        }
         if(is_array($method) && empty($params))
         {
             $params = $method;
@@ -84,9 +88,17 @@ class FbBatch
 
     protected function parseMultipleResults($results)
     {
-        foreach($results as &$item)
+        if(!Util::isAssoc($results))
         {
-            $item = json_decode($item['body'], true);
+            foreach($results as &$item)
+            {
+                $item = json_decode($item['body'], true);
+            }
+        }
+        else
+        {
+            // something wrong with the batch call
+            return $results;
         }
 
         // array_count_values only accept integers and strings, and keys can be null

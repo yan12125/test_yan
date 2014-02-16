@@ -32,10 +32,80 @@ class TextsTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    public function testListTitles()
+    {
+        $titles = Texts::listTitles();
+        $this->assertEquals(count($titles['titles']), count($titles['locked']));
+        $this->assertInternalType('integer', $titles['locked'][0]);
+    }
+
     public function testCheckTitle()
     {
         $this->assertTrue(Texts::checkTitle('empty'));
         $this->assertFalse(Texts::checkTitle('does_not_exist'));
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage 標題不得為空白！
+     */
+    public function testAddTitle_EmptyTitle()
+    {
+        Texts::addTitle('', 'invalid_token');
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage 指定的標題已存在！
+     */
+    public function testAddTitle_TitleExists()
+    {
+        Texts::addTitle('empty', 'invalid_token');
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage Invalid OAuth access token.
+     */
+    public function testAddTitle_InvalidToken()
+    {
+        Texts::addTitle('does_not_exist', 'invalid_token');
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage 指定的標題不存在！
+     */
+    public function testUpdateText_TitleDoesNotExist()
+    {
+        Texts::updateText('does_not_exist', 'text', '__none__', 'invalid_token');
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage 指定的外掛不存在！
+     */
+    public function testUpdateText_PluginDoesNotExist()
+    {
+        Texts::updateText('empty', 'text', 'does_not_exist', 'invalid_token');
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage No strings given
+     */
+    public function testUpdateText_EmptyContent()
+    {
+        Texts::updateText('empty', '', '__none__', 'invalid_token');
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage Invalid OAuth access token.
+     */
+    public function testUpdateText_InvalidToken()
+    {
+        Texts::updateText('empty', 'text', '__none__', 'invalid_token');
     }
 
     /**
