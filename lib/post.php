@@ -188,6 +188,10 @@ class Post
         {
             $this->fillErrorMsg($uid, false, 'banned');
         }
+        else if(strpos($err, 'Invalid result from facebook'))
+        {
+            throw new Exception($err);
+        }
         else
         {
             $this->fillErrorMsg($uid, true);
