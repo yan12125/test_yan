@@ -229,6 +229,7 @@ class Texts
         $json_texts=json_decode($texts, true);
         if(!is_array($json_texts) || count($json_texts) == 0) // if not valid json, json_decode return null, and count(null) is 0
         {
+            self::stripTitle($title);
             return array(
                 'error' => 'Texts in specified title not valid!', 
                 'title' => $title, 
@@ -313,6 +314,32 @@ class Texts
             {
                 throw new Exception("Title '{$curTitle}' locked or invalid.");
             }
+        }
+    }
+
+    protected static function stripTitle($title)
+    {
+        $stmt = Db::prepare("SELECT uid FROM users WHERE titles LIKE ?");
+        $stmt->execute(array('%'.$title.'%'));
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        for($i = 0; $i < count($results); $i++)
+        {
+            $uid = $results[$i]['uid'];
+            $stmt2 = Db::prepare("SELECT access_token,titles FROM users WHERE uid = ?");
+            $stmt2->execute(array($uid));
+            $results2 = $stmt2->fetch(PDO::FETCH_ASSOC);
+            $titles = json_decode($results2['titles'], true);
+            $titles = array_values(array_filter($titles, function ($item) use ($title) {
+                return $item != $title;
+            }));
+            $stmt3 = Db::prepare("UPDATE users SET titles = ? WHERE uid = ?");
+            $stmt3->execute(array(json_encode($titles), $uid));
+            $access_token = $results2['access_token'];
+            if(count($titles) == 0)
+            {
+                Users::setUserStatus($uid, 'stopped', $access_token);
+            }
+            Logger::write("Title \"{$title}\" stripped from user {$uid}");
         }
     }
 }
