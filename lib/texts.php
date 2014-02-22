@@ -319,8 +319,9 @@ class Texts
 
     protected static function stripTitle($title)
     {
-        $stmt = Db::prepare("SELECT uid FROM users WHERE titles LIKE ?");
-        $stmt->execute(array('%'.$title.'%'));
+        // $title is not escaped here, while data in the database might be encoded (browser dependent)
+        $stmt = Db::prepare("SELECT uid FROM users WHERE titles LIKE ? OR titles LIKE ?");
+        $stmt->execute(array('%'.$title.'%', '%'.Util::escapeUtf8($title, true).'%'));
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         for($i = 0; $i < count($results); $i++)
         {
@@ -329,13 +330,17 @@ class Texts
             $stmt2->execute(array($uid));
             $results2 = $stmt2->fetch(PDO::FETCH_ASSOC);
             $titles = json_decode($results2['titles'], true);
-            $titles = array_values(array_filter($titles, function ($item) use ($title) {
-                return $item != $title;
+            $new_titles = array_values(array_filter($titles, function ($item) use ($title) {
+                return ($item != $title) && ($item != Util::escapeUtf8($title, true));
             }));
+            if(count($titles) == count($new_titles))
+            {
+                continue;
+            }
             $stmt3 = Db::prepare("UPDATE users SET titles = ? WHERE uid = ?");
-            $stmt3->execute(array(json_encode($titles), $uid));
+            $stmt3->execute(array(json_encode($new_titles), $uid));
             $access_token = $results2['access_token'];
-            if(count($titles) == 0)
+            if(count($new_titles) == 0)
             {
                 Users::setUserStatus($uid, 'stopped', $access_token);
             }

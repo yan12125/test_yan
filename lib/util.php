@@ -289,6 +289,16 @@ class Util
         return array_keys($arr) !== range(0, count($arr) - 1);
     }
 
+    public static function escapeUtf8($str, $double_escape = false)
+    {
+        $retval = json_encode($str);
+        if($double_escape)
+        {
+            $retval = str_replace("\\", "\\\\", $retval);
+        }
+        return substr($retval, 1, -1);
+    }
+
     public static function handleException(Exception $e, &$output, $needTrace = true)
     {
         // basic parameters
