@@ -9,6 +9,10 @@ try
     }
     header('Content-type: application/json;charset=UTF-8');
     header('Connection: close');
+    if(isset($_POST['debug']))
+    {
+        Util::$debug = true;
+    }
     switch($_POST['action'])
     {
         /*

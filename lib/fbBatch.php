@@ -134,9 +134,14 @@ class FbBatch
         {
             $params = array(
                 'batch' => json_encode(array_map(function ($item) {
+                    $relative_url = $item['path'].'?'.http_build_query($item['params']);
+                    if($relative_url{0} == '/')
+                    {
+                        $relative_url = substr($relative_url, 1);
+                    }
                     return array(
                         'method' => $item['method'], 
-                        'relative_url' => $item['path'].'?'.http_build_query($item['params'])
+                        'relative_url' => $relative_url
                     );
                 }, $this->queries)), 
                 'access_token' => $this->commonToken
@@ -163,7 +168,10 @@ class FbBatch
             CURLOPT_POSTFIELDS => http_build_query($params), 
             CURLOPT_TIMEOUT => 20, 
             // http://stackoverflow.com/questions/11004624/ 
-            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
+            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4, 
+            // Without this, the response will be two HTTP headers - 100 Continue and 200 OK
+            // http://www.laruence.com/2011/01/20/1840.html
+            CURLOPT_HTTPHEADER => array('Expect:')
         ));
         $result = curl_exec($ch);
         if($result === false)

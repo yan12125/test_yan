@@ -18,8 +18,7 @@ class Post
         $this->group = array();
         $default_config = array(
             'not_post' => false, 
-            'truncated_msg' => true, 
-            'debug' => false
+            'truncated_msg' => true
         );
         foreach($default_config as $key => $value)
         {
@@ -54,7 +53,7 @@ class Post
                     Users::setUserStatus($uid, 'stopped', $userData['access_token']);
                     throw new Exception($userData['name'].' : goal achieved');
                 }
-                if($this->config[$uid]['debug'])
+                if(Util::$debug)
                 {
                     $this->config[$uid]['not_post'] = true;
                 }
@@ -129,7 +128,7 @@ class Post
         {
             for($i = 0;$i < count($this->uids);$i++)
             {
-                $this->handleFacebookError($this->uids[$i], $e->getMessage());
+                $this->handleFacebookError($this->uids[$i], $e);
             }
             return;
         }
@@ -146,7 +145,7 @@ class Post
             $this->response[$uid]['ret_obj'] = $responses[$realIndex];
             if(isset($responses[$realIndex]['error']))
             {
-                $this->handleFacebookError($uid, $responses[$realIndex]['error']['message']);
+                $this->handleFacebookError($uid, new Exception($responses[$realIndex]['error']['message']));
                 continue;
             }
             if(isset($responses[$realIndex]['id']))
@@ -161,8 +160,9 @@ class Post
         }
     }
 
-    protected function handleFacebookError($uid, $err)
+    protected function handleFacebookError($uid, $e)
     {
+        $err = $e->getMessage();
         $this->response[$uid]['fbErr'] = $err;
         $this->response[$uid]['error'] = '';
         $this->config[$uid]['truncated_msg'] = false;
@@ -188,9 +188,9 @@ class Post
         {
             $this->fillErrorMsg($uid, false, 'banned');
         }
-        else if(strpos($err, 'Invalid result from facebook'))
+        else if(strpos($err, 'Invalid result from facebook') !== false)
         {
-            throw new Exception($err);
+            throw $e;
         }
         else
         {
