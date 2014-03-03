@@ -66,6 +66,11 @@
     font-weight: bold;
 }
 
+.title_choose a.disabled_title
+{
+    text-decoration: line-through;
+}
+
 .input_number
 {
     width: 80px;

@@ -50,6 +50,10 @@ $(document).on('ready', function(e){
         {
             if(Math.random() <= probability)
             {
+                if(titleTexts.eq(i).hasClass('disabled_title'))
+                {
+                    continue;
+                }
                 checkboxes.eq(i).attr('checked', true);
                 titleTexts.eq(i).addClass('selected_item');
             }
@@ -92,6 +96,10 @@ function getTitles(userTitles)
 {
     callWrapper('list_titles', function(data){
         var titles = data.titles, lines = data.lines, locked = data.locked;
+        // if error 'user_not_found' repeatedly occurs (unregistered users)
+        // this prevents duplicated titles
+        var titles_div = $('.title_choose');
+        titles_div.html('');
         for(var i = 0; i < titles.length; i++)
         {
             var disabled = false;
@@ -100,7 +108,6 @@ function getTitles(userTitles)
                 disabled = true;
             }
 
-            var titles_div = $('.title_choose');
             var title_text = titles[i];
             var textUrl = './text_mgr.php?title='+encodeURIComponent(title_text)+'&access_token='+$('#token').val();
             titles_div.eq(i%titles_div.length)
@@ -111,7 +118,7 @@ function getTitles(userTitles)
             if(disabled)
             {
                 curTitleElement.attr('disabled', true)
-                    .next().wrap('<del></del>');
+                    .next().addClass('disabled_title');
             }
             if(!disabled && $.inArray(title_text, userTitles) > -1)
             {
