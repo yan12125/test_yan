@@ -98,7 +98,7 @@ class RssReader extends PluginBase
         $matches = array();
         if(preg_match('/HTTP\/1.1 (302|301)/', $results))
         {
-            preg_match('/(Location:|URI:)(.*?)\n/', $results, $matches);
+            preg_match('/(location:|uri:)(.*?)\n/', strtolower($results), $matches);
             return $this->getRedirectedUrl(trim($matches[2]), $count + 1);
         }
         else
