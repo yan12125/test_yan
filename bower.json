@@ -1,0 +1,12 @@
+{
+    "name": "test_yan", 
+    "version": "0.0.2-dev", 
+    "dependencies": {
+        "codemirror": "*", 
+        "jquery": "1.7.2", 
+        "jqgrid": "*", 
+        "jquery-ui": "*", 
+        "jquery.validation": "*", 
+        "phpjs": "*"
+    }
+}

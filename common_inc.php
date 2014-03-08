@@ -25,6 +25,8 @@ if(!function_exists('autoload'))
     spl_autoload_register('autoload');
 }
 
+require APP_ROOT.'vendor/autoload.php';
+
 set_error_handler(array('Util', 'errorHandler'));
 
 /*

@@ -1,5 +1,4 @@
 .htsecret
-3rdparty
 TODO
 
 # vim temporary files
@@ -13,3 +12,10 @@ test*
 *.orig
 
 *.pyc
+
+# For composer.phar
+/vendor/
+/composer.lock
+
+# For bower
+/bower_components/

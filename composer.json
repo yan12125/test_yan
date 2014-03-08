@@ -1,0 +1,7 @@
+{
+    "require": {
+        "greenlion/php-sql-parser": "*", 
+        "shark/simple_html_dom": "dev-master", 
+        "facebook/php-sdk": "*"
+    }
+}

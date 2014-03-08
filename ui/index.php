@@ -10,7 +10,7 @@ Fb::login();
 <link rel="stylesheet" href="index.css">
 <?php
 External::setRelativePath('..');
-echo External::loadJsCss('jquery-ui', 'validate');
+echo External::loadJsCss('jquery-ui', 'validate', 'phpjs');
 ?>
 <base target="_blank">
 <script language="javascript">

@@ -5,7 +5,6 @@ class YahooImgSearch extends PluginBase
 
     public function __construct()
     {
-        External::loadPhp('simple_html_dom');
         $this->ch = curl_init();
     }
 

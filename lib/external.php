@@ -6,17 +6,32 @@ class External
     protected static $relativePath = '.';
 
     protected static $list = array(
-        'php-sql-parser' => array('path' => 'php-sql-parser/', 'files' => array('php-sql-parser.php')), 
-        'facebook' => array('files' => array('facebook.php')), 
-        'codemirror' => array('files' => array('codemirror.js', 'codemirror.css', 'sql.js')), 
-        'jquery' => array('files' => array('jquery.js')), 
-        'jquery-ui' => array('files' => array('jquery-ui.js', 'jquery-ui.css')), 
-        'jqGrid' => array('files' => array('jquery.jqGrid.min.js', 'grid.locale-tw.js', 'ui.jqgrid.css')), 
-        'validate' => array('files' => array('jquery.validate.js', 'messages_zh_TW.js')), 
-        'ajaxq' => array('files' => array('jquery.ajaxq.js')), 
-        'simple_html_dom' => array('files' => array('simple_html_dom.php')), 
-        'parse_str' => array('files' => array('parse_str.js')), 
-        'sprintf' => array('files' => array('sprintf.js'))
+        'codemirror' => array(
+            'path' => 'bower_components/codemirror/', 
+            'files' => array('lib/codemirror.js', 'lib/codemirror.css', 'mode/sql/sql.js')
+        ), 
+        'jquery' => array('files' => array('bower_components/jquery/jquery.min.js')), 
+        'jquery-ui' => array(
+            'path' => 'bower_components/jquery-ui/', 
+            'files' => array('ui/jquery-ui.js', 'themes/base/jquery-ui.css')
+         ), 
+        'jqGrid' => array(
+            'path' => 'bower_components/jqgrid/', 
+            'files' => array(
+                'js/minified/jquery.jqGrid.min.js', 
+                'js/i18n/grid.locale-tw.js', 
+                'css/ui.jqgrid.css'
+            )
+        ), 
+        'validate' => array(
+            'path' => 'bower_components/jquery.validation/', 
+            'files' => array('jquery.validate.js', 'localization/messages_zh_TW.js')
+        ), 
+        'ajaxq' => array('files' => array('3rdparty/jquery.ajaxq.js')), 
+        'phpjs' => array(
+            'path' => 'bower_components/phpjs/functions/', 
+            'files' => array('strings/sprintf.js', 'strings/parse_str.js')
+         )
     );
 
     protected static function load($type, $names)
@@ -29,7 +44,7 @@ class External
                 throw new Exception('Invalid module name '.$item);
             }
             $cur = self::$list[$item];
-            $prefix = self::EXT_PATH;
+            $prefix = '';
             if(isset($cur['path']))
             {
                 $prefix = $prefix.$cur['path'];

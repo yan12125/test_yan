@@ -11,7 +11,6 @@ class Fb
             return;
         }
         $appConf = Config::getParamArr(array('appId', 'appSecret', 'fb_prefix'));
-        External::loadPhp('facebook');
         // Disable ssl verify to hide messages in error.log
         // Reference: http://stackoverflow.com/questions/7374223
         Facebook::$CURL_OPTS[CURLOPT_SSL_VERIFYPEER] = false;

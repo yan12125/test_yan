@@ -19,7 +19,7 @@ button
 <?php
 require '../common_inc.php';
 External::setRelativePath('..');
-echo External::loadJsCss('sprintf');
+echo External::loadJsCss('phpjs');
 ?>
 <script>
 var users={};

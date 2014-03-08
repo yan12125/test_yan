@@ -12,7 +12,7 @@ if(isset($_GET['login']) && $_GET['login'] == 'true')
 <title>Text Manager</title>
 <?php
 External::setRelativePath('..');
-echo External::loadJsCss('jquery-ui', 'parse_str');
+echo External::loadJsCss('jquery-ui', 'phpjs');
 ?>
 <script language="javascript" src="text_mgr.js"></script>
 <link rel="stylesheet" href="text_mgr.css"></script>

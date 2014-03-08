@@ -68,7 +68,6 @@ class Db
     public static function queryToArray($sql)
     {
         Util::ip_only();
-        External::loadPhp('php-sql-parser');
         $stmt = self::prepare($sql);
         $ret = $stmt->execute();
         // determine the type of query
