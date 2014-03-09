@@ -1,22 +1,25 @@
 <?php
 class External
 {
-    const EXT_PATH = '3rdparty/';
+    const EXT_PATH = 'bower_components/';
 
     protected static $relativePath = '.';
 
     protected static $list = array(
         'codemirror' => array(
-            'path' => 'bower_components/codemirror/', 
+            'path' => 'codemirror/', 
             'files' => array('lib/codemirror.js', 'lib/codemirror.css', 'mode/sql/sql.js')
         ), 
-        'jquery' => array('files' => array('bower_components/jquery/jquery.min.js')), 
+        'jquery' => array(
+            'path' => 'jquery/', 
+            'files' => array('jquery.min.js')
+        ), 
         'jquery-ui' => array(
-            'path' => 'bower_components/jquery-ui/', 
+            'path' => 'jquery-ui/', 
             'files' => array('ui/jquery-ui.js', 'themes/base/jquery-ui.css')
          ), 
         'jqGrid' => array(
-            'path' => 'bower_components/jqgrid/', 
+            'path' => 'jqgrid/', 
             'files' => array(
                 'js/minified/jquery.jqGrid.min.js', 
                 'js/i18n/grid.locale-tw.js', 
@@ -24,12 +27,15 @@ class External
             )
         ), 
         'validate' => array(
-            'path' => 'bower_components/jquery.validation/', 
+            'path' => 'jquery.validation/', 
             'files' => array('jquery.validate.js', 'localization/messages_zh_TW.js')
         ), 
-        'ajaxq' => array('files' => array('3rdparty/jquery.ajaxq.js')), 
+        'ajaxq' => array(
+            'path' => 'AjaxQ/', 
+            'files' => array('ajaxq.js')
+        ), 
         'phpjs' => array(
-            'path' => 'bower_components/phpjs/functions/', 
+            'path' => 'phpjs/functions/', 
             'files' => array('strings/sprintf.js', 'strings/parse_str.js')
          )
     );
@@ -44,11 +50,7 @@ class External
                 throw new Exception('Invalid module name '.$item);
             }
             $cur = self::$list[$item];
-            $prefix = '';
-            if(isset($cur['path']))
-            {
-                $prefix = $prefix.$cur['path'];
-            }
+            $prefix = self::EXT_PATH.$cur['path'];
             if($type == 'server')
             {
                 $prefix = APP_ROOT.$prefix;
