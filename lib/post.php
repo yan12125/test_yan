@@ -51,14 +51,14 @@ class Post
                 {
                     $this->fillErrorMsg($uid, false, 'stopped');
                     Users::setUserStatus($uid, 'stopped', $userData['access_token']);
-                    throw new Exception($userData['name'].' : goal achieved');
+                    throw new SingleUserPostError($userData['name'].' : goal achieved', $uid);
                 }
                 if(Util::$debug)
                 {
                     $this->config[$uid]['not_post'] = true;
                 }
             }
-            catch(Exception $e)
+            catch(SingleUserPostError $e)
             {
                 $this->config[$uid]['not_post'] = true;
                 Util::handleException($e, $this->response[$uid]);
@@ -80,7 +80,7 @@ class Post
             }
             else
             {
-                throw new Exception(json_encode($text));
+                throw new SingleUserPostError(json_encode($text), $uid);
             }
             return;
         }
@@ -234,14 +234,17 @@ class Post
         $userData = &$this->userData[$uid];
         $group = &$this->group[$uid];
 
-        $response['user_data'] = array();
-        foreach(explode(',', Users::basic_user_data) as $field)
+        if(!isset($response['user_data']))
         {
-            if($field == 'uid') // uid never changes, so not sending
+            $response['user_data'] = array();
+            foreach(explode(',', Users::basic_user_data) as $field)
             {
-                continue;
+                if($field == 'uid') // uid never changes, so not sending
+                {
+                    continue;
+                }
+                $response['user_data'][$field] = $userData[$field];
             }
-            $response['user_data'][$field] = $userData[$field];
         }
 
         if(!isset($response['next_wait_time']))
@@ -301,7 +304,7 @@ class Post
     {
         $optionalField = array('title', 'msg', 'm', 'new_status', 'group', 
                                'next_wait_time', 'post_id', 'ret_obj');
-        $output['userData'] = $this->userData[$uid];
+        $output['user_data'] = $this->userData[$uid];
         foreach($optionalField as $item)
         {
             if(isset($this->response[$uid][$item]))
@@ -327,15 +330,22 @@ class Post
         return self::$posts->getResponse();
     }
 
-    public static function report_fields(&$output)
+    public static function report_fields(&$output, $e)
     {
         if(self::$posts instanceof Post)
         {
-            for($i = 0;$i < count(self::$posts->uids);$i++)
+            if($e instanceof SingleUserPostError)
             {
-                $uid = self::$posts->uids[$i];
-                $output[$uid] = array();
-                self::$posts->reportFieldsPerUser($uid, $output[$uid]);
+                self::$posts->reportFieldsPerUser($e->getUserId(), $output);
+            }
+            else
+            {
+                for($i = 0;$i < count(self::$posts->uids);$i++)
+                {
+                    $uid = self::$posts->uids[$i];
+                    $output[$uid] = array();
+                    self::$posts->reportFieldsPerUser($uid, $output[$uid]);
+                }
             }
         }
     }

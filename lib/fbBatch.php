@@ -192,7 +192,7 @@ class FbBatch
         return count($this->queries);
     }
 
-    public static function report_fields(&$output)
+    public static function report_fields(&$output, $e /*unused*/)
     {
         $output['fb_result'] = Util::tryParseJson(self::$lastQueryResult);
         if(isset(self::$lastParam['batch']))

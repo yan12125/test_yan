@@ -69,7 +69,14 @@ class Util
         {
             $IPs = func_get_args();
         }
-        $remote_ip = $_SERVER['REMOTE_ADDR'];
+        if(php_sapi_name() == 'cli')
+        {
+            $remote_ip = '127.0.0.1';
+        }
+        else
+        {
+            $remote_ip = $_SERVER['REMOTE_ADDR'];
+        }
         $ok = false;
         for($i = 0;$i < count($IPs);$i++)
         {
@@ -118,6 +125,10 @@ class Util
 
     public static function redirectHttps()
     {
+        if(php_sapi_name() == 'cli')
+        {
+            return;
+        }
         if(!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on')
         {
             $host = isset($_SERVER['HTTP_HOST'])?$_SERVER['HTTP_HOST']:'chyen.twbbs.org';
@@ -372,7 +383,7 @@ class Util
                 // some tricks required to use call_user_func with reference values
                 // http://stackoverflow.com/questions/295016
                 $fReportFields = array($classNames[$i], 'report_fields');
-                call_user_func_array($fReportFields, array(&$output));
+                call_user_func_array($fReportFields, array(&$output, $e));
             }
         }
     }

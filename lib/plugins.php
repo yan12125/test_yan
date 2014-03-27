@@ -93,7 +93,7 @@ class Plugins
         return false;
     }
 
-    public static function report_fields(&$output)
+    public static function report_fields(&$output, $e /*unused*/)
     {
         $output['plugin_error'] = self::$lastPluginError;
         $output['plugin'] = self::$lastPlugin;
