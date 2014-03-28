@@ -51,17 +51,18 @@ class Post
                 {
                     $this->fillErrorMsg($uid, false, 'stopped');
                     Users::setUserStatus($uid, 'stopped', $userData['access_token']);
-                    throw new SingleUserPostError($userData['name'].' : goal achieved', $uid);
+                    throw new Exception($userData['name'].' : goal achieved');
                 }
                 if(Util::$debug)
                 {
                     $this->config[$uid]['not_post'] = true;
                 }
             }
-            catch(SingleUserPostError $e)
+            catch(Exception $e)
             {
                 $this->config[$uid]['not_post'] = true;
-                Util::handleException($e, $this->response[$uid]);
+                $e2 = new SingleUserPostError($e->getMessage(), $uid, $e);
+                Util::handleException($e2, $this->response[$uid]);
             }
         }
     }
@@ -80,7 +81,7 @@ class Post
             }
             else
             {
-                throw new SingleUserPostError(json_encode($text), $uid);
+                throw new Exception(json_encode($text));
             }
             return;
         }

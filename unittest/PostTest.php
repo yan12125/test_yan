@@ -8,6 +8,6 @@ class PostTest extends PHPUnit_Framework_TestCase
         Util::$debug = true;
         $uid = 100004005107949;
         $ret = Post::postUids($uid, array());
-        $this->assertEquals(isset($ret[$uid]), false);
+        $this->assertArrayNotHasKey($uid, $ret);
     }
 }

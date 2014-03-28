@@ -29,6 +29,23 @@ class Fb
         return call_user_func_array(array(self::$fb, $name), $args);
     }
 
+    public static function api($path, $method = 'GET', $params = array())
+    {
+        if(is_array($method) && empty($params))
+        {
+            $params = $method;
+            $method = 'GET';
+        }
+        $request = new FbBatch();
+        $request->push(null, $path, $method, $params);
+        $result = $request->run();
+        if(isset($result['error']))
+        {
+            throw new Exception($result['error']);
+        }
+        return $result[0];
+    }
+
     // used in stats.php
     public static function getCommentsInfo($access_token)
     {

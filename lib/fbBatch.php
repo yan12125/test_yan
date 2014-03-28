@@ -158,21 +158,31 @@ class FbBatch
             $isPost = ($query['method'] == 'POST');
         }
         self::$lastParam = $params;
+        $params = http_build_query($params);
 
         $ch = curl_init();
-        curl_setopt_array($ch , array(
-            CURLOPT_URL => $url, 
+        $curl_options = array(
             CURLOPT_RETURNTRANSFER => true, 
             CURLOPT_BINARYTRANSFER => true, 
-            CURLOPT_POST => $isPost, 
-            CURLOPT_POSTFIELDS => http_build_query($params), 
             CURLOPT_TIMEOUT => 20, 
             // http://stackoverflow.com/questions/11004624/ 
             CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4, 
             // Without this, the response will be two HTTP headers - 100 Continue and 200 OK
             // http://www.laruence.com/2011/01/20/1840.html
             CURLOPT_HTTPHEADER => array('Expect:')
-        ));
+        );
+        if($isPost)
+        {
+            $curl_options[CURLOPT_URL] = $url;
+            $curl_options[CURLOPT_POST] = true;
+            $curl_options[CURLOPT_POSTFIELDS] = $params;
+        }
+        else
+        {
+            $curl_options[CURLOPT_URL] = $url."?".$params;
+            $curl_options[CURLOPT_POST] = false;
+        }
+        curl_setopt_array($ch , $curl_options);
         $result = curl_exec($ch);
         if($result === false)
         {

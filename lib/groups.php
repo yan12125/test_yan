@@ -18,7 +18,7 @@ class Groups
                 'access_token' => $access_token
             ));
         }
-        catch(FacebookApiException $e)
+        catch(Exception $e)
         {
             // user in group or not?
             $userGroups = Users::getDataFromFb($access_token, array('groups'));

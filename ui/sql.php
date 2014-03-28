@@ -78,7 +78,7 @@ function parseQueryResult(query, result, editor)
         resultHTML += '<tr>';
         for(var field in result[i])
         {
-            resultHTML += '<td>'+escapeHtml(""+result[i][field])+'</td>';
+            resultHTML += '<td><pre>'+escapeHtml(""+result[i][field])+'<pre></td>';
         }
         resultHTML += '</tr>'
     }
@@ -111,6 +111,12 @@ function parseQueryResult(query, result, editor)
     cursor: pointer;
     color: blue;
     text-decoration: underline;
+}
+
+/* http://stackoverflow.com/questions/248011/how-do-i-wrap-text-in-a-pre-tag */
+pre
+{
+    white-space: pre-wrap;
 }
 </style>
 </head>
