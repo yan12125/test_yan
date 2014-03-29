@@ -1,6 +1,8 @@
 <?php
 class Texts
 {
+    public static $ignoreLocked = false;
+
     protected static function listTitlesImpl($assoc)
     {
         $stmt = Db::query("SELECT `title`,`lines`,`locked` FROM texts");
@@ -211,7 +213,7 @@ class Texts
                 'title' => $title
             );
         }
-        if($arr['locked'] && $m == -1)
+        if(!self::$ignoreLocked && $arr['locked'] && $m == -1)
         {
             return array(
                 'error' => 'title_locked', 

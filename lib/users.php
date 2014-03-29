@@ -198,7 +198,7 @@ class Users
         }
     }
 
-    protected static function setData($uid, $param)
+    public static function setData($uid, $param)
     {
         foreach($param as $key=>$value)
         {

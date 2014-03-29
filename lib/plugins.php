@@ -49,7 +49,7 @@ class Plugins
             {
                 $errStr = 'Error from the plugin "' . $handler . '"';
             }
-            throw new Exception($errStr);
+            throw new Exception($errStr, $e->getCode(), $e);
         }
     }
 

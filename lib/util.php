@@ -386,6 +386,13 @@ class Util
                 call_user_func_array($fReportFields, array(&$output, $e));
             }
         }
+
+        $previous = $e->getPrevious();
+        if($previous != null)
+        {
+            $output['previous'] = array();
+            self::handleException($previous, $output['previous'], $needTrace);
+        }
     }
 }
 ?>

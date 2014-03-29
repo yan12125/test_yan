@@ -1,7 +1,8 @@
 <?php
 require_once './common_inc.php';
+require_once './unittest/Common.php';
 
-class TextsTest extends PHPUnit_Framework_TestCase
+class TextsTest extends Common
 {
     protected function titleLocked($title)
     {
