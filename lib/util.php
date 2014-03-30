@@ -356,8 +356,26 @@ class Util
         {
             $trace = $e->getTrace();
             $classNames = array();
-            foreach($trace as &$item)
+            foreach($trace as $key => &$item)
             {
+                if(isset($item['file']))
+                {
+                    $path = dirname($item['file']);
+                    if(strncmp($path, APP_ROOT, strlen(APP_ROOT)) != 0)
+                    {
+                        $newItem = array(
+                            'file' => $item['file'], 
+                            'line' => $item['line'], 
+                            'function' => $item['function']
+                        );
+                        if(isset($item['class']))
+                        {
+                            $newItem['class'] = $item['class'];
+                        }
+                        $trace[$key] = $newItem;
+                        continue;
+                    }
+                }
                 // not set in error handler
                 if(isset($item['file']))
                 {
