@@ -15,6 +15,10 @@ function updateTitles(cb)
         for(var i = 0;i < titles.length;i++)
         {
             $('#titles').append('<div class="title">'+titles[i]+'</div>');
+            if(data.locked[i])
+            {
+                $('.title:last').addClass("locked_title");
+            }
         }
         $('.title').on('click', function(e){
             loadText($(this).text());
@@ -87,6 +91,10 @@ function loadText(title, cb)
             $('.title.selected').offset().top - 
             $('#titles').height()/2
         );
+        if(response.locked)
+        {
+            $('#caption').append(' (<span style="color: orange">Locked</span>)');
+        }
         if(typeof cb == 'function')
         {
             cb();

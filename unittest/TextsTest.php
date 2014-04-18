@@ -120,26 +120,31 @@ class TextsTest extends Common
 
     public function testGetTexts()
     {
-        $this->assertEquals(Texts::getTexts('empty'), array('msg' => ''));
-        $this->assertEquals(Texts::getTexts('Error'), 
-            array('handler' => 'Error', 'text' => 'Just generates an error'));
+        $this->assertEquals(
+            array('handler' => '__none__', 'text' => ''), 
+            Texts::getTexts('empty')
+        );
+        $this->assertEquals(
+            array('handler' => 'Error', 'text' => 'Just generates an error'), 
+            Texts::getTexts('Error')
+        );
     }
 
     public function testGetTextFromTitle()
     {
-        $this->assertEquals(Texts::getTextFromTitle('does_not_exist'), 
-                            $this->errorQueryData('does_not_exist'));
-        $this->assertEquals(Texts::getTextFromTitle('empty'), 
-                            $this->titleLocked('empty'));
-        $this->assertEquals(Texts::getTextFromTitle('empty', 0), 
-                            $this->textInvalid('empty'));
+        $this->assertEquals($this->errorQueryData('does_not_exist'), 
+            Texts::getTextFromTitle('does_not_exist'));
+        $this->assertEquals($this->titleLocked('empty'), 
+            Texts::getTextFromTitle('empty'));
+        $this->assertEquals($this->textInvalid('empty'), 
+            Texts::getTextFromTitle('empty', 0));
     }
 
     public function testGetTextFromTexts()
     {
         $texts = "";
-        $this->assertEquals(Texts::getTextFromTexts('empty', null, $texts), 
-                            $this->textInvalid('empty'));
+        $this->assertEquals($this->textInvalid('empty'), 
+            Texts::getTextFromTexts('empty', null, $texts));
     }
 }
 ?>

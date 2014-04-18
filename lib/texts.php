@@ -139,7 +139,7 @@ class Texts
             }
             $texts = $results[0][0];
         }
-        $texts = json_decode($texts, true);
+        $texts = explode("\n", $texts);
         $stmt = Db::prepare('UPDATE texts SET `lines` = ? WHERE `title` = ?');
         $stmt->execute(array(count($texts), $title));
         return array('line_count' => count($texts));
@@ -175,7 +175,7 @@ class Texts
 
     public static function getTexts($title)
     {
-        $stmt = Db::prepare("SELECT handler,text FROM texts WHERE title=?");
+        $stmt = Db::prepare("SELECT locked,handler,text FROM texts WHERE title=?");
         $stmt->execute(array($title));
         $arr = $stmt->fetch(PDO::FETCH_ASSOC);
         if($arr === false) // no title matches
@@ -184,18 +184,11 @@ class Texts
         }
         $text = $arr['text'];
         Util::replaceTab($text);
-        $json_text = json_decode($text, true);
-        if(is_array($json_text))
-        {
-            return array(
-                'handler' => is_null($arr['handler'])?'__none__':$arr['handler'], 
-                'text' => implode("\n", $json_text)
-            );
-        }
-        else
-        {
-            return array('msg' => $text);
-        }
+        return array(
+            'handler' => is_null($arr['handler'])?'__none__':$arr['handler'], 
+            'text' => $text, 
+            'locked' => (int)$arr['locked']
+        );
     }
 
     /*
@@ -229,9 +222,7 @@ class Texts
 
     public static function getTextFromTexts($title, $handler, &$texts, $m = -1)
     {
-        Util::replaceTab($texts);
-        $json_texts=json_decode($texts, true);
-        if(!is_array($json_texts) || count($json_texts) == 0) // if not valid json, json_decode return null, and count(null) is 0
+        if($texts === "")
         {
             self::stripTitle($title);
             return array(
@@ -241,6 +232,8 @@ class Texts
                 'source' => 'Texts'
             );
         }
+        Util::replaceTab($texts);
+        $json_texts = explode("\n", $texts);
         if($m < 0 || $m >= count($json_texts)) // if $m == -1 or invalid, randomly select a number
         {
             $m = rand(0, count($json_texts)-1);
@@ -350,6 +343,34 @@ class Texts
             }
             Logger::write("Title \"{$title}\" stripped from user {$uid}");
         }
+    }
+
+    public static function jsonTextToRaw()
+    {
+        $result = array();
+        $stmt = Db::query("SELECT title,text FROM texts");
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        for($i = 0; $i < count($data); $i++)
+        {
+            $item = json_decode($data[$i]['text'], true);
+            $title = $data[$i]['title'];
+            if(!is_array($item))
+            {
+                $result[$title] = "Not JSON";
+                continue;
+            }
+            $rawTexts = implode("\n", $item);
+            $stmt2 = Db::prepare("UPDATE texts SET text = ? WHERE title = ?");
+            if($stmt2->execute(array($rawTexts, $title)))
+            {
+                $result[$title] = "Transformed succeeded";
+            }
+            else
+            {
+                $result[$title] = "Transformed failed";
+            }
+        }
+        return $result;
     }
 }
 ?>

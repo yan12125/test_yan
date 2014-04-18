@@ -57,3 +57,8 @@ body
     display: inline-block;
     width: 400px;
 }
+
+.locked_title
+{
+    text-decoration: line-through;
+}
