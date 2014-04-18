@@ -93,3 +93,9 @@ label.error,span.error
     background-position: 10px center;
     background-repeat: no-repeat;
 }
+
+.handlerText
+{
+    color: orange;
+    text-decoration: bold;
+}

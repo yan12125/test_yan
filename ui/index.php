@@ -95,7 +95,8 @@ $(document).on('ready', function(e){
 function getTitles(userTitles)
 {
     callWrapper('list_titles', function(data){
-        var titles = data.titles, lines = data.lines, locked = data.locked;
+        var titles = data.titles, lines = data.lines, 
+            locked = data.locked, handlers = data.handlers;
         // if error 'user_not_found' repeatedly occurs (unregistered users)
         // this prevents duplicated titles
         var titles_div = $('.title_choose');
@@ -110,10 +111,14 @@ function getTitles(userTitles)
 
             var title_text = titles[i];
             var textUrl = './text_mgr.php?title='+encodeURIComponent(title_text)+'&access_token='+$('#token').val();
-            titles_div.eq(i%titles_div.length)
-                .append('<input type="checkbox" value="'+title_text+'">')
-                .append('<a href="'+textUrl+'">'+title_text+'</a>')
-                .append(' ('+lines[i]+')<br>');
+            var itemContent = '<input type="checkbox" value="'+title_text+'">' + 
+                              '<a href="'+textUrl+'">'+title_text+'</a>';
+            if(handlers[i] != null)
+            {
+                itemContent += ' (<span class="handlerText">'+handlers[i]+'</span>)';
+            }
+            itemContent += ' ('+lines[i]+')<br>\n';
+            titles_div.eq(i%titles_div.length).append(itemContent);
             var curTitleElement = titles_div.find('input[value="'+title_text+'"]');
             if(disabled)
             {

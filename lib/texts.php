@@ -5,7 +5,7 @@ class Texts
 
     protected static function listTitlesImpl($assoc)
     {
-        $stmt = Db::query("SELECT `title`,`lines`,`locked` FROM texts");
+        $stmt = Db::query("SELECT * FROM texts");
         $arr = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if($assoc) // titles as keys
         {
@@ -19,17 +19,19 @@ class Texts
         }
         else
         {
-            $titles = $lines = array();
+            $titles = $lines = $locked = $handlers = array();
             for($i = 0; $i < count($arr); $i++)
             {
                 $titles[] = $arr[$i]['title'];
                 $lines[] = $arr[$i]['lines'];
                 $locked[] = (int)$arr[$i]['locked'];
+                $handlers[] = $arr[$i]['handler'];
             }
             return array(
                 'titles' => $titles, 
                 'lines' => $lines, 
-                'locked' => $locked
+                'locked' => $locked, 
+                'handlers' => $handlers
             );
         }
     }
