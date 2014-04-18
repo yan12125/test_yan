@@ -16,13 +16,13 @@ $(document).on('ready', function(e){
         autofocus: true, 
     });
     editor.setSize("100%", 100); // (width, height)
-    editor.on('beforeChange', function(cm, e){
+    /*editor.on('beforeChange', function(cm, e){
         if(e.text.length == 2 && e.text[0] == "" && e.text[1] == "")
         {
             e.cancel();
             $('#b_submit').click();
         }
-    });
+    });*/
     $('#b_submit').on('click', function(e){
         $('#result tbody').html('<tr></tr>');
         var q = editor.getDoc().getValue();

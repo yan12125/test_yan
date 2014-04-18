@@ -121,23 +121,37 @@ class TextsTest extends Common
     public function testGetTexts()
     {
         $this->assertEquals(
-            array('handler' => '__none__', 'text' => ''), 
+            array('handler' => '__none__', 'text' => '', 'locked' => 1), 
             Texts::getTexts('empty')
         );
         $this->assertEquals(
-            array('handler' => 'Error', 'text' => 'Just generates an error'), 
+            array('handler' => 'Error', 'text' => 'Just generates an error', 'locked' => 1), 
             Texts::getTexts('Error')
         );
     }
 
+    /**
+     * @expectedException PDOException
+     * @expectedExceptionMessage Title not found
+     */
+    public function testGetTextFromTitle_TitleDoesNotExist()
+    {
+        Texts::getTextFromTitle('does_not_exist');
+    }
+
+    /**
+     * @expectedException PDOException
+     * @expectedExceptionMessage Index out of range
+     */
+    public function testGetTextFromTitle_IndexOutOfRange()
+    {
+        Texts::getTextFromTitle('empty', 0);
+    }
+
     public function testGetTextFromTitle()
     {
-        $this->assertEquals($this->errorQueryData('does_not_exist'), 
-            Texts::getTextFromTitle('does_not_exist'));
         $this->assertEquals($this->titleLocked('empty'), 
             Texts::getTextFromTitle('empty'));
-        $this->assertEquals($this->textInvalid('empty'), 
-            Texts::getTextFromTitle('empty', 0));
     }
 
     public function testGetTextFromTexts()

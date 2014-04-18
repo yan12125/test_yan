@@ -105,7 +105,7 @@ class Texts
         // the same reason as self::addTitle()
         self::logTextModification($title, $access_token);
 
-        $texts = Util::json_unicode($textArr);
+        $texts = implode("\n", $textArr);
         $stmt = Db::prepare('update texts set text=?,handler=? where title=?');
         if($stmt->execute(array($texts, $handler, $title)) === false)
         {
@@ -197,10 +197,25 @@ class Texts
      */
     public static function getTextFromTitle($title, $m = -1)
     {
-        $stmt = Db::prepare("SELECT text,handler,locked FROM texts WHERE title=?");
-        $stmt->execute(array($title));
-        $arr = $stmt->fetch(PDO::FETCH_ASSOC);
-        if($arr===false)
+        // index and text are mysql keywords
+        $stmt = Db::prepare(implode("\n", array(
+            "SET @index_ = :index;", 
+            "SET @title = :title;"
+        )));
+        $stmt->execute(array(':index' => $m, ':title' => $title));
+        // needs flush all previous queries
+        // "Cannot execute queries while other unbuffered queries are active"
+        // http://stackoverflow.com/questions/2066714
+        $stmt->closeCursor();
+
+        // CALL needs a single statement because PDO doesn't catch signals from multiple queries
+        // Use SQL variables because PDO can't extract procedure outputs by using bindParam
+        Db::query("CALL select_text(@title, @index_, @text_)");
+
+        // To retrieve SELECT result, it should be the only statement in PDO query
+        $stmt = Db::query("SELECT @text_ AS text_, @index_ AS index_");
+        $textData = $stmt->fetch(PDO::FETCH_ASSOC);
+        if($textData===false)
         {
             return array(
                 'error'=> 'Error query data!', 
@@ -208,7 +223,9 @@ class Texts
                 'title' => $title
             );
         }
-        if(!self::$ignoreLocked && $arr['locked'] && $m == -1)
+        $stmt = Db::query("SELECT locked,handler FROM texts WHERE title = @title");
+        $metaData = $stmt->fetch(PDO::FETCH_ASSOC);
+        if(!self::$ignoreLocked && $metaData['locked'] && $m == -1)
         {
             return array(
                 'error' => 'title_locked', 
@@ -217,7 +234,7 @@ class Texts
                 'm' => -1 // used in output in post.php
             );
         }
-        return self::getTextFromTexts($title, $arr['handler'], $arr['text'], $m);
+        return self::handlePlugins($title, $metaData['handler'], $textData['text_'], $textData['index_']);
     }
 
     public static function getTextFromTexts($title, $handler, &$texts, $m = -1)
@@ -238,18 +255,23 @@ class Texts
         {
             $m = rand(0, count($json_texts)-1);
         }
+        return self::handlePlugins($title, $handler, $json_texts[$m], $m);
+    }
+
+    protected static function handlePlugins($title, $handler, $text, $m)
+    {
         $ret_val = array(
             'm' => $m, 
             'title' => $title
         );
         if(!is_null($handler) && $handler !== '__none__')
         {
-            $ret_val = array_merge($ret_val, Plugins::callPlugin($handler, $json_texts[$m]));
+            $ret_val = array_merge($ret_val, Plugins::callPlugin($handler, $text));
         }
         else
         {
             // no need to escape html special chars because facebook will do it
-            $ret_val['msg'] = $json_texts[$m];
+            $ret_val['msg'] = $text;
         }
         if(isset($ret_val['msg']) && !Util::not_empty($ret_val['msg']))
         {
