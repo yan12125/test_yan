@@ -27,10 +27,29 @@ $(document).on('ready', function(e){
         $('#result tbody').html('<tr></tr>');
         var q = editor.getDoc().getValue();
         callWrapper('query_sql', { query:  q }, function(response){
-                parseQueryResult(q, response, editor);
+            parseQueryResult(q, response, editor);
+            updateStatus();
         });
     });
+    updateStatus();
 });
+
+function updateStatus()
+{
+    callWrapper('query_sql', { query:  'SHOW GLOBAL STATUS' }, function(response) {
+        for(var i = 0; i < response.length; i++)
+        {
+            if(response[i].Variable_name == 'Bytes_sent')
+            {
+                $('#bytes-sent').text(parseInt(response[i].Value).toLocaleString());
+            }
+            if(response[i].Variable_name == 'Bytes_received')
+            {
+                $('#bytes-received').text(parseInt(response[i].Value).toLocaleString());
+            }
+        }
+    });
+}
 
 function parseQueryResult(query, result, editor)
 {
@@ -86,9 +105,33 @@ function parseQueryResult(query, result, editor)
 }
 </script>
 <style>
-#result
+#result, #status
 {
     border-collapse: collapse;
+}
+
+#status
+{
+    float: right;
+}
+
+#result
+{
+    clear: both;
+}
+
+#status td
+{
+    padding: 5px;
+    border: 1px solid black;
+}
+
+/* 
+ * http://stackoverflow.com/questions/5065766
+ */
+#status tr:not(:first-child) td:nth-child(2)
+{
+    text-align: right;
 }
 
 #result td
@@ -98,6 +141,7 @@ function parseQueryResult(query, result, editor)
     border-color: black;
     word-break: break-all;
     min-width: 50px;
+    vertical-align: top;
 }
 
 .CodeMirror
@@ -123,6 +167,20 @@ pre
 <body>
     Query:<br>
     <textarea id="query"></textarea><br>
+    <table id="status">
+        <tr>
+            <td>SQL server status</td>
+            <td>Value</td>
+        </tr>
+        <tr>
+            <td>Bytes sent</td>
+            <td id="bytes-sent"></td>
+        </tr>
+        <tr>
+            <td>Bytes received</td>
+            <td id="bytes-received"></td>
+        </tr>
+    </table>
     <input type="button" id="b_submit" value="Submit">
     <div id="history"></div>
     <table id="result"><tbody>
