@@ -14,25 +14,31 @@ $(document).on('ready', function(e){
         mode: 'text/x-mysql', 
         lineWrapping: true, 
         autofocus: true, 
+        extraKeys: {
+            "Ctrl-Enter": function (cm) {
+                sendQuery(editor);
+            }
+        }
     });
     editor.setSize("100%", 100); // (width, height)
-    /*editor.on('beforeChange', function(cm, e){
-        if(e.text.length == 2 && e.text[0] == "" && e.text[1] == "")
-        {
-            e.cancel();
-            $('#b_submit').click();
-        }
-    });*/
     $('#b_submit').on('click', function(e){
-        $('#result tbody').html('<tr></tr>');
-        var q = editor.getDoc().getValue();
-        callWrapper('query_sql', { query:  q }, function(response){
-            parseQueryResult(q, response, editor);
-            updateStatus();
-        });
+        sendQuery(editor);
+    });
+    $('#b_update_status').on('click', function(e) {
+        updateStatus();
     });
     updateStatus();
 });
+
+function sendQuery(editor)
+{
+    $('#result tbody').html('<tr></tr>');
+    var q = editor.getDoc().getValue();
+    callWrapper('query_sql', { query:  q }, function(response){
+        parseQueryResult(q, response, editor);
+        updateStatus();
+    });
+}
 
 function updateStatus()
 {
@@ -69,13 +75,22 @@ function parseQueryResult(query, result, editor)
     }
     if(!notAddLink)
     {
-        $('#history').append('<div class="historyItem">'+query+'</div>');
-        $('.historyItem:last').data('query', query)
-            .on('click', function(e){
-                editor.setValue($(this).data('query'));
-                $('#b_submit').click();
-            });
+        $('#history').append(
+            '<div class="historyItem">'+
+                query+' '+
+                '<button class="resend">Resend</button> '+
+                '<button class="copy">Copy to editor</button>'+
+            '</div>'
+        );
+        $('.historyItem:last').data('query', query);
     }
+    $('.historyItem .copy').on('click', function(e){
+        editor.setValue($(this).parent().data('query'));
+    });
+    $('.historyItem .resend').on('click', function(e){
+        editor.setValue($(this).parent().data('query'));
+        sendQuery(editor);
+    });
     if(result.length == 0)
     {
         return;
@@ -150,13 +165,6 @@ function parseQueryResult(query, result, editor)
     font-size: 20px;
 }
 
-.historyItem
-{
-    cursor: pointer;
-    color: blue;
-    text-decoration: underline;
-}
-
 /* http://stackoverflow.com/questions/248011/how-do-i-wrap-text-in-a-pre-tag */
 pre
 {
@@ -181,7 +189,8 @@ pre
             <td id="bytes-received"></td>
         </tr>
     </table>
-    <input type="button" id="b_submit" value="Submit">
+    <input type="button" id="b_submit" value="Submit (Ctrl-Enter)">
+    <input type="button" id="b_update_status" value="Update server status">
     <div id="history"></div>
     <table id="result"><tbody>
     </tbody></table>
