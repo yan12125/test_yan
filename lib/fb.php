@@ -71,12 +71,11 @@ class Fb
 
     public static function getAppToken()
     {
-        $stmt = Db::query('select value from main where name="app_token"');
-        $app_token = $stmt->fetch(PDO::FETCH_ASSOC);
+        $app_token = Db::getConfig('app_token');
         // App token never expires
-        if($app_token)
+        if(!is_null($app_token))
         {
-            return $app_token['value'];
+            return $app_token;
         }
         else
         {

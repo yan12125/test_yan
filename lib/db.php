@@ -2,6 +2,7 @@
 class Db
 {
     protected static $db = null;
+    protected static $config = array();
 
     public static function getMysqlCredentials($local_only = true)
     {
@@ -59,10 +60,24 @@ class Db
 
     public static function getConfig($key)
     {
-        $stmt = self::prepare("SELECT value FROM main WHERE name=?");
-        $stmt->execute(array($key));
-        $arr_result=$stmt->fetch(PDO::FETCH_NUM);
-        return $arr_result[0];
+        if(isset(self::$config[$key]))
+        {
+            return self::$config[$key];
+        }
+        $stmt = self::query("SELECT * FROM main");
+        $arr_result=$stmt->fetchAll(PDO::FETCH_ASSOC);
+        $retval = null;
+        for($i = 0; $i < count($arr_result); $i++)
+        {
+            $name = $arr_result[$i]['name'];
+            $value = $arr_result[$i]['value'];
+            self::$config[$name] = $value;
+            if($name == $key)
+            {
+                $retval = $value;
+            }
+        }
+        return $retval;
     }
 
     public static function queryToArray($sql)
