@@ -6,7 +6,7 @@
 <?php
 require '../common_inc.php';
 External::setRelativePath('..');
-echo External::loadJsCss('codemirror');
+echo External::loadJsCss('codemirror', 'phpjs');
 ?>
 <script>
 $(document).on('ready', function(e){
@@ -45,13 +45,25 @@ function updateStatus()
     callWrapper('query_sql', { query:  'SHOW GLOBAL STATUS' }, function(response) {
         for(var i = 0; i < response.length; i++)
         {
-            if(response[i].Variable_name == 'Bytes_sent')
+            var key = response[i].Variable_name;
+            var value = parseInt(response[i].Value);
+            if(key == 'Bytes_sent')
             {
-                $('#bytes-sent').text(parseInt(response[i].Value).toLocaleString());
+                $('#bytes-sent').text(value.toLocaleString());
             }
-            if(response[i].Variable_name == 'Bytes_received')
+            if(key == 'Bytes_received')
             {
-                $('#bytes-received').text(parseInt(response[i].Value).toLocaleString());
+                $('#bytes-received').text(value.toLocaleString());
+            }
+            if(key == 'Uptime')
+            {
+                var days = Math.floor(value / 86400);
+                value = value % 86400;
+                var hours = Math.floor(value / 3600);
+                value = value % 3600;
+                var minutes = Math.floor(value / 60);
+                var seconds = value % 60;
+                $('#uptime').text(sprintf("%d day %02d:%02d:%02d", days, hours, minutes, seconds));
             }
         }
     });
@@ -179,6 +191,10 @@ pre
         <tr>
             <td>SQL server status</td>
             <td>Value</td>
+        </tr>
+        <tr>
+            <td>Uptime</td>
+            <td id="uptime"></td>
         </tr>
         <tr>
             <td>Bytes sent</td>

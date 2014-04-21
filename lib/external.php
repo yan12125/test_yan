@@ -37,7 +37,7 @@ class External
         'phpjs' => array(
             'path' => 'phpjs/functions/', 
             'files' => array('strings/sprintf.js', 'strings/parse_str.js')
-         )
+        )
     );
 
     protected static function load($type, $names)
