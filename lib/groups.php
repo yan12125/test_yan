@@ -116,5 +116,79 @@ class Groups
         $gids = explode('_', $gid);
         return self::getFromGroup($gids[array_rand($gids)], $access_token);
     }
+
+    protected static function updateGroupMemberCache($gid, $access_token)
+    {
+        $stmt = Db::prepare('SELECT member_cache_timestamp,member_cache FROM groups WHERE gid=?');
+        $stmt->execute(array($gid));
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+        if($data !== false)
+        {
+            $lastTime = new DateTime($data['member_cache_timestamp']);
+            if($lastTime->getTimestamp() + 3600 > time())
+            {
+                $decodedData = json_decode($data['member_cache'], true);
+                if(!is_null($decodedData))
+                {
+                    return $decodedData;
+                }
+            }
+        }
+        $names = array();
+        foreach(Util::$locales as $locale)
+        {
+            $data = Fb::api("/{$gid}/members", array(
+                'access_token' => $access_token, 
+                'locale' => $locale
+            ));
+            foreach($data['data'] as $person)
+            {
+                $name = $person['name'];
+                if(!isset($names[$name]))
+                {
+                    $names[$name] = $person['id'];
+                }
+            }
+        }
+        $stmt = Db::prepare("UPDATE groups SET member_cache=?,member_cache_timestamp=TIMESTAMP(NOW())");
+        $stmt->execute(array(json_encode($names)));
+        Logger::write('Member cache of group '.$gid.' updated');
+        return $names;
+    }
+
+    public static function searchNameInGroup($gid, $needle, $access_token)
+    {
+        $results = array();
+        $names = self::updateGroupMemberCache($gid, $access_token);
+        foreach($names as $name => $uid)
+        {
+            if(strpos(strtolower($name), strtolower($needle)) !== false)
+            {
+                $results[] = array(
+                    'name' => $name, 
+                    'uid' => $uid
+                );
+            }
+        }
+        return $results;
+    }
+
+    public static function checkGroupMember($gid, $access_token, $externalUid)
+    {
+        if($externalUid == "")
+        {
+            return true;
+        }
+
+        $names = self::updateGroupMemberCache($gid, $access_token);
+        foreach($names as $name => $uid)
+        {
+            if($uid == $externalUid)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 ?>

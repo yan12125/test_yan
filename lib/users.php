@@ -3,7 +3,7 @@ class Users
 {
     // used in SQL SELECT
     const basic_user_data = 'uid,name,status';
-    const detailed_user_data = 'uid,name,status,interval_max,interval_min,count,goal,titles,groups,last_count';
+    const detailed_user_data = 'uid,name,status,interval_max,interval_min,count,goal,titles,groups,last_count,contact';
 
     protected static function listUsers($field, $status, $IDs = '')
     {
@@ -160,6 +160,14 @@ class Users
         }
         $count = self::getData($uid, 'count');
         self::setData($uid, array('last_count'=>$count));
+        if(Groups::checkGroupMember(Groups::primary_group, $token, $userData['contact']))
+        {
+            self::setData($uid, array('contact' => $userData['contact']));
+        }
+        else
+        {
+            throw new Exception('Invalid contact user id');
+        }
         Logger::write('User '.$uid.' started');
         return array('message' => 'User added successfully');
     }

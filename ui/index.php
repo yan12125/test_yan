@@ -35,6 +35,11 @@ $(document).on('ready', function(e){
                 expiry--;
             }, 1000);
             setInterval(function(){ get_info(false); }, 30*1000); // after that, only update post count
+            $('input[name="contact"]').autocomplete({
+                source: function (request, response) {
+                    searchGroupAutoComplete(request.term, response);
+                }
+            });
         });
     }, true); // longterm token required
 
@@ -226,9 +231,15 @@ function add_user(cb)
         "titles": JSON.stringify($.makeArray(titleList)), 
         "groups": $.makeArray(userGroups).join('_'), 
         "access_token": $('#token').val(), 
-        "goal": $('input[name="goal"]').val()
-    }, function(){
+        "goal": $('input[name="goal"]').val(), 
+        "contact": $('input[name="contact"]').val()
+    }, function(response) {
         // to update last_count
+        if(typeof response.error != 'undefined')
+        {
+            alert("Adding user failed: " + response.error);
+            return;
+        }
         get_info(true);
         if(typeof cb == 'function')
         {
@@ -272,11 +283,28 @@ function get_info(initial)
             $('input[name="interval_max"]').val(response.interval_max);
             $('input[name="interval_min"]').val(response.interval_min);
             $('input[name="goal"]').val(response.goal);
+            $('input[name="contact"]').val(response.contact);
             $('#last_count').text(response.last_count);
             getTitles(JSON.parse(response.titles));
             parseGroups(window.userGroups, response.groups);
         }
         $("#count").html(response.count);
+    });
+}
+
+function searchGroupAutoComplete(term, callback)
+{
+    callWrapper("search_name_in_group", {
+        gid: "198971170174405", 
+        name: term, 
+        access_token: $('#token').val()
+    }, function (data) {
+        for(var i = 0; i < data.length; i++)
+        {
+            data[i].label = data[i].name;
+            data[i].value = data[i].uid;
+        }
+        callback(data);
     });
 }
 </script>
@@ -291,9 +319,10 @@ function get_info(initial)
             <legend>設定</legend>
             <input type="hidden" id="uid" value="">
             <input type="hidden" id="token" value="">
-            時間間隔上限: <input type="text" name="interval_max" class="input_number" value="100"/><br />
-            時間間隔下限: <input type="text" name="interval_min" class="input_number" value="80"/><br />
-            發文次數: <input type="text" name="goal" class="input_number" value="2147483647"/><br />
+            時間間隔上限: <input type="text" name="interval_max" class="input_field" value="100"/><br />
+            時間間隔下限: <input type="text" name="interval_min" class="input_field" value="80"/><br />
+            發文次數: <input type="text" name="goal" class="input_field" value="2147483647"/><br />
+            聯絡人：<input type="text" name="contact" class="input_field" /><br />
             已發文數：<span id="count">0</span><br />
             上次留言數：<span id="last_count"></span><br>
             <input type="button" value="開始" id="btnStart">

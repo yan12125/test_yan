@@ -4,6 +4,7 @@ class Util
     const FIREFOX_UA = 'Mozilla/5.0 (X11; Linux x86_64; rv:27.0) Gecko/20100101 Firefox/27.0';
     const CHROME_UA =  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.146 Safari/537.36';
     public static $debug = false;
+    public static $locales = array('en_US', 'zh_TW');
 
     /*
         Usage: Use Box-Muller method to get a random number with a Normal Distribution (ND)

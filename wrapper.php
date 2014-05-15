@@ -33,7 +33,7 @@ try
             echo json_encode(Users::listUsersSimple($_POST['IDs']));
             break;
         case 'add_user':
-            Util::checkPOST(array('access_token', 'interval_min', 'interval_max', 'titles', 'goal', 'groups'));
+            Util::checkPOST(array('access_token', 'interval_min', 'interval_max', 'titles', 'goal', 'groups', 'contact'));
             echo json_encode(Users::addUser($_POST)); // $_POST contains all needed fields
             break;
         case 'get_user_info': // used in index.php
@@ -69,6 +69,10 @@ try
             break;
         case 'get_primary_group':
             echo json_encode(Groups::getPrimaryGroup());
+            break;
+        case 'search_name_in_group':
+            Util::checkPOST(array('gid', 'name', 'access_token'));
+            echo json_encode(Groups::searchNameInGroup($_POST['gid'], $_POST['name'], $_POST['access_token']));
             break;
         /*
          * texts.php
