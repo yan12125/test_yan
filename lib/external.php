@@ -28,7 +28,7 @@ class External
         ), 
         'validate' => array(
             'path' => 'jquery.validation/', 
-            'files' => array('jquery.validate.js', 'localization/messages_zh_TW.js')
+            'files' => array('dist/jquery.validate.js', 'src/localization/messages_zh_TW.js')
         ), 
         'ajaxq' => array(
             'path' => 'AjaxQ/', 
