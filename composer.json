@@ -3,6 +3,7 @@
         "greenlion/php-sql-parser": "*", 
         "shark/simple_html_dom": "dev-master", 
         "facebook/php-sdk": "*", 
-        "cboden/Ratchet": "*"
+        "cboden/Ratchet": "*", 
+        "php-curl-class/php-curl-class": "*"
     }
 }

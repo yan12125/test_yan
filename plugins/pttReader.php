@@ -1,41 +1,56 @@
 <?php
 class PttReader extends PluginBase
 {
-    private $ch = null;
-
-    public function __construct()
-    {
-        $this->ch = curl_init();
-    }
-
-    public function __destruct()
-    {
-        curl_close($this->ch);
-    }
+    private $lastContent = null;
+    private $threshold = 10; // ptt has 20 entries per page
+    private $items = array();
+    private $nextLnk = null;
 
     public function run($param)
     {
-        curl_setopt_array($this->ch, array(
-            CURLOPT_URL => $param, 
-            CURLOPT_BINARYTRANSFER => true,
-            CURLOPT_RETURNTRANSFER => true, 
-            CURLOPT_HTTPHEADER => array('Cookie: over18=1')
-        ));
-        $content = curl_exec($this->ch);
+        $this->parsePage($param);
+        if(count($this->items) < $this->threshold)
+        {
+            $this->parsePage($this->nextLnk);
+        }
+        $i = rand(0, count($this->items) - 1);
+        $item = $this->items[$i];
+        return $item['title']."\n".$item['link'];
+    }
+
+    protected function parsePage($url)
+    {
+        $conn = new Curl();
+        $conn->setCookie('over18', '1');
+        $conn->setUserAgent(Util::FIREFOX_UA);
+        $conn->get($url);
+        $this->lastContent = $content = $conn->response;
+
         $dom = new simple_html_dom();
         $dom->load($content);
         $entries = $dom->find(".r-ent .title a");
-        $i = rand(0, count($entries) - 1);
-        $title = $entries[$i]->innertext;
-        $link = 'http://www.ptt.cc'.$entries[$i]->href;
-        return $title."\n".$link;
+        for($i = 0; $i < count($entries); $i++)
+        {
+            $this->items[] = array(
+                'link' => $this->getFullUrl($entries[$i]->href), 
+                'title' => $entries[$i]->innertext
+            );
+        }
+        $links = $dom->find('.pull-right a');
+        $this->nextLnk = $this->getFullUrl($links[1]->href);
+    }
+
+    protected function getFullUrl($relativeUrl)
+    {
+        return 'http://www.ptt.cc'.$relativeUrl;
     }
 
     public function handleException($e)
     {
         return array(
             'msg' => $e->getMessage(), 
-            'line' => $e->getLine()
+            'line' => $e->getLine(), 
+            'lastContent' => $this->lastContent
         );
     }
 }
