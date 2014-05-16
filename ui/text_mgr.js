@@ -169,7 +169,7 @@ function testText()
     callWrapper('get_text_from_texts', {
         title: $('#caption').text(), 
         handler: $('#handler').val(), 
-        texts: JSON.stringify($('#texts').val().split('\n'))
+        texts: $('#texts').val()
     }, function(data){
         if(data.error)
         {
