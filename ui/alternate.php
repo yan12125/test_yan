@@ -154,10 +154,24 @@ function post2(uids)
         url: "../wrapper.php", 
         type: "POST", 
         data: _data, 
-        dataType: "json", 
+        dataType: "text", 
         timeout: 300000, // theoretically no need, but sometimes starving occurs
-        success: function(response, status, xhr)
+        success: function(response_, status, xhr)
         {
+            var response = null;
+            try
+            {
+                response = JSON.parse(response_);
+                if(!$.isPlainObject(response))
+                {
+                    throw new Error("Invalid data returned from server");
+                }
+            }
+            catch(e)
+            {
+                handleServerError(realPostUids, status, e.message, xhr);
+                return;
+            }
             if(realPostUids.length == 1)
             {
                 handlePost(realPostUids[0], response);

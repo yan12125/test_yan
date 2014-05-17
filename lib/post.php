@@ -199,7 +199,7 @@ class Post
             $this->response[$uid]['error'] = $err;
         }
 
-        if(isset($this->response[$uid]['new_status']))
+        if(isset($this->response[$uid]['new_status']) && $this->response[$uid]['new_status'] !== '')
         {
             Users::setUserStatus($this->userData[$uid]['uid'], $this->response[$uid]['new_status'], $this->userData[$uid]['access_token']);
             $err = $this->userData[$uid]['name'].': '.$this->response[$uid]['new_status'];
