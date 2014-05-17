@@ -169,6 +169,10 @@ class Groups
                     'uid' => $uid
                 );
             }
+            if(count($results) >= 5)
+            {
+                break;
+            }
         }
         return $results;
     }

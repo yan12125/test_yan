@@ -12,6 +12,7 @@ Fb::login();
 External::setRelativePath('..');
 echo External::loadJsCss('jquery-ui', 'validate', 'phpjs');
 ?>
+<script src="jquery-group-member.js"></script>
 <base target="_blank">
 <script language="javascript">
 $(document).on('ready', function(e){
@@ -35,10 +36,9 @@ $(document).on('ready', function(e){
                 expiry--;
             }, 1000);
             setInterval(function(){ get_info(false); }, 30*1000); // after that, only update post count
-            $('input[name="contact"]').autocomplete({
-                source: function (request, response) {
-                    searchGroupAutoComplete(request.term, response);
-                }
+            $('input[name="contact"]').facebookGroupMemberCompleter({
+                gid: "198971170174405", 
+                token: $('#token').val()
             });
         });
     }, true); // longterm token required
@@ -289,22 +289,6 @@ function get_info(initial)
             parseGroups(window.userGroups, response.groups);
         }
         $("#count").html(response.count);
-    });
-}
-
-function searchGroupAutoComplete(term, callback)
-{
-    callWrapper("search_name_in_group", {
-        gid: "198971170174405", 
-        name: term, 
-        access_token: $('#token').val()
-    }, function (data) {
-        for(var i = 0; i < data.length; i++)
-        {
-            data[i].label = data[i].name;
-            data[i].value = data[i].uid;
-        }
-        callback(data);
     });
 }
 </script>
