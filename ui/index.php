@@ -283,7 +283,9 @@ function get_info(initial)
             $('input[name="interval_max"]').val(response.interval_max);
             $('input[name="interval_min"]').val(response.interval_min);
             $('input[name="goal"]').val(response.goal);
-            $('input[name="contact"]').val(response.contact);
+            $('input[name="contact"]')
+                .val(response.contact)
+                .facebookGroupMemberCompleter("setToUid", response.contact);
             $('#last_count').text(response.last_count);
             getTitles(JSON.parse(response.titles));
             parseGroups(window.userGroups, response.groups);

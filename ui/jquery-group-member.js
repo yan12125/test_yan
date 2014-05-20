@@ -3,35 +3,32 @@ $.widget("custom.facebookGroupMemberCompleter", $.ui.autocomplete, {
         source: function (request, response) {
             searchGroupAutoComplete(request.term, response, this.options.token, this.options.gid);
         }, 
-        select: function (event, data) {
-            var $parent = $(this).parent();
-            var input = $parent.find('input');
-            var displayField = $parent.find('.display-field');
-            var btnDelete = $('<button>').text('Remove').button().click(function (event) {
-                input.val('');
-                displayField.hide();
-                input.show();
-            });
-            displayField
-                .empty()
-                .append(
-                    $('<a>')
-                        .attr('href', 'https://www.facebook.com/' + data.item.uid)
-                        .text(data.item.name)
-                )
-                .append(btnDelete)
-                .show();
-            input.hide();
-        }
     }, 
     _create: function () {
+        var that = this;
+
         this._superApply(arguments);
 
+        this._btnDelete = $('<button>').text('Remove').button();
+        this._btnDelete.click(function (event) {
+            that.element.val('');
+            that._displayField.hide();
+            that.element.show();
+        });
+
+        this._link = $('<a>');
+
+        this._displayField = $('<span>').addClass('display-field').hide();
+        this._displayField.append(this._link).append(this._btnDelete);
+
         this._wrapper = $('<span>').addClass('facebookGroupMemberCompleter-wrapper');
-        this._displayField = $('<span>');
         this._wrapper.insertAfter(this.element);
         this.element.detach().appendTo(this._wrapper);
-        this._wrapper.append($("<span>").addClass('display-field'));
+        this._wrapper.append(this._displayField);
+
+        this._setOption('select', function (event, data) {
+            that.setToUid(data.item.uid, data.item.name);
+        });
     }, 
     _renderItem: function (ul, item) {
         var li = $('<li>').addClass('facebook-group-member');
@@ -41,6 +38,27 @@ $.widget("custom.facebookGroupMemberCompleter", $.ui.autocomplete, {
         li.append(link);
         li.appendTo(ul);
         return li;
+    }, 
+    setToUid: function (uid, name) {
+        var that = this;
+
+        var setToUidInner = function (_name) {
+            that._link.text(_name);
+            that._displayField.show();
+            that.element.hide();
+        };
+
+        this._link.attr('href', 'https://www.facebook.com/' + uid);
+        if(name)
+        {
+            setToUidInner(name);
+        }
+        else
+        {
+            $.getJSON('https://graph.facebook.com/' + uid, function (response) {
+                setToUidInner(response.name);
+            });
+        }
     }
 });
 
