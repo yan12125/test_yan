@@ -85,7 +85,7 @@ function handlePostError(uids, response)
     }
 }
 
-function handleServerError(uids, status, error, xhr)
+function handleServerError(uids, status, error, xhr, extraInfo)
 {
     if(error)
     {
@@ -104,6 +104,10 @@ function handleServerError(uids, status, error, xhr)
     if(xhr.responseText) // undefined if timeout
     {
         errObj.responseText = xhr.responseText;
+    }
+    if(typeof extraInfo !== 'undefined')
+    {
+        errObj.extraInfo = extraInfo;
     }
     window.errors.push(errObj);
     if(xhr.status == 500)
@@ -169,7 +173,7 @@ function post2(uids)
             }
             catch(e)
             {
-                handleServerError(realPostUids, status, e.message, xhr);
+                handleServerError(realPostUids, status, e.message, xhr, response_);
                 return;
             }
             if(realPostUids.length == 1)
