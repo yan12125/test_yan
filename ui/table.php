@@ -104,11 +104,11 @@ $(document).on('ready', function (e) {
             row_num: 40
         }
     };
-    $('input[type=button]').each(function (index, elem) {
+    $('button').each(function (index, elem) {
         if(parameters[elem.id])
         {
             var cur_action = parameters[elem.id];
-            $(elem).val(cur_action.caption);
+            $(elem).text(cur_action.caption);
             $(elem).on('click', function (e) {
                 createTable(cur_action.action, cur_action.columns, cur_action.caption, cur_action.row_num);
             });
@@ -126,11 +126,11 @@ $(document).on('ready', function (e) {
 </script>
 </head>
 <body>
-<input type="button" id="viewRunningUsers">
-<input type="button" id="viewOtherUsers">
-<input type="button" id="getStats">
-<input type="button" id="runningState">
-<input type="button" id="textsLog">
+<button id="viewRunningUsers"></button>
+<button id="viewOtherUsers"></button>
+<button id="getStats"></button>
+<button id="runningState"></button>
+<button id="textsLog"></button>
 <div id="wrapper">選擇一個表格</div>
 </body>
 </html>

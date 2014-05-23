@@ -14,8 +14,8 @@ if(isset($_GET['login']) && $_GET['login'] == 'true')
 External::setRelativePath('..');
 echo External::loadJsCss('jquery-ui', 'phpjs');
 ?>
-<script language="javascript" src="text_mgr.js"></script>
-<link rel="stylesheet" href="text_mgr.css"></script>
+<script src="text_mgr.js"></script>
+<link rel="stylesheet" href="text_mgr.css">
 <script>
 $(document).on('ready', function(e){
     getAccessToken(function(data){
@@ -68,8 +68,8 @@ $(document).on('ready', function(e){
         外掛：<select id="handler"><option value="__none__">(None)</option></select>
         <button id="test_text">測試</button>
         <br>
-        <img id="img_ok" src="../images/ok.png">
-        <img id="img_error" src="../images/error.png">
+        <img id="img_ok" src="../images/ok.png" alt="OK">
+        <img id="img_error" src="../images/error.png" alt="Error">
         <span id="test_result"></span>
     </div>
     <div class="right">

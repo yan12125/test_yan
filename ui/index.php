@@ -14,7 +14,7 @@ echo External::loadJsCss('jquery-ui', 'validate', 'phpjs');
 ?>
 <script src="jquery-group-member.js"></script>
 <base target="_blank">
-<script language="javascript">
+<script type="text/javascript">
 $(document).on('ready', function(e){
     // basic data
     getAccessToken(function(response){

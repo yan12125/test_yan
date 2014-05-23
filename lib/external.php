@@ -98,7 +98,7 @@ class External
             switch($ext)
             {
                 case 'js':
-                    $output .= '<script language="javascript" src="'.$file.'"></script>';
+                    $output .= '<script src="'.$file.'"></script>';
                     break;
                 case 'css':
                     $output .= '<link rel="stylesheet" href="'.$file.'">';
@@ -107,7 +107,7 @@ class External
             $output .= "\n";
         }
         $script = '$(document).on("ready", function(e){ Util.relativePath = "'.self::$relativePath.'"; });';
-        $output .= "<script language=\"javascript\">\n".$script."\n</script>\n";
+        $output .= "<script type=\"text/javascript\">\n".$script."\n</script>\n";
         return $output;
     }
 

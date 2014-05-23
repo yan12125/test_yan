@@ -10,10 +10,42 @@
     border-collapse: collapse;
 }
 
+#users td
+{
+    border: 1px solid black;
+}
+
 button
 {
-    margin-bottom: 10px;
+    margin: 10px;
     width: 200px;
+}
+
+.left
+{
+    float: left;
+    padding-left: 5px;
+}
+
+#results
+{
+    width: 100%;
+    height: 300px;
+}
+/*
+ * Reference: http://stackoverflow.com/questions/6471268
+ */
+#wrapper
+{
+    overflow: hidden;
+    padding-right: 15px;
+    padding-left: 5px;
+}
+
+#buttons-wrapper
+{
+    text-align: center;
+    margin: 0 auto;
 }
 </style>
 <?php
@@ -394,32 +426,30 @@ $(document).on('ready', function(e){
 </script>
 </head>
 <body>
-<table border="0">
+<div class="left">
+    <table id="users">
+    <tbody>
     <tr>
-        <td>
-            <table id="users" border="1">
-            <tbody>
-            <tr>
-            <td>n</td><td>Name</td><td>Time</td><td>Last Message</td><td>Group</td>
-            </tr>
-            </tbody>
-            </table>
-        </td>
-        <td align="left" valign="top">
-            <textarea id="results" style="width:100%; height:100px" readonly="readonly" rows="10" cols="20"></textarea><br>
-            <button id="btn_start">Start</button><br>
-            <button id="btn_stop">Stop</button><br>
-            <button id="btn_slow_stop">Slow Stop</button><br>
-            <button id="btn_pause">Pause</button><br>
-            <button id="btn_clearLog">clear log</button><br>
-            <button id="btn_print_error">Print errors</button><br>
-            <input type="checkbox" id="chk_debug">Debug<br>
-            <a href="sql.php">execute SQL</a>
-            <a href="table.php">Tables</a>
-            <a href="text_mgr.php">Text Manager</a><br>
-        </td>
+    <td>n</td><td>Name</td><td>Time</td><td>Last Message</td><td>Group</td>
     </tr>
-</table>
+    </tbody>
+    </table>
+</div>
+<div id="wrapper">
+    <textarea id="results" readonly="readonly" cols="50" rows="20"></textarea>
+    <div id="buttons-wrapper">
+        <button id="btn_start">Start</button>
+        <button id="btn_stop">Stop</button>
+        <button id="btn_slow_stop">Slow Stop</button>
+        <button id="btn_pause">Pause</button>
+        <button id="btn_clearLog">clear log</button>
+        <button id="btn_print_error">Print errors</button>
+    </div>
+    <input type="checkbox" id="chk_debug">Debug<br>
+    <a href="sql.php">execute SQL</a>
+    <a href="table.php">Tables</a>
+    <a href="text_mgr.php">Text Manager</a><br>
+</div>
 </body>
 </html>
 
