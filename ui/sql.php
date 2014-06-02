@@ -87,22 +87,27 @@ function parseQueryResult(query, result, editor)
     }
     if(!notAddLink)
     {
-        $('#history').append(
-            '<div class="historyItem">'+
-                query+' '+
-                '<button class="resend">Resend</button> '+
-                '<button class="copy">Copy to editor</button>'+
-            '</div>'
-        );
-        $('.historyItem:last').data('query', query);
+        (function (_query) {
+            var resendBtn = $('<button>').text('Resend').click(function (e) {
+                editor.setValue(_query);
+                sendQuery(editor);
+            });
+            var copyBtn = $('<button>').text('Copy to editor').click(function (e) {
+                editor.setValue(_query);
+            });
+            var removeBtn = $('<button>').text('Remove').click(function (e) {
+                $(this).parent().remove();
+            });
+            var $historyItem = $('<div>')
+                .addClass('historyItem')
+                .data('query', _query)
+                .append(_query)
+                .append(resendBtn)
+                .append(copyBtn)
+                .append(removeBtn);
+            $('#history').append($historyItem);
+        }) (query);
     }
-    $('.historyItem .copy').on('click', function(e){
-        editor.setValue($(this).parent().data('query'));
-    });
-    $('.historyItem .resend').on('click', function(e){
-        editor.setValue($(this).parent().data('query'));
-        sendQuery(editor);
-    });
     if(result.length == 0)
     {
         return;
