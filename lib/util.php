@@ -313,6 +313,18 @@ class Util
         return substr($retval, 1, -1);
     }
 
+    public static function displayErrorsIfLocal()
+    {
+        try
+        {
+            self::ip_only();
+            ini_set('display_errors', 'On');
+        }
+        catch(Exception $e)
+        {
+        }
+    }
+
     public static function handleException(Exception $e, &$output, $needTrace = true)
     {
         // basic parameters
