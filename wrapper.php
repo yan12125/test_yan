@@ -65,7 +65,7 @@ try
          */
         case 'get_group_info':
             Util::checkPOST(array('access_token', 'gid'));
-            echo Util::json_unicode(Groups::getFromGroup($_POST['gid'], $_POST['access_token']));
+            echo json_encode(Groups::getFromGroup($_POST['gid'], $_POST['access_token']), JSON_UNESCAPED_UNICODE);
             break;
         case 'get_primary_group':
             echo json_encode(Groups::getPrimaryGroup());
@@ -78,7 +78,7 @@ try
          * texts.php
          */
         case "list_titles":
-            echo Util::json_unicode(Texts::listTitles());
+            echo json_encode(Texts::listTitles(), JSON_UNESCAPED_UNICODE);
             break;
         case 'update_text':
             Util::checkPOST(array('title', 'texts', 'handler', 'access_token'));
@@ -94,7 +94,7 @@ try
             break;
         case 'get_texts':
             Util::checkPOST(array('title'));
-            echo Util::json_unicode(Texts::getTexts($_POST['title']));
+            echo json_encode(Texts::getTexts($_POST['title']), JSON_UNESCAPED_UNICODE);
             break;
         case 'texts_log': 
             Util::checkPOST(array('page', 'rows'));
@@ -133,7 +133,7 @@ try
          */
         case 'post_uids':
             Util::checkPOST(array('uids'));
-            echo Util::json_unicode(Post::postUids($_POST['uids'], $_POST));
+            echo json_encode(Post::postUids($_POST['uids'], $_POST), JSON_UNESCAPED_UNICODE);
             break;
         /*
          * fb.php
@@ -146,9 +146,9 @@ try
 catch(Exception $e)
 {
     $response_error = array();
-    Util::handleException($e, $response_error);
     try
     {
+        Util::handleException($e, $response_error);
         echo json_encode($response_error);
     }
     catch(Exception $e)

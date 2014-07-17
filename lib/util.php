@@ -139,29 +139,6 @@ class Util
         }
     }
 
-    // Reference: 
-    // http://php.net/manual/en/function.json-encode.php 
-    // devilan (REMOVEIT) (at) o2 (dot) pl
-    public static function json_unicode(array $arr)
-    {
-        // strings like "\\\\u2345" should not be changed
-        // convmap since 0x80 char codes so it takes all multibyte codes (above ASCII 127). 
-        // So such characters are being "hidden" from normal json_encode
-        $convmap = array (0x80, 0xffff, 0, 0xffff);
-        $oldEncoding = mb_internal_encoding();
-        mb_internal_encoding('UTF-8');
-        array_walk_recursive($arr, function (&$item, $key) use ($convmap)
-        {
-            if (is_string($item))
-            {
-                $item = mb_encode_numericentity($item, $convmap); 
-            }
-        });
-        $result = mb_decode_numericentity(json_encode($arr), $convmap);
-        mb_internal_encoding($oldEncoding);
-        return $result;
-    }
-
     public static function errorHandler($severity, $message, $file, $line)
     {
         throw new ErrorException($message, 0, $severity, $file, $line);
@@ -268,9 +245,10 @@ class Util
     public static function checkPHP()
     {
         // check PHP version
-        if(PHP_MAJOR_VERSION < 5 || PHP_MINOR_VERSION < 3)
+        $requiredVersion = 5.4;
+        if(PHP_MAJOR_VERSION + 0.1 * PHP_MINOR_VERSION < $requiredVersion)
         {
-            echo 'Require PHP 5.3 or higher.';
+            echo "Require PHP {$requiredVersion} or higher.";
             exit(0);
         }
 

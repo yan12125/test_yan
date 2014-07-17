@@ -2,16 +2,18 @@
 // simple wrapper for facebook batch requests
 class FbBatch
 {
+    const BATCH_LIMIT = 45;
     protected $commonToken;
     protected $queries;
     protected $keys;
+    protected $responses;
     protected static $lastQueryResult;
     protected static $lastParam;
 
     public function __construct($common_token = null)
     {
         self::$lastParam = self::$lastQueryResult = null;
-        $this->queries = $this->keys = array();
+        $this->queries = $this->keys = $this->responses = array();
         if(is_null($common_token))
         {
             $this->commonToken = Fb::getAppToken();
@@ -24,10 +26,6 @@ class FbBatch
 
     public function push($key, $path, $method = 'GET', $params = array())
     {
-        if(count($this->queries) >= 50)
-        {
-            throw new Exception('The limit of batch requests is 50.');
-        }
         if($key == 'error')
         {
             throw new Exception("\"error\" can't be used as a key");
@@ -58,14 +56,31 @@ class FbBatch
             return array();
         }
 
-        $results = $this->makeRequest();
+        $query_chunks = array_chunk($this->queries, self::BATCH_LIMIT);
+        for($i = 0; $i < count($query_chunks); $i++)
+        {
+            try
+            {
+                $this->responses = array_merge($this->responses, $this->drainRequest($query_chunks[$i]));
+            }
+            catch(Exception $e)
+            {
+                $range_start = $i * self::BATCH_LIMIT;
+                $range_len = min(count($this->queries) - $range_start, self::BATCH_LIMIT);
+                $base_err_array = array(
+                    'error' => $e->getMessage()
+                );
+                $err_array = array_fill($range_start, $range_len, $base_err_array);
+                $this->responses = array_merge($this->responses, $err_array);
+            }
+        }
         if(count($this->queries) == 1)
         {
-            $retval = $this->parseSingleResult($results);
+            $retval = $this->parseSingleResult($this->responses);
         }
         else
         {
-            $retval = $this->parseMultipleResults($results);
+            $retval = $this->parseMultipleResults($this->responses);
         }
 
         $this->queries = array();
@@ -127,10 +142,10 @@ class FbBatch
         return $results;
     }
 
-    protected function makeRequest()
+    protected function drainRequest($query)
     {
         $base_url = 'https://graph.facebook.com';
-        if(count($this->queries) > 1)
+        if(count($query) > 1)
         {
             $params = array(
                 'batch' => json_encode(array_map(function ($item) {
@@ -143,7 +158,7 @@ class FbBatch
                         'method' => $item['method'], 
                         'relative_url' => $relative_url
                     );
-                }, $this->queries)), 
+                }, $query)), 
                 'access_token' => $this->commonToken
             );
             $url = $base_url;
@@ -151,11 +166,11 @@ class FbBatch
         }
         else
         {
-            $query = $this->queries[0];
+            $_query = $query[0];
 
-            $params = $query['params'];
-            $url = $base_url.$query['path'];
-            $isPost = ($query['method'] == 'POST');
+            $params = $_query['params'];
+            $url = $base_url.$_query['path'];
+            $isPost = ($_query['method'] == 'POST');
         }
         self::$lastParam = $params;
         $params = http_build_query($params);
