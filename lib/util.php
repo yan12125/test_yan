@@ -217,7 +217,7 @@ class Util
     public static function checkPHP()
     {
         // check PHP version
-        $requiredVersion = 5.4;
+        $requiredVersion = 5.5;
         if(PHP_MAJOR_VERSION + 0.1 * PHP_MINOR_VERSION < $requiredVersion)
         {
             echo "Require PHP {$requiredVersion} or higher.";
@@ -275,6 +275,16 @@ class Util
         }
     }
 
+    public static function jsonEncode($arr, $flags = JSON_UNESCAPED_UNICODE)
+    {
+        $str = json_encode($arr, $flags);
+        if($str === false)
+        {
+            throw new JsonEncodeFailure($arr);
+        }
+        return $str;
+    }
+
     public static function handleException(Exception $e, &$output, $needTrace = true)
     {
         // basic parameters
@@ -313,6 +323,10 @@ class Util
         if($errClass == 'ErrorException')
         {
             $response_error['severity'] = Util::getSeverityStr($e->getSeverity());
+        }
+        else if($errClass == 'JsonEncodeFailure')
+        {
+            $response_error['data'] = $e->getData();
         }
 
         if($needTrace)

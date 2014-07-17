@@ -1,4 +1,6 @@
 <?php
+use \Curl\Curl;
+
 class PttReader extends PluginBase
 {
     private $lastContent = null;
@@ -21,6 +23,7 @@ class PttReader extends PluginBase
     protected function parsePage($url)
     {
         $conn = new Curl();
+        $conn->setOpt(CURLOPT_FOLLOWLOCATION, true);
         $conn->setCookie('over18', '1');
         $conn->setUserAgent(Util::FIREFOX_UA);
         $conn->get($url);

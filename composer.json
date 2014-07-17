@@ -4,6 +4,7 @@
         "shark/simple_html_dom": "dev-master", 
         "facebook/php-sdk": "*", 
         "cboden/Ratchet": "*", 
-        "php-curl-class/php-curl-class": "*"
+        "php-curl-class/php-curl-class": "*", 
+        "phpdocumentor/reflection-docblock": "dev-master"
     }
 }
