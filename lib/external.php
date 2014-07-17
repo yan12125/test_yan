@@ -40,7 +40,7 @@ class External
         )
     );
 
-    protected static function load($type, $names)
+    protected static function load($names)
     {
         $filenames = array();
         foreach($names as $item)
@@ -51,44 +51,20 @@ class External
             }
             $cur = self::$list[$item];
             $prefix = self::EXT_PATH.$cur['path'];
-            if($type == 'server')
-            {
-                $prefix = APP_ROOT.$prefix;
-            }
             foreach($cur['files'] as $file)
             {
                 $filename = $prefix.$file;
-                if($type == 'server' && !is_file($filename))
-                {
-                    throw new Exception($filename.' does not exist!');
-                }
-                if($type == 'server')
-                {
-                    Util::addIncludePath($prefix);
-                    require_once $filename;
-                }
-                else
-                {
-                    array_push($filenames, $filename);
-                }
+                array_push($filenames, $filename);
             }
         }
-        if($type == 'client')
-        {
-            return $filenames;
-        }
-    }
-
-    public static function loadPhp()
-    {
-        self::load('server', func_get_args());
+        return $filenames;
     }
 
     public static function loadJsCss()
     {
         $modules = func_get_args();
         array_unshift($modules, 'jquery', 'ajaxq');
-        $files = self::load('client', $modules);
+        $files = self::load($modules);
         array_push($files, 'ui/util.js', 'ui/common.css');
         $output = '';
         foreach($files as $file)

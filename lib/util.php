@@ -48,18 +48,6 @@ class Util
         }
     }
 
-    // PHP 5.2.6 doesn't support SimpleXMLElement::count(), so write one
-    // but not used since PHP 5.3
-    function xmlCount($xml)
-    {
-        $i=0;
-        foreach($xml as $child)
-        {
-            $i++;
-        }
-        return $i;
-    }
-
     public static function ip_only()
     {
         if(func_num_args() == 0)
@@ -117,13 +105,6 @@ class Util
         return ($ip_ip_net == $ip_net);
     }
 
-    // not used anymore
-    private static function checkAction($filename)
-    {
-        return isset($_POST['action']) && 
-               (strpos($_SERVER['REQUEST_URI'], basename($filename)) !== FALSE);
-    }
-
     public static function redirectHttps()
     {
         if(php_sapi_name() == 'cli')
@@ -173,15 +154,6 @@ class Util
         {
             return null;
         }
-    }
-
-    public static function addIncludePath($path)
-    {
-        if(!is_dir($path))
-        {
-            throw new Exception('Invalid path: '.$path);
-        }
-        set_include_path(get_include_path().PATH_SEPARATOR.$path);
     }
 
     public static function replaceTab(&$text)
