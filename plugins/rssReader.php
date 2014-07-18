@@ -1,4 +1,6 @@
 <?php
+use \Curl\Curl;
+
 class RssReader extends PluginBase
 {
     protected $xml;
@@ -12,18 +14,13 @@ class RssReader extends PluginBase
         $this->xml = null;
         $this->url = null;
         $this->redirectHeader = null;
-        $this->ch = curl_init();
-    }
-
-    public function __destruct()
-    {
-        curl_close($this->ch);
+        $this->ch = new Curl();
     }
 
     public function run($param)
     {
         $this->getUrlContent($param);
-        $feed=new SimpleXMLElement($this->xml);
+        $feed = $this->xml;
         $url = $title = '';
         // RSS
         if($feed->channel->count() > 0)
@@ -58,12 +55,9 @@ class RssReader extends PluginBase
     public function getUrlContent($url)
     {
         $this->url = $url;
-        curl_setopt_array($this->ch, array(
-            CURLOPT_URL => $this->url, 
-            CURLOPT_RETURNTRANSFER => true, 
-            CURLOPT_FOLLOWLOCATION => true
-        ));
-        $this->xml = curl_exec($this->ch);
+        $this->ch->setOpt(CURLOPT_FOLLOWLOCATION, true);
+        $this->ch->get($this->url);
+        $this->xml = $this->ch->response;
         if(empty($this->xml))
         {
             throw new Exception('Failed to retrieve specified url');
@@ -83,23 +77,15 @@ class RssReader extends PluginBase
         }
         // PHP cUrl HTTP HEAD
         // http://stackoverflow.com/questions/770179
-        $ch = curl_init();
-        curl_setopt_array($ch, array(
-            CURLOPT_URL => $url, 
-            CURLOPT_CUSTOMREQUEST => 'HEAD', 
-            CURLOPT_HEADER => true, 
-            CURLOPT_HTTPHEADER => array('Connection: close'), 
-            CURLOPT_RETURNTRANSFER => true, 
-            CURLOPT_BINARYTRANSFER => true, 
-            CURLOPT_FOLLOWLOCATION => false
-        ));
-        $this->redirectHeader = $results = curl_exec($ch);
-        curl_close($ch);
+        $ch = new Curl();
+        $ch->setHeader("Connection", "close");
+        $ch->setOpt(CURLOPT_FOLLOWLOCATION, false);
+        $ch->head($url);
+        $this->redirectHeader = $results = $ch->response;
         $matches = array();
-        if(preg_match('/HTTP\/1.1 (302|301)/', $results))
+        if($ch->http_status_code == 301 || $ch->http_status_code == 302)
         {
-            preg_match('/(location:|uri:)(.*?)\n/', strtolower($results), $matches);
-            return $this->getRedirectedUrl(trim($matches[2]), $count + 1);
+            return $this->getRedirectedUrl($ch->response_headers['Location'], $count + 1);
         }
         else
         {
@@ -135,7 +121,7 @@ class RssReader extends PluginBase
             $output['xml_base64'] = base64_encode($this->xml);
         }
         $output['url'] = $this->url;
-        $output['curl_error'] = curl_error($this->ch);
+        $output['curl_error'] = $this->ch->curl_error_message;
         $output['redirectHeader'] = $this->redirectHeader;
         return $output;
     }
