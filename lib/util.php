@@ -120,7 +120,7 @@ class Util
         }
     }
 
-    public static function errorHandler($severity, $message, $file, $line)
+    public static function errorHandler($severity, $message, $file, $line, $context)
     {
         throw new ErrorException($message, 0, $severity, $file, $line);
         return true;
@@ -285,7 +285,7 @@ class Util
         return $str;
     }
 
-    public static function handleException(Exception $e, &$output, $needTrace = true)
+    public static function handleException(Exception $e, &$output, $needContext = true)
     {
         // basic parameters
         $errClass = get_class($e);
@@ -329,47 +329,49 @@ class Util
             $response_error['data'] = $e->getData();
         }
 
-        if($needTrace)
+        $trace = $e->getTrace();
+        $classNames = array();
+        foreach($trace as $key => &$item)
         {
-            $trace = $e->getTrace();
-            $classNames = array();
-            foreach($trace as $key => &$item)
+            if(isset($item['file']))
             {
-                if(isset($item['file']))
+                $path = dirname($item['file']);
+                if(strncmp($path, APP_ROOT, strlen(APP_ROOT)) != 0)
                 {
-                    $path = dirname($item['file']);
-                    if(strncmp($path, APP_ROOT, strlen(APP_ROOT)) != 0)
+                    $newItem = array(
+                        'file' => $item['file'], 
+                        'line' => $item['line'], 
+                        'function' => $item['function']
+                    );
+                    if(isset($item['class']))
                     {
-                        $newItem = array(
-                            'file' => $item['file'], 
-                            'line' => $item['line'], 
-                            'function' => $item['function']
-                        );
-                        if(isset($item['class']))
-                        {
-                            $newItem['class'] = $item['class'];
-                        }
-                        $trace[$key] = $newItem;
-                        continue;
+                        $newItem['class'] = $item['class'];
                     }
-                }
-                // not set in error handler
-                if(isset($item['file']))
-                {
-                    $item['file'] = basename($item['file']);
-                }
-                // determine which class cause the error
-                if(isset($item['class']))
-                {
-                    if($item['class'] == 'Util' && $item['function'] == 'errorHandler')
-                    {
-                        continue;
-                    }
-                    $classNames[] = $item['class'];
+                    $trace[$key] = $newItem;
+                    continue;
                 }
             }
-            $output['trace'] = $trace;
+            // not set in error handler
+            if(isset($item['file']))
+            {
+                $item['file'] = basename($item['file']);
+            }
+            // determine which class cause the error
+            if(isset($item['class']))
+            {
+                if($item['class'] == 'Util' && $item['function'] == 'errorHandler')
+                {
+                    if(!$needContext)
+                    {
+                        $item['args'][4] = null;
+                    }
+                    continue;
+                }
+                $classNames[] = $item['class'];
+            }
         }
+
+        $output['trace'] = $trace;
 
         for($i = 0;$i < count($classNames);$i++)
         {
