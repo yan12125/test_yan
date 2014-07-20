@@ -3,7 +3,7 @@
     "version": "0.0.2-dev", 
     "dependencies": {
         "codemirror": "*", 
-        "jquery": "1.7.2", 
+        "jquery": "1.11.1", 
         "jqgrid": "*", 
         "jquery-ui": "*", 
         "jquery.validation": "*", 

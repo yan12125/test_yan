@@ -11,12 +11,12 @@ class External
             'files' => array('lib/codemirror.js', 'lib/codemirror.css', 'mode/sql/sql.js')
         ), 
         'jquery' => array(
-            'path' => 'jquery/', 
+            'path' => 'jquery/dist/', 
             'files' => array('jquery.min.js')
         ), 
         'jquery-ui' => array(
             'path' => 'jquery-ui/', 
-            'files' => array('ui/jquery-ui.js', 'themes/base/jquery-ui.css')
+            'files' => array('jquery-ui.js', 'themes/smoothness/jquery-ui.css')
          ), 
         'jqGrid' => array(
             'path' => 'jqgrid/', 
