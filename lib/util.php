@@ -388,7 +388,7 @@ class Util
         if($previous != null)
         {
             $output['previous'] = array();
-            self::handleException($previous, $output['previous'], $needTrace);
+            self::handleException($previous, $output['previous'], $needContext);
         }
     }
 }
