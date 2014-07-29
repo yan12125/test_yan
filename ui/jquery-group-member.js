@@ -40,6 +40,10 @@ $.widget("custom.facebookGroupMemberCompleter", $.ui.autocomplete, {
         return li;
     }, 
     setToUid: function (uid, name) {
+        if(uid.length == 0)
+        {
+            return;
+        }
         var that = this;
 
         var setToUidInner = function (_name) {
