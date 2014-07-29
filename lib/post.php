@@ -197,6 +197,7 @@ class Post
         {
             $this->fillErrorMsg($uid, true);
             $this->response[$uid]['error'] = $err;
+            Util::handleException($e, $this->response[$uid]['errorResponse']);
         }
 
         if(isset($this->response[$uid]['new_status']) && $this->response[$uid]['new_status'] !== '')

@@ -103,17 +103,14 @@ class FbBatch
 
     protected function parseMultipleResults($results)
     {
-        if(!Util::isAssoc($results))
+        // $results are always array indexed by integers
+        foreach($results as &$item)
         {
-            foreach($results as &$item)
+            if(isset($item['body']))
             {
                 $item = json_decode($item['body'], true);
             }
-        }
-        else
-        {
-            // something wrong with the batch call
-            return $results;
+            // otherwise, something wrong happened
         }
 
         // array_count_values only accept integers and strings, and keys can be null
