@@ -146,7 +146,15 @@ class Post
             $this->response[$uid]['ret_obj'] = $responses[$realIndex];
             if(isset($responses[$realIndex]['error']))
             {
-                $this->handleFacebookError($uid, new Exception($responses[$realIndex]['error']['message']));
+                $errObj = $responses[$realIndex]['error'];
+                if(isset($errObj['message'])) // facebook errors
+                {
+                    $this->handleFacebookError($uid, new Exception($errObj['message']));
+                }
+                else // other errors, such as curl errrors ( ones caught in FbBatch::run() )
+                {
+                    $this->handleFacebookError($uid, new Exception($errObj));
+                }
                 continue;
             }
             if(isset($responses[$realIndex]['id']))
@@ -287,7 +295,7 @@ class Post
             $response['group'] = '---'; // to reduce the amount of transmission
         }
     }
-    
+
     public function getResponse()
     {
         for($i = 0;$i < count($this->uids);$i++)
