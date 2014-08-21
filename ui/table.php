@@ -102,6 +102,15 @@ $(document).on('ready', function (e) {
                 { caption: '修改時間', name: 'update_time', width: 200 }
             ], 
             row_num: 40
+        }, 
+        'listContacts': {
+            caption: '聯絡人', 
+            action: 'list_contacts', 
+            columns: [
+                { caption: 'User', name: 'name', width: 200 }, 
+                { caption: 'Contact', name: 'contact_name', width: 200 }
+            ], 
+            row_num: 40
         }
     };
     $('button').each(function (index, elem) {
@@ -131,6 +140,7 @@ $(document).on('ready', function (e) {
 <button id="getStats"></button>
 <button id="runningState"></button>
 <button id="textsLog"></button>
+<button id="listContacts"></button>
 <div id="wrapper">選擇一個表格</div>
 </body>
 </html>

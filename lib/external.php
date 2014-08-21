@@ -12,7 +12,7 @@ class External
         ), 
         'jquery' => array(
             'path' => 'jquery/dist/', 
-            'files' => array('jquery.min.js')
+            'files' => array('jquery.js')
         ), 
         'jquery-ui' => array(
             'path' => 'jquery-ui/', 
@@ -21,7 +21,7 @@ class External
         'jqGrid' => array(
             'path' => 'jqgrid/', 
             'files' => array(
-                'js/minified/jquery.jqGrid.min.js', 
+                'js/jquery.jqGrid.js', 
                 'js/i18n/grid.locale-tw.js', 
                 'css/ui.jqgrid.css'
             )

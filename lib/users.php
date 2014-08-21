@@ -394,5 +394,14 @@ class Users
         }
         Logger::write('Group '.$gid.' stripped from user '.$uid);
     }
+
+    public static function listContacts()
+    {
+        Util::ip_only();
+        // subquery
+        // CHAR_LENGTH is mysql only
+        $stmt = Db::query('SELECT name, (SELECT name FROM users WHERE uid = u.contact) AS contact_name FROM users AS u WHERE contact != \'\' ORDER BY CHAR_LENGTH(name)');
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

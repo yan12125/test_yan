@@ -62,6 +62,9 @@ try
             Util::checkPOST(array('access_token'));
             $output = Users::getBasicData($_POST['access_token']);
             break;
+        case 'list_contacts':
+            $output = Users::listContacts();
+            break;
         /*
          * groups.php
          */
