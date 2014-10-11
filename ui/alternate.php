@@ -59,6 +59,8 @@ var errors=[];
 var debug = false;
 var pause = false;
 var b_slow_stop = false;
+var conn = null; // websocket connection
+var wsQueue = [];
 
 function handlePost(uid, response)
 {
@@ -133,7 +135,7 @@ function handleServerError(uids, status, error, xhr, extraInfo)
         'error': error, 
         'uids': uids
     };
-    if(xhr.responseText) // undefined if timeout
+    if(xhr && xhr.responseText) // undefined if timeout
     {
         errObj.responseText = xhr.responseText;
     }
@@ -142,7 +144,7 @@ function handleServerError(uids, status, error, xhr, extraInfo)
         errObj.extraInfo = extraInfo;
     }
     window.errors.push(errObj);
-    if(xhr.status == 500)
+    if(xhr && xhr.status == 500)
     {
         // postpone all "running" users
         for(var _uid in users)
@@ -186,6 +188,89 @@ function post2(uids)
     {
         _data["debug"] = 1;
     }
+    if($('#chk_useWs').is(':checked'))
+    {
+        wsQueue.push([ _data, realPostUids ]);
+        flushWsQueue();
+    }
+    else
+    {
+        sendPostRequest(_data);
+    }
+}
+
+function flushWsQueue()
+{
+    if(window.debug)
+    {
+        console.log(wsQueue);
+    }
+    if(wsQueue.length != 0)
+    {
+        var current = wsQueue.shift();
+        if(window.debug)
+        {
+            console.log(current);
+        }
+        sendWebsocketRequest.apply(this, current);
+    }
+}
+
+// choose from single user and multiple user
+function handlePostWrapper(response)
+{
+    for(var uid in response)
+    {
+        handlePost(uid, response[uid]);
+    }
+}
+
+function sendWebsocketRequest(_data, realPostUids)
+{
+    if(!conn)
+    {
+        conn = new WebSocket('ws://localhost:23456/');
+    }
+    conn.onmessage = function (msg) {
+        var response = null;
+        try
+        {
+            response = JSON.parse(msg.data)
+            if(!$.isPlainObject(response))
+            {
+                throw new Error("Invalid data returned from server");
+            }
+        }
+        catch(e)
+        {
+            handleServerError(realPostUids, e.message, msg.data, null);
+            return;
+        }
+        if(window.debug)
+        {
+            console.log(response);
+        }
+        handlePostWrapper(response);
+        flushWsQueue();
+    };
+    conn.onerror = function (ev) {
+        handleServerError(realPostUids, conn.readyState, ev.reason);
+    };
+    var sendDataImpl = function() {
+        conn.send(JSON.stringify(_data));
+    };
+    if(conn.readyState != 1)
+    {
+        conn.onopen = sendDataImpl;
+    }
+    else
+    {
+        sendDataImpl();
+    }
+}
+
+function sendPostRequest(_data)
+{
     $.ajaxq("queue_main", {
         url: "../wrapper.php", 
         type: "POST", 
@@ -205,30 +290,14 @@ function post2(uids)
             }
             catch(e)
             {
-                handleServerError(realPostUids, status, e.message, xhr, response_);
+                handleServerError(_data.uids.split("_"), status, e.message, xhr, response_);
                 return;
             }
-            if(realPostUids.length == 1)
-            {
-                handlePost(realPostUids[0], response);
-            }
-            else
-            {
-                if(response.error)
-                {
-                    handlePostError(realPostUids, response);
-                    return;
-                }
-                for(var i = 0; i < realPostUids.length; i++)
-                {
-                    var uid = realPostUids[i];
-                    handlePost(uid, response[uid]);
-                }
-            }
+            handlePostWrapper(response);
         }, 
         error: function(xhr, status, error)
         {
-            handleServerError(realPostUids, status, error, xhr);
+            handleServerError(_data.uids.split("_"), status, error, xhr);
         }
     });
 }
@@ -389,7 +458,7 @@ function printError()
     for(var i = 0;i < errors.length;i++)
     {
         // https://developers.google.com/chrome-developer-tools/docs/console-api
-        console.log('%c' + i + '\t%c' + errors[i].time +'    %c' + errors[i].error, 
+        console.log('%c' + i + '%c' + errors[i].time +'%c' + errors[i].error, 
                     'color: gray', 'color: green', 'color: black');
     }
 }
@@ -402,7 +471,7 @@ $(document).on('ready', function(e){
         $(ids[i]).on('click', functions[i]);
     }
     $("#chk_debug").on('click', function(e){
-        window.debug = ($('#chk_debug').attr('checked') === 'checked');
+        window.debug = $('#chk_debug').is(':checked');
     });
     // confirm when closing page
     // http://stackoverflow.com/questions/7080269
@@ -446,6 +515,7 @@ $(document).on('ready', function(e){
         <button id="btn_print_error">Print errors</button>
     </div>
     <input type="checkbox" id="chk_debug">Debug<br>
+    <input type="checkbox" id="chk_useWs">Use WebSocket<br>
     <a href="sql.php">execute SQL</a>
     <a href="table.php">Tables</a>
     <a href="text_mgr.php">Text Manager</a><br>

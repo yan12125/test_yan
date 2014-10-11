@@ -48,7 +48,7 @@ class Util
         }
     }
 
-    public static function ip_only()
+    public static function ip_only($allow_http = true)
     {
         if(func_num_args() == 0)
         {
@@ -71,7 +71,10 @@ class Util
         {
             if(self::ipCIDRCheck($remote_ip, $IPs[$i]))
             {
-                self::redirectHttps();
+                if(!$allow_http)
+                {
+                    self::redirectHttps();
+                }
                 $ok = true;
             }
         }
@@ -113,7 +116,7 @@ class Util
         }
         if(!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on')
         {
-            $host = isset($_SERVER['HTTP_HOST'])?$_SERVER['HTTP_HOST']:'chyen.twbbs.org';
+            $host = isset($_SERVER['HTTP_HOST'])?$_SERVER['HTTP_HOST']:Config::getParam('hostname');
             $url = 'https://'.$host.$_SERVER['REQUEST_URI'];
             header('Location: '.$url);
             exit(0);
@@ -263,18 +266,6 @@ class Util
         return substr($retval, 1, -1);
     }
 
-    public static function displayErrorsIfLocal()
-    {
-        try
-        {
-            self::ip_only();
-            ini_set('display_errors', 'On');
-        }
-        catch(Exception $e)
-        {
-        }
-    }
-
     public static function jsonEncode($arr, $flags = JSON_UNESCAPED_UNICODE)
     {
         $str = json_encode($arr, $flags);
@@ -283,6 +274,20 @@ class Util
             throw new JsonEncodeFailure($arr);
         }
         return $str;
+    }
+
+    public static function isSubFile($filePath, $dirPath)
+    {
+        $dirPath = realpath($dirPath);
+        do
+        {
+            $filePath = dirname($filePath);
+            if($filePath == $dirPath)
+            {
+                return true;
+            }
+        } while($filePath != '/');
+        return false;
     }
 
     public static function handleException(Exception $e, &$output, $needContext = true)

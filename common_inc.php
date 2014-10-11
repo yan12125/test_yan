@@ -33,5 +33,4 @@ set_error_handler(array('Util', 'errorHandler'));
  * checking PHP version and required extensions
  */
 Util::checkPHP();
-Util::displayErrorsIfLocal();
 ?>

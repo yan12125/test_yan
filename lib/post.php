@@ -302,11 +302,6 @@ class Post
         {
             $this->makeResponse($this->uids[$i]);
         }
-        if(count($this->response) == 1)
-        {
-            $keys = array_keys($this->response);
-            $this->response = $this->response[$keys[0]];
-        }
         return $this->response;
     }
 

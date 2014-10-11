@@ -5,6 +5,7 @@ try
 {
     header('Content-type: application/json;charset=UTF-8');
     header('Connection: close');
+    header('Access-Control-Allow-Origin: '.Config::getParam('hostname'));
     if(isset($_POST['debug']))
     {
         Util::$debug = true;
