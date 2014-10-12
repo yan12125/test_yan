@@ -1,3 +1,30 @@
+<?php
+require '../common_inc.php';
+$externalSrc = null;
+$wsPort = null;
+try
+{
+    External::setRelativePath('..');
+    $externalSrc = External::loadJsCss('phpjs');
+    $wsPort = Config::getParam('wsPort');
+}
+catch(Exception $e)
+{
+    header('Content-Type: text/plain');
+    $err = Util::tryParseJson($e->getMessage());
+    print("Unexpected error ");
+    if(is_array($err))
+    {
+        print("\n");
+        print_r($err);
+    }
+    else
+    {
+        print($err);
+    }
+    exit(0);
+}
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -48,11 +75,7 @@ button
     margin: 0 auto;
 }
 </style>
-<?php
-require '../common_inc.php';
-External::setRelativePath('..');
-echo External::loadJsCss('phpjs');
-?>
+<?php echo $externalSrc; ?>
 <script>
 var users={};
 var errors=[];
@@ -61,6 +84,7 @@ var pause = false;
 var b_slow_stop = false;
 var conn = null; // websocket connection
 var wsQueue = [];
+var wsPort = <?php echo $wsPort; ?>
 
 function handlePost(uid, response)
 {
@@ -75,11 +99,11 @@ function handlePost(uid, response)
         users[uid].wait_time = parseFloat(response.next_wait_time);
 
         // update user data
-        for(var s in response["user_data"])
+        for(var s in response.user_data)
         {
-            users[uid][s]=response["user_data"][s];
+            users[uid][s] = response.user_data[s];
         }
-        if(response["user_data"]["status"]!="started")
+        if(response.user_data.status != "started")
         {
             users[uid].bStarted=false;
         }
@@ -98,7 +122,7 @@ function handlePostError(uids, response)
         if(response.new_status)
         {   // no new status when "Timed out"
             $("#results").append(response.error + "\n");
-            users[uid]['status'] = response.new_status;
+            users[uid].status = response.new_status;
             users[uid].bStarted = false; // "started" won't appear here
             hasNewStatus = true;
         }
@@ -119,47 +143,32 @@ function handlePostError(uids, response)
     }
 }
 
-function handleServerError(uids, status, error, xhr, extraInfo)
+function handleServerError(uids, restartAll, extraInfo)
 {
-    if(error)
+    $("#results").append("Failed to post.\n");
+    var errObj = {
+        'time': timestr(), 
+        'extraInfo': extraInfo, 
+        'uids': uids
+    };
+    window.errors.push(errObj);
+    var resetUser = function (uid) {
+        users[uid].wait_time=300;
+        users[uid].posting = false;
+    };
+    if(restartAll)
     {
-        $("#results").append(error + "\n");
+        for(var uid in users)
+        {
+            resetUser(uid);
+        }
     }
     else
     {
-        $("#results").append("Failed to post.\n");
-    }
-    var errObj = {
-        'time': timestr(), 
-        'status': status, 
-        'error': error, 
-        'uids': uids
-    };
-    if(xhr && xhr.responseText) // undefined if timeout
-    {
-        errObj.responseText = xhr.responseText;
-    }
-    if(typeof extraInfo !== 'undefined')
-    {
-        errObj.extraInfo = extraInfo;
-    }
-    window.errors.push(errObj);
-    if(xhr && xhr.status == 500)
-    {
-        // postpone all "running" users
-        for(var _uid in users)
+        for(var i = 0; i < uids.length; i++)
         {
-            if(users[_uid].bStarted)
-            {
-                users[_uid].wait_time = 300;
-            }
+            resetUser(uids[i]);
         }
-    }
-    for(var i = 0; i < uids.length; i++)
-    {
-        var uid = uids[i];
-        users[uid].wait_time=300;
-        users[uid].posting = false;
     }
 }
 
@@ -186,7 +195,7 @@ function post2(uids)
     };
     if(debug)
     {
-        _data["debug"] = 1;
+        _data.debug = 1;
     }
     wsQueue.push([ _data, realPostUids ]);
     flushWsQueue();
@@ -236,7 +245,7 @@ function sendWebsocketRequest(_data, realPostUids)
         }
         catch(e)
         {
-            handleServerError(realPostUids, e.message, msg.data, null);
+            handleServerError(realPostUids, false, e.message, msg.data);
             return;
         }
         if(window.debug)
@@ -246,8 +255,9 @@ function sendWebsocketRequest(_data, realPostUids)
         handlePostWrapper(response);
         flushWsQueue();
     };
-    conn.onerror = function (ev) {
-        handleServerError(realPostUids, conn.readyState, ev.reason);
+    conn.onclose = function (ev) {
+        handleServerError(realPostUids, true, ev.code, ev.reason);
+        conn = null;
     };
     var sendDataImpl = function() {
         conn.send(JSON.stringify(_data));
