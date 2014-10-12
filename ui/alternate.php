@@ -188,15 +188,8 @@ function post2(uids)
     {
         _data["debug"] = 1;
     }
-    if($('#chk_useWs').is(':checked'))
-    {
-        wsQueue.push([ _data, realPostUids ]);
-        flushWsQueue();
-    }
-    else
-    {
-        sendPostRequest(_data);
-    }
+    wsQueue.push([ _data, realPostUids ]);
+    flushWsQueue();
 }
 
 function flushWsQueue()
@@ -267,39 +260,6 @@ function sendWebsocketRequest(_data, realPostUids)
     {
         sendDataImpl();
     }
-}
-
-function sendPostRequest(_data)
-{
-    $.ajaxq("queue_main", {
-        url: "../wrapper.php", 
-        type: "POST", 
-        data: _data, 
-        dataType: "text", 
-        timeout: 300000, // theoretically no need, but sometimes starving occurs
-        success: function(response_, status, xhr)
-        {
-            var response = null;
-            try
-            {
-                response = JSON.parse(response_);
-                if(!$.isPlainObject(response))
-                {
-                    throw new Error("Invalid data returned from server");
-                }
-            }
-            catch(e)
-            {
-                handleServerError(_data.uids.split("_"), status, e.message, xhr, response_);
-                return;
-            }
-            handlePostWrapper(response);
-        }, 
-        error: function(xhr, status, error)
-        {
-            handleServerError(_data.uids.split("_"), status, error, xhr);
-        }
-    });
 }
 
 function update_userList()
@@ -515,7 +475,6 @@ $(document).on('ready', function(e){
         <button id="btn_print_error">Print errors</button>
     </div>
     <input type="checkbox" id="chk_debug">Debug<br>
-    <input type="checkbox" id="chk_useWs">Use WebSocket<br>
     <a href="sql.php">execute SQL</a>
     <a href="table.php">Tables</a>
     <a href="text_mgr.php">Text Manager</a><br>
