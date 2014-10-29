@@ -395,12 +395,29 @@ class Users
         Logger::write('Group '.$gid.' stripped from user '.$uid);
     }
 
-    public static function listContacts()
+    public static function listContacts($sortBy, $order)
     {
         Util::ip_only();
-        // subquery
+        $sortByColumnName = '';
+        switch($sortBy)
+        {
+            case '':
+            case 'name':
+                $sortByColumnName = 'u1.name';
+                break;
+            case 'contact_name':
+                $sortByColumnName = 'u2.name';
+                break;
+            default:
+                throw new Exception('Invalid sortBy column name');
+        }
         // CHAR_LENGTH is mysql only
-        $stmt = Db::query('SELECT name, (SELECT name FROM users WHERE uid = u.contact) AS contact_name FROM users AS u WHERE contact != \'\' ORDER BY CHAR_LENGTH(name)');
+        $query = 'SELECT u1.name AS name, u2.name AS contact_name, u1.status AS status '.
+                 'FROM users u1, users u2 '.
+                 'WHERE u1.contact = u2.uid '.
+                 sprintf('ORDER BY CHAR_LENGTH(%s) ', $sortByColumnName).
+                 ($order === 'desc'?'DESC':'ASC');
+        $stmt = Db::query($query);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

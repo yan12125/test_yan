@@ -108,7 +108,8 @@ $(document).on('ready', function (e) {
             action: 'list_contacts', 
             columns: [
                 { caption: 'User', name: 'name', width: 200 }, 
-                { caption: 'Contact', name: 'contact_name', width: 200 }
+                { caption: 'Contact', name: 'contact_name', width: 200 }, 
+                { caption: 'Status', name: 'status', width: 150 }
             ], 
             row_num: 40
         }
