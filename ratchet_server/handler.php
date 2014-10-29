@@ -44,7 +44,6 @@ class Handler implements MessageComponentInterface
         {
             $response_error = array();
             Util::handleException($e, $response_error, false);
-            file_put_contents("output.log", print_r($response_error, true));
             $from->send(json_encode($response_error, JSON_PARTIAL_OUTPUT_ON_ERROR));
         }
     }

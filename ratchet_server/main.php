@@ -23,7 +23,7 @@ function main()
     catch(Exception $e)
     {
         print($e->getMessage()."\n");
-        print_r($e->getTrace());
+        print($e->getTraceAsString());
         echo "\nExitting...\n";
     }
 }

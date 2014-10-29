@@ -32,19 +32,24 @@ class Db
 
     public static function __callStatic($name, $args)
     {
+        return self::callStaticImpl($name, $args, true);
+    }
+
+    public static function callStaticImpl($name, $args, $retry)
+    {
         self::loadDB();
-        $ret = call_user_func_array(array(self::$db, $name), $args);
-        if($ret === false && $name == 'query')
-        {
-            throw new Exception(self::getErr());
-        }
-        return $ret;
+        return call_user_func_array(array(self::$db, $name), $args);
+    }
+
+    public static function getErrInfo()
+    {
+        // self::loadDB();
+        return self::$db->errorInfo();
     }
 
     public static function getErr()
     {
-        // self::loadDB();
-        $errInfo = self::$db->errorInfo();
+        $errInfo = self::getErrInfo();
         return $errInfo[2];
     }
 
