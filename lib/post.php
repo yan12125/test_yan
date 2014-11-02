@@ -197,6 +197,10 @@ class Post
         {
             $this->fillErrorMsg($uid, false, 'banned');
         }
+        else if(strpos($err, 'You have been temporarily blocked from performing this action.') !== false)
+        {
+            $this->fillErrorMsg($uid, false, 'banned');
+        }
         else if(strpos($err, 'Invalid result from facebook') !== false)
         {
             throw $e;
