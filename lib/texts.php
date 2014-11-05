@@ -126,53 +126,6 @@ class Texts
         $stmt->execute(array($userData['uid'], $title, Util::timestr()));
     }
 
-    public static function updateLines($title, $texts = '')
-    {
-        if($texts === '')
-        {
-            $stmt = Db::prepare('SELECT text FROM texts WHERE title = ?');
-            $stmt->execute(array($title));
-            $results = $stmt->fetchAll(PDO::FETCH_NUM);
-            if(count($results) === 0)
-            {
-                throw new Exception("Title not found.");
-            }
-            $texts = $results[0][0];
-        }
-        $texts = explode("\n", $texts);
-        $stmt = Db::prepare('UPDATE texts SET `lines` = ? WHERE `title` = ?');
-        $stmt->execute(array(count($texts), $title));
-        return array('line_count' => count($texts));
-    }
-
-    public static function updateAllTitles()
-    {
-        $results = array();
-        $titles = self::listTitlesImpl(false);
-        for($i = 0; $i < count($titles['titles']); $i++)
-        {
-            $curTitle = $titles['titles'][$i];
-            $results[] = array(
-                'title' => $curTitle, 
-                'line_count' => self::updateLines($curTitle)['line_count']
-            );
-        }
-        return $results;
-    }
-
-    protected static function check()
-    {
-        $stmt = Db::query('SELECT * FROM texts');
-        while(($arr = $stmt->fetch(PDO::FETCH_ASSOC))!==false)
-        {
-            if(($new_text=str_replace(", \"\"", "", $arr['text']))!==$arr['text'])
-            {
-                $stmt_update = Db::prepare('UPDATE texts SET text=? WHERE title=?');
-                $stmt_update->execute(array(str_replace('"', '\"', $new_text), $arr['title']));
-            }
-        }
-    }
-
     public static function getTexts($title)
     {
         $stmt = Db::prepare("SELECT locked,handler,text FROM texts WHERE title=?");
@@ -197,44 +150,35 @@ class Texts
      */
     public static function getTextFromTitle($title, $m = -1)
     {
-        // index and text are mysql keywords
-        $stmt = Db::prepare(implode("\n", array(
-            "SET @index_ = :index;", 
-            "SET @title = :title;"
-        )));
-        $stmt->execute(array(':index' => $m, ':title' => $title));
-        // needs flush all previous queries
-        // "Cannot execute queries while other unbuffered queries are active"
-        // http://stackoverflow.com/questions/2066714
-        $stmt->closeCursor();
-
-        // CALL needs a single statement because PDO doesn't catch signals from multiple queries
-        // Use SQL variables because PDO can't extract procedure outputs by using bindParam
-        Db::query("CALL select_text(@title, @index_, @text_)");
-
-        // To retrieve SELECT result, it should be the only statement in PDO query
-        $stmt = Db::query("SELECT @text_ AS text_, @index_ AS index_");
-        $textData = $stmt->fetch(PDO::FETCH_ASSOC);
-        if($textData===false)
+        if($m == -1)
         {
-            return array(
-                'error'=> 'Error query data!', 
-                'msg' => NULL, 
-                'title' => $title
-            );
+            $stmt = Db::prepare('
+                SELECT texts_data.line, texts.locked, texts.handler, texts_data.ID AS `index`
+                FROM texts_data, texts, ( SELECT FLOOR(RAND() * `lines`) AS num FROM texts WHERE title = :title) AS rand_id
+                WHERE texts_data.ID = rand_id.num AND texts_data.title = :title AND texts.title = texts_data.title
+            ');
+            $stmt->execute(array('title' => $title));
         }
-        $stmt = Db::query("SELECT locked,handler FROM texts WHERE title = @title");
-        $metaData = $stmt->fetch(PDO::FETCH_ASSOC);
-        if(!self::$ignoreLocked && $metaData['locked'] && $m == -1)
+        else
         {
-            return array(
-                'error' => 'title_locked', 
-                'title' => $title, 
-                'msg' => "(title locked)", 
-                'm' => -1 // used in output in post.php
-            );
+            $stmt = Db::prepare('
+                SELECT texts_data.line, texts.locked, texts.handler, texts_data.ID AS `index` 
+                FROM texts_data, texts 
+                WHERE texts_data.ID = :id AND texts_data.title = :title AND texts_data.title = texts.title
+            ');
+            $stmt->execute(array('id' => $m, 'title' => $title));
         }
-        return self::handlePlugins($title, $metaData['handler'], $textData['text_'], $textData['index_']);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+        if($data===false)
+        {
+            return array('error'=> 'Error query data!', 'msg' => NULL, 'title' => $title);
+        }
+        if(!self::$ignoreLocked && $data['locked'] && $m == -1)
+        {
+            // $m used in output in post.php
+            return array( 'error' => 'title_locked', 'title' => $title, 'msg' => "(title locked)", 'm' => -1);
+        }
+        return self::handlePlugins($title, $data['handler'], $data['line'], $data['index']);
     }
 
     public static function getTextFromTexts($title, $handler, &$texts, $m = -1)
@@ -365,34 +309,6 @@ class Texts
             }
             Logger::write("Title \"{$title}\" stripped from user {$uid}");
         }
-    }
-
-    public static function jsonTextToRaw()
-    {
-        $result = array();
-        $stmt = Db::query("SELECT title,text FROM texts");
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        for($i = 0; $i < count($data); $i++)
-        {
-            $item = json_decode($data[$i]['text'], true);
-            $title = $data[$i]['title'];
-            if(!is_array($item))
-            {
-                $result[$title] = "Not JSON";
-                continue;
-            }
-            $rawTexts = implode("\n", $item);
-            $stmt2 = Db::prepare("UPDATE texts SET text = ? WHERE title = ?");
-            if($stmt2->execute(array($rawTexts, $title)))
-            {
-                $result[$title] = "Transformed succeeded";
-            }
-            else
-            {
-                $result[$title] = "Transformed failed";
-            }
-        }
-        return $result;
     }
 }
 ?>

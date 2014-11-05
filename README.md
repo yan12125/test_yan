@@ -17,8 +17,7 @@ $ composer install
 
 1. First, create a database named test_yan
 2. Import test_yan.sql. Please mail me for the file.
-3. import stored procedures form the file select_text.sql
-4. Create a user test_yan and grant him at least SELECT, INSERT, UPDATE, DELETE and EXECUTE permissions
+3. Create a user test_yan and grant him at least SELECT, INSERT, UPDATE, and DELETE permissions
 
 # Troubleshoot
 
