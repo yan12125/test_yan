@@ -66,7 +66,7 @@ class Texts
         // need to log before adding title to filter invalid users
         self::logTextModification($title, $access_token);
 
-        $stmt = Db::prepare('insert texts (title,handler,text) values(?,NULL,"")');
+        $stmt = Db::prepare('insert texts (title,handler) values(?,NULL)');
         if($stmt->execute(array($title)) !== false)
         {
             return array('status' => 'success');
@@ -105,17 +105,25 @@ class Texts
         // the same reason as self::addTitle()
         self::logTextModification($title, $access_token);
 
-        $texts = implode("\n", $textArr);
-        $stmt = Db::prepare('update texts set text=?,handler=? where title=?');
-        if($stmt->execute(array($texts, $handler, $title)) === false)
+        Db::prepareAndExecute('DELETE FROM texts_data WHERE title = ?', array($title));
+        $query = 'INSERT INTO texts_data (title,id,line) VALUES ';
+        $params = [];
+        for($i = 0; $i < count($textArr); $i++)
         {
-            throw new Exception("PDO execute() failed: ".Db::getErr());
+            $query .= '(?,?,?)';
+            array_push($params, $title, $i, $textArr[$i]);
+            if($i != count($textArr) - 1)
+            {
+                $query .= ',';
+            }
         }
-        $linesObj = self::updateLines($title, $texts);
+        Db::prepareAndExecute($query, $params);
+        $nLines = count($textArr);
+        Db::prepareAndExecute('UPDATE texts SET handler=?, `lines`=? WHERE title=?', array($handler, $nLines, $title));
 
         return array(
             'status' => 'success', 
-            'lines' => $linesObj['line_count']
+            'lines' => $nLines
         );
     }
 
@@ -128,18 +136,30 @@ class Texts
 
     public static function getTexts($title)
     {
-        $stmt = Db::prepare("SELECT locked,handler,text FROM texts WHERE title=?");
+        Db::query('SET SESSION group_concat_max_len = 10000000');
+        $stmt = Db::prepare('
+            SELECT texts.locked, texts.handler, GROUP_CONCAT(texts_data.line SEPARATOR "\n") AS text_lines
+            FROM texts, texts_data 
+            WHERE texts.title=? AND texts_data.title = texts.title
+            GROUP BY texts.title
+        ');
         $stmt->execute(array($title));
         $arr = $stmt->fetch(PDO::FETCH_ASSOC);
         if($arr === false) // no title matches
         {
-            throw new Exception('Unable to find title '.$title);
+            // maybe newly added?
+            $stmt = Db::prepareAndExecute('SELECT handler, locked FROM texts WHERE title=?', array($title));
+            $arr = $stmt->fetch(PDO::FETCH_ASSOC);
+            if($arr === false)
+            {
+                throw new Exception('Unable to find title '.$title);
+            }
+            $arr['text_lines'] = '';
         }
-        $text = $arr['text'];
-        Util::replaceTab($text);
+        Util::replaceTab($arr['text_lines']);
         return array(
             'handler' => is_null($arr['handler'])?'__none__':$arr['handler'], 
-            'text' => $text, 
+            'text' => $arr['text_lines'], 
             'locked' => (int)$arr['locked']
         );
     }
@@ -251,7 +271,7 @@ class Texts
 
     public static function searchText($term)
     {
-        $stmt = Db::prepare('SELECT title FROM texts WHERE text like ? AND locked=0');
+        $stmt = Db::prepare('SELECT title FROM texts_data WHERE line like ?');
         $stmt->execute(array('%'.$term.'%'));
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map(function ($item) { return $item['title']; }, $data);

@@ -85,6 +85,16 @@ class Db
         return $retval;
     }
 
+    public static function prepareAndExecute($query, array $param)
+    {
+        $stmt = self::prepare($query);
+        if($stmt->execute($param) === false)
+        {
+            throw new Exception('PDOStatement::execute() failed: '.self::getErr());
+        }
+        return $stmt;
+    }
+
     public static function queryToArray($sql)
     {
         Util::ip_only();
