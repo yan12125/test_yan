@@ -45,8 +45,7 @@ class Texts
     {
         // check that specified title exists or not
         // return true if such title exists
-        $stmt = Db::prepare('select count(*) from texts where title=?');
-        $stmt->execute(array($title));
+        $stmt = Db::prepareAndExecute('select count(*) from texts where title=?', array($title));
         $num = $stmt->fetch(PDO::FETCH_NUM);
         return $num[0] > 0;
     }
@@ -66,15 +65,8 @@ class Texts
         // need to log before adding title to filter invalid users
         self::logTextModification($title, $access_token);
 
-        $stmt = Db::prepare('insert texts (title,handler) values(?,NULL)');
-        if($stmt->execute(array($title)) !== false)
-        {
-            return array('status' => 'success');
-        }
-        else
-        {
-            return array('error' => Db::getErr());
-        }
+        Db::prepareAndExecute('INSERT INTO texts (title,handler) VALUES (?,NULL)', array($title));
+        return array('status' => 'success');
     }
 
     public static function updateText($title, $texts, $handler, $access_token)
@@ -130,20 +122,18 @@ class Texts
     protected static function logTextModification($title, $access_token)
     {
         $userData = Users::getDataFromFb($access_token, array('token'));
-        $stmt = Db::prepare('insert texts_log (uid,title,update_time) values (?,?,?)');
-        $stmt->execute(array($userData['uid'], $title, Util::timestr()));
+        Db::prepareAndExecute('INSERT INTO texts_log (uid,title,update_time) VALUES (?,?,?)', array($userData['uid'], $title, Util::timestr()));
     }
 
     public static function getTexts($title)
     {
         Db::query('SET SESSION group_concat_max_len = 10000000');
-        $stmt = Db::prepare('
+        $stmt = Db::prepareAndExecute('
             SELECT texts.locked, texts.handler, GROUP_CONCAT(texts_data.line SEPARATOR "\n") AS text_lines
             FROM texts, texts_data 
             WHERE texts.title=? AND texts_data.title = texts.title
             GROUP BY texts.title
-        ');
-        $stmt->execute(array($title));
+        ', array($title));
         $arr = $stmt->fetch(PDO::FETCH_ASSOC);
         if($arr === false) // no title matches
         {
@@ -172,21 +162,19 @@ class Texts
     {
         if($m == -1)
         {
-            $stmt = Db::prepare('
+            $stmt = Db::prepareAndExecute('
                 SELECT texts_data.line, texts.locked, texts.handler, texts_data.ID AS `index`
                 FROM texts_data, texts, ( SELECT FLOOR(RAND() * `lines`) AS num FROM texts WHERE title = :title) AS rand_id
                 WHERE texts_data.ID = rand_id.num AND texts_data.title = :title AND texts.title = texts_data.title
-            ');
-            $stmt->execute(array('title' => $title));
+            ', array('title' => $title));
         }
         else
         {
-            $stmt = Db::prepare('
+            $stmt = Db::prepareAndExecute('
                 SELECT texts_data.line, texts.locked, texts.handler, texts_data.ID AS `index` 
                 FROM texts_data, texts 
                 WHERE texts_data.ID = :id AND texts_data.title = :title AND texts_data.title = texts.title
-            ');
-            $stmt->execute(array('id' => $m, 'title' => $title));
+            ', array('id' => $m, 'title' => $title));
         }
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
         if($data===false)
@@ -271,8 +259,7 @@ class Texts
 
     public static function searchText($term)
     {
-        $stmt = Db::prepare('SELECT title FROM texts_data WHERE line like ?');
-        $stmt->execute(array('%'.$term.'%'));
+        $stmt = Db::prepareAndExecute('SELECT title FROM texts_data WHERE line LIKE ?', array('%'.$term.'%'));
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map(function ($item) { return $item['title']; }, $data);
     }
@@ -303,14 +290,12 @@ class Texts
     protected static function stripTitle($title)
     {
         // $title is not escaped here, while data in the database might be encoded (browser dependent)
-        $stmt = Db::prepare("SELECT uid FROM users WHERE titles LIKE ? OR titles LIKE ?");
-        $stmt->execute(array('%'.$title.'%', '%'.Util::escapeUtf8($title, true).'%'));
+        $stmt = Db::prepareAndExecute("SELECT uid FROM users WHERE titles LIKE ? OR titles LIKE ?", array('%'.$title.'%', '%'.Util::escapeUtf8($title, true).'%'));
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         for($i = 0; $i < count($results); $i++)
         {
             $uid = $results[$i]['uid'];
-            $stmt2 = Db::prepare("SELECT access_token,titles FROM users WHERE uid = ?");
-            $stmt2->execute(array($uid));
+            $stmt2 = Db::prepareAndExecute("SELECT access_token,titles FROM users WHERE uid = ?", array($uid));
             $results2 = $stmt2->fetch(PDO::FETCH_ASSOC);
             $titles = json_decode($results2['titles'], true);
             $new_titles = array_values(array_filter($titles, function ($item) use ($title) {
@@ -320,8 +305,7 @@ class Texts
             {
                 continue;
             }
-            $stmt3 = Db::prepare("UPDATE users SET titles = ? WHERE uid = ?");
-            $stmt3->execute(array(json_encode($new_titles), $uid));
+            $stmt3 = Db::prepareAndExecute("UPDATE users SET titles = ? WHERE uid = ?", array(json_encode($new_titles), $uid));
             $access_token = $results2['access_token'];
             if(count($new_titles) == 0)
             {
