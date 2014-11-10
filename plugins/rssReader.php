@@ -56,6 +56,7 @@ class RssReader extends PluginBase
     {
         $this->url = $url;
         $this->ch->setOpt(CURLOPT_FOLLOWLOCATION, true);
+        $this->ch->setOpt(CURLOPT_ENCODING, 'gzip,deflate');
         $this->ch->get($this->url);
         $this->xml = $this->ch->response;
         if(empty($this->xml))
