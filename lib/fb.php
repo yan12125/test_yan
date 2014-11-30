@@ -93,7 +93,7 @@ class Fb
                 $token = $result['access_token'];
                 $stmt = Db::prepare('insert into main (name,value) values ("app_token",?)');
                 $stmt->execute(array($token));
-                return $token; 
+                return $token;
             }
             else
             {
@@ -118,12 +118,12 @@ class Fb
     public static function getToken($code, $redirect_uri)
     {
         $context = stream_context_create(array(
-            'http' => array('ignore_errors' => true),
+            'http' => array('ignore_errors' => true)
         ));
         $conf = Config::getParamArr(array('appId', 'appSecret', 'rootUrl'));
         $params = http_build_query(array(
             'client_id' => $conf['appId'], 
-            'redirect_uri' => $redirect_uri,  
+            'redirect_uri' => $redirect_uri, 
             'client_secret' => $conf['appSecret'], 
             'code' => $code
         ));

@@ -28,7 +28,7 @@ class Util
         // restrict the result in the range
         if($nRandom>$max) $nRandom=$max;
         if($nRandom<$min) $nRandom=$min;
-            
+
         return $nRandom;
     }
 
@@ -97,7 +97,7 @@ class Util
         {
             $mask = 32;
         }
-        
+
         $ip_net = ip2long ($net);
         $ip_mask = ~((1 << (32 - $mask)) - 1);
 
@@ -288,6 +288,12 @@ class Util
             }
         } while($filePath != '/');
         return false;
+    }
+
+    // $ch is a Curl instance
+    public static function curlErrorHandler($ch)
+    {
+        throw new Exception($ch->error);
     }
 
     public static function handleException(Exception $e, &$output, $needContext = true)

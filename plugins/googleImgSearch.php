@@ -1,4 +1,6 @@
 <?php
+use \Curl\Curl;
+
 class GoogleImgSearch extends PluginBase
 {
     protected $ch;
@@ -8,15 +10,10 @@ class GoogleImgSearch extends PluginBase
 
     public function __construct()
     {
-        $this->ch = curl_init();
+        $this->ch = new Curl();
         $this->url = null;
         $this->content = null;
         $this->keyword = null;
-    }
-
-    public function __destruct()
-    {
-        curl_close($this->ch);
     }
 
     public function run($param)
@@ -25,26 +22,17 @@ class GoogleImgSearch extends PluginBase
         $this->url = 'https://www.google.com/search?tbm=isch&hl=zh-TW&oe=utf8&q='.urlencode($param);
 
         // get the html of search result page
-        curl_setopt_array($this->ch, array(
-            CURLOPT_URL => $this->url, 
-            CURLOPT_RETURNTRANSFER => 1, 
-            CURLOPT_USERAGENT => Util::CHROME_UA
-        ));
-        $this->content = curl_exec($this->ch);
-        if($this->content === false)
-        {
-            throw new Exception('curl_exec() failed');
-        }
+        $this->ch->setUserAgent(Util::CHROME_UA);
+        $this->ch->setOpt(CURLOPT_FOLLOWLOCATION, true);
+        $this->ch->error(array('Util', 'curlErrorHandler'));
+        $this->ch->get($this->url);
+        $this->content = $this->ch->response;
         return $this->keyword . "\n" . $this->parseResult();
     }
 
-    public function parseResult($content = "")
+    protected function parseResult()
     {
-        $dom=new simple_html_dom();
-        if($content != "")
-        {
-            $this->content = $content;
-        }
+        $dom = new simple_html_dom();
         $dom->load($this->content);
 
         // start to analyze
@@ -65,13 +53,13 @@ class GoogleImgSearch extends PluginBase
         $output = array(
             'message' => $e->getMessage(), 
             'keyword' => $this->keyword, 
-            'url' => $this->url
+            'url' => $this->url, 
+            'content' => $this->content
         );
         Logger::write($e->getMessage(), Logger::ERROR, is_null($this->content)?"":$this->content);
-        $curlErr = curl_error($this->ch);
-        if($curlErr !== '')
+        if($this->ch->error !== '')
         {
-            $output['curl_error'] = $curlErr;
+            $output['curl_error'] = $this->ch->error;
         }
         return $output;
     }

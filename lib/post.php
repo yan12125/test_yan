@@ -112,7 +112,7 @@ class Post
             }
             $req_path = '/'.$this->group[$uid]['post_id'].'/comments';
             $req->push(null, $req_path, 'POST', array(
-                "message"=> $this->response[$uid]['msg'],
+                "message"=> $this->response[$uid]['msg'], 
                 "access_token"=>$this->userData[$uid]['access_token']
             ));
         }
