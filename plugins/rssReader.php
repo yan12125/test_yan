@@ -59,13 +59,9 @@ class RssReader extends PluginBase
         $this->ch->setOpt(CURLOPT_ENCODING, 'gzip,deflate');
         $this->ch->get($this->url);
         $this->xml = $this->ch->response;
-        if(empty($this->xml))
+        if(!($this->xml instanceof SimpleXMLElement))
         {
-            throw new Exception('Failed to retrieve specified url');
-        }
-        if(!mb_check_encoding($this->xml, 'UTF-8'))
-        {
-            throw new Exception('Invalid UTF-8 detected');
+            throw new Exception('No XML returned');
         }
     }
 
