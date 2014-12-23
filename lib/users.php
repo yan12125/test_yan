@@ -174,7 +174,7 @@ class Users
 
     public static function getData($uid, $field)
     {
-        // determine only one field or not. 
+        // determine only one field or not.
         // If only one, return the field directly , or return an array
         $fieldCount = count(explode(',', $field));
         if($field == '*')
@@ -398,15 +398,24 @@ class Users
     public static function listContacts($sortBy, $order)
     {
         Util::ip_only();
-        $sortByColumnName = '';
+        $criteria = array(
+            'name' => 'u1.name', 
+            'name_len' => 'CHAR_LENGTH(u1.name)', 
+            'contact_name' => 'u2.name', 
+            'status' => 'FIELD(u1.status, "expired", "banned", "stopped", "started")'
+        );
+        $sortBys = array();
         switch($sortBy)
         {
             case '':
             case 'name':
-                $sortByColumnName = 'u1.name';
+                $sortBys = array($criteria['name_len'], $criteria['name']);
                 break;
             case 'contact_name':
-                $sortByColumnName = 'u2.name';
+                $sortBys = array($criteria['contact_name'], $criteria['status']);
+                break;
+            case 'status':
+                $sortBys = array($criteria['status'], $criteria['contact_name']);
                 break;
             default:
                 throw new Exception('Invalid sortBy column name');
@@ -414,9 +423,10 @@ class Users
         // CHAR_LENGTH is mysql only
         $query = 'SELECT u1.name AS name, u2.name AS contact_name, u1.status AS status '.
                  'FROM users u1, users u2 '.
-                 'WHERE u1.contact = u2.uid '.
-                 sprintf('ORDER BY CHAR_LENGTH(%s) ', $sortByColumnName).
-                 ($order === 'desc'?'DESC':'ASC');
+                 'WHERE u1.contact = u2.uid ORDER BY ';
+        $order = ($order === 'desc'?'DESC':'ASC');
+        $sortBys = array_map(function($item) use ($order) { return $item.' '.$order; }, $sortBys);
+        $query .= implode(', ', $sortBys);
         $stmt = Db::query($query);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
