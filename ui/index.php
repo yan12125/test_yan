@@ -49,7 +49,7 @@ $(document).on('ready', function(e){
     var selectRandom = function(probability){
         var checkboxes = $('.title_choose :checkbox');
         var titleTexts = $('.title_choose a');
-        checkboxes.attr("checked", false);
+        checkboxes.prop("checked", false);
         titleTexts.removeClass('selected_item');
         for(var i = 0;i < checkboxes.length;i++)
         {
@@ -59,7 +59,7 @@ $(document).on('ready', function(e){
                 {
                     continue;
                 }
-                checkboxes.eq(i).attr('checked', true);
+                checkboxes.eq(i).prop('checked', true);
                 titleTexts.eq(i).addClass('selected_item');
             }
         }
@@ -127,12 +127,12 @@ function getTitles(userTitles)
             var curTitleElement = titles_div.find('input[value="'+title_text+'"]');
             if(disabled)
             {
-                curTitleElement.attr('disabled', true)
+                curTitleElement.prop('disabled', true)
                     .next().addClass('disabled_title');
             }
             if(!disabled && $.inArray(title_text, userTitles) > -1)
             {
-                curTitleElement.attr("checked", true)
+                curTitleElement.prop("checked", true)
                     .next().addClass('selected_item');
             }
         }
@@ -151,7 +151,7 @@ function parseGroups(allGroups, userGroups)
         $('#choose_groups').append('<input type="checkbox" value="'+gid+'"><span>' + allGroups[i].name + '</span><span></span><br>');
         $('#choose_groups input[value="' + gid + '"]').on('click', function(e){
             $(this).next().toggleClass('selected_item');
-            if(!$(this).attr('checked'))
+            if(!$(this).prop('checked'))
             {
                 return;
             }
@@ -164,7 +164,7 @@ function parseGroups(allGroups, userGroups)
                 {
                     $statusText.addClass('error').html('無法讀取社團內容: '+response.error);
                     var gid = this.data.split('&')[1].split('=')[1];
-                    $('#choose_groups input[value="'+gid+'"]').attr('checked', false) // revert selection
+                    $('#choose_groups input[value="'+gid+'"]').prop('checked', false) // revert selection
                         .next().removeClass('selected_item');
                 }
             });
@@ -173,7 +173,7 @@ function parseGroups(allGroups, userGroups)
     var gids = userGroups.split('_');
     for(var i = 0;i < gids.length;i++)
     {
-        $('#choose_groups input[value="'+gids[i]+'"]').attr('checked', true)
+        $('#choose_groups input[value="'+gids[i]+'"]').prop('checked', true)
             .next().addClass('selected_item'); // make selected items bold
     }
 }
@@ -182,8 +182,8 @@ function start2()
 {
     add_user(function(){
         $("#status").html("代洗中");
-        $("#btnStart").attr("disabled", true);
-        $("#btnStop").attr("disabled", false);
+        $("#btnStart").prop("disabled", true);
+        $("#btnStop").prop("disabled", false);
     });
 }
 
@@ -197,8 +197,8 @@ function stop2()
         if(response.status == 'stopped')
         {
             $("#status").html("未開始發文");
-            $("#btnStart").attr("disabled", false);
-            $("#btnStop").attr("disabled", true);
+            $("#btnStart").prop("disabled", false);
+            $("#btnStop").prop("disabled", true);
         }
         else
         {
@@ -275,8 +275,8 @@ function get_info(initial)
         if(response.status == "started")
         {
             $("#status").html("代洗中");
-            $("#btnStart").attr("disabled", true);
-            $("#btnStop").attr("disabled", false);
+            $("#btnStart").prop("disabled", true);
+            $("#btnStop").prop("disabled", false);
         }
         if(initial)
         {
