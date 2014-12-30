@@ -10,7 +10,7 @@ echo External::loadJsCss('jquery-ui', 'jqGrid');
 ?>
 <style>
 /*
- * jqGrid word wrapping 
+ * jqGrid word wrapping
  * http://stackoverflow.com/questions/6510144
  */
 .ui-jqgrid tr.jqgrow td
@@ -21,21 +21,27 @@ echo External::loadJsCss('jquery-ui', 'jqGrid');
 }
 </style>
 <script>
-function createTable(_action, columns, _caption, _rowNum)
+function createTable(curAction)
 {
     $('#wrapper').html('<table id="list"></table><div id="pager"></div>');
     var options = {
         url: '../wrapper.php',
-        postData: { action: _action },
+        postData: { action: curAction.action },
         mtype: 'POST', 
         datatype: "json",
         colNames: [],
         colModel: [],
-        rowNum: _rowNum, 
+        rowNum: curAction.row_num, 
         pager: '#pager',
-        caption: _caption, 
+        caption: curAction.caption, 
         height: "auto"
     };
+    if(curAction.defaultSort)
+    {
+        options.sortname = curAction.defaultSort;
+        options.sortorder = 'asc';
+    }
+    var columns = curAction.columns;
     for(var i = 0;i < columns.length;i++)
     {
         options.colNames.push(columns[i].caption);
@@ -46,7 +52,6 @@ function createTable(_action, columns, _caption, _rowNum)
     }
     $("#list").jqGrid(options);
     $("#list").jqGrid('navGrid','#pager',{edit:false,add:false,del:false});
-    $('#list').setGridParam({ rowNum: _rowNum });
 }
 
 $(document).on('ready', function (e) {
@@ -111,7 +116,8 @@ $(document).on('ready', function (e) {
                 { caption: 'Contact', name: 'contact_name', width: 200 }, 
                 { caption: 'Status', name: 'status', width: 150 }
             ], 
-            row_num: 40
+            row_num: 40, 
+            defaultSort: 'contact_name'
         }
     };
     $('button').each(function (index, elem) {
@@ -120,7 +126,7 @@ $(document).on('ready', function (e) {
             var cur_action = parameters[elem.id];
             $(elem).text(cur_action.caption);
             $(elem).on('click', function (e) {
-                createTable(cur_action.action, cur_action.columns, cur_action.caption, cur_action.row_num);
+                createTable(cur_action);
             });
         }
     });

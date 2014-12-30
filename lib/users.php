@@ -397,7 +397,6 @@ class Users
 
     public static function listContacts($sortBy, $order)
     {
-        Util::ip_only();
         $criteria = array(
             'name' => 'u1.name', 
             'name_len' => 'CHAR_LENGTH(u1.name)', 
