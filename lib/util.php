@@ -290,6 +290,12 @@ class Util
         return false;
     }
 
+    public static function getWebSocketPort()
+    {
+        self::ip_only();
+        return array('port' => Config::getParam('wsPort'));
+    }
+
     // $ch is a Curl instance
     public static function curlErrorHandler($ch)
     {

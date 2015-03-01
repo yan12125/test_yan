@@ -148,6 +148,12 @@ try
         case 'get_token':
             $output = Fb::getTokenFromSession();
             break;
+        /*
+         * util.php
+         */
+        case 'get_websocket_port':
+            $output = Util::getWebSocketPort();
+            break;
 
         default:
             throw new Exception("Unknown action");
@@ -165,8 +171,8 @@ catch(Exception $e)
     if($str === false)
     {
         echo json_encode(array(
-            'error' => json_last_error_msg(), 
-            'response_error' => print_r($response_error, true), 
+            'error' => json_last_error_msg(),
+            'response_error' => print_r($response_error, true),
             'next_wait_time' => 300
         ));
     }
