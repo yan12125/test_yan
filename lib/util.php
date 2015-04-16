@@ -229,14 +229,17 @@ class Util
 
         // check extensions
         $required = array('curl', 'PDO', 'pdo_mysql', 'openssl', 'mbstring', 'iconv');
-        $loaded = get_loaded_extensions();
-        $diff = array_diff($required, $loaded);
-        if(count($diff) != 0)
+        $something_missing = false;
+        foreach($required as $ext)
         {
-            foreach($diff as $ext)
+            if(!extension_loaded($ext))
             {
                 echo "Extension {$ext} required.\n";
+                $something_missing = true;
             }
+        }
+        if($something_missing)
+        {
             exit(0);
         }
     }
