@@ -14,10 +14,10 @@ function main()
 {
     $port = Config::getParam('wsPort');
     print("Listening on port ".$port."\n");
-    $app = new Ratchet\App('localhost', $port);
-    $app->route('/', new Handler(), array('*'));
     try
     {
+        $app = new Ratchet\App('localhost', $port);
+        $app->route('/', new Handler(), array('*'));
         $app->run();
     }
     catch(Exception $e)
