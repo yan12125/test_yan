@@ -8,7 +8,6 @@ test*
 
 # For composer.phar
 /vendor/
-/composer.lock
 
 # For bower
 /bower_components/
