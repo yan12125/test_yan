@@ -13,6 +13,21 @@ function signal_handler($signal)
 function main()
 {
     $port = Config::getParam('wsPort');
+    $options = getopt('', array('port:'));
+    if(isset($options['port']))
+    {
+        if(!is_numeric($options['port']))
+        {
+            print("Error: Non-numeric value {$options['port']} for port\n");
+            return;
+        }
+        $port = intval($options['port']);
+        if($port >= 65536 || $port <= 0)
+        {
+            print("Error: Invalid port value {$port}\n");
+            return;
+        }
+    }
     print("Listening on port ".$port."\n");
     try
     {

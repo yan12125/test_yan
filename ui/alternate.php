@@ -84,7 +84,7 @@ var pause = false;
 var b_slow_stop = false;
 var conn = null; // websocket connection
 var wsQueue = [];
-var wsPort = <?php echo $wsPort; ?>
+var wsPort = <?php echo $wsPort; ?>;
 
 function handlePost(uid, response)
 {
@@ -231,7 +231,7 @@ function sendWebsocketRequest(_data, realPostUids)
 {
     if(!conn)
     {
-        conn = new WebSocket('ws://localhost:23456/');
+        conn = new WebSocket('ws://localhost:'+$('#wsPort').val()+'/');
     }
     conn.onmessage = function (msg) {
         var response = null;
@@ -434,6 +434,8 @@ function printError()
 }
 
 $(document).on('ready', function(e){
+    $('#wsPort').val(wsPort);
+
     var ids = [ '#btn_start', '#btn_stop', '#btn_slow_stop', '#btn_pause', '#btn_clearLog', '#btn_print_error' ];
     var functions = [ update_userList, stop, slow_stop, pause_or_resume, clearLog, printError ];
     for(var i = 0; i < ids.length; i++)
@@ -485,10 +487,10 @@ $(document).on('ready', function(e){
         <button id="btn_print_error">Print errors</button>
     </div>
     <input type="checkbox" id="chk_debug">Debug<br>
+    wsPort: <input type="number" id="wsPort"><br>
     <a href="sql.php">execute SQL</a>
     <a href="table.php">Tables</a>
     <a href="text_mgr.php">Text Manager</a><br>
 </div>
 </body>
 </html>
-
