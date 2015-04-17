@@ -14,23 +14,33 @@ function signal_handler($signal)
 {
 }
 
-function main()
+function parse_argv(&$port)
 {
-    $port = Config::getParam('wsPort');
     $options = getopt('', array('port:'));
     if(isset($options['port']))
     {
         if(!is_numeric($options['port']))
         {
             print("Error: Non-numeric value {$options['port']} for port\n");
-            return;
+            return -1;
         }
-        $port = intval($options['port']);
-        if($port >= 65536 || $port <= 0)
+        $value= intval($options['port']);
+        if($value >= 65536 || $value <= 0)
         {
-            print("Error: Invalid port value {$port}\n");
-            return;
+            print("Error: Invalid port value {$value}\n");
+            return -2;
         }
+        $port = $value;
+    }
+    return 0;
+}
+
+function main()
+{
+    $port = Config::getParam('wsPort');
+    if(parse_argv($port) < 0)
+    {
+        return;
     }
     print("Listening on port ".$port."\n");
     try
@@ -41,8 +51,8 @@ function main()
     catch(Exception $e)
     {
         print($e->getMessage()."\n");
-        print($e->getTraceAsString());
-        echo "\nExitting...\n";
+        print($e->getTraceAsString()."\n");
+        print("Exitting...\n");
     }
 }
 
