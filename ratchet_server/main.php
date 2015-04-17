@@ -1,4 +1,8 @@
 <?php
+use Ratchet\Server\IoServer;
+use Ratchet\Http\HttpServer;
+use Ratchet\WebSocket\WsServer;
+
 chdir(dirname(__FILE__));
 require '../common_inc.php';
 require './handler.php';
@@ -31,9 +35,8 @@ function main()
     print("Listening on port ".$port."\n");
     try
     {
-        $app = new Ratchet\App('localhost', $port);
-        $app->route('/', new Handler(), array('*'));
-        $app->run();
+        $server = IoServer::factory(new HttpServer(new WsServer(new Handler)), $port, '127.0.0.1');
+        $server->run();
     }
     catch(Exception $e)
     {
