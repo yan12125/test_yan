@@ -1,15 +1,8 @@
+# vim: set ft=conf:
 .htsecret
 TODO
 
-# vim temporary files
-.swp
-.swo
-.*.swp
-
 test*
-
-# created when merging
-*.orig
 
 *.pyc
 
