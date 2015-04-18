@@ -32,6 +32,19 @@ class Util
         return $nRandom;
     }
 
+    public static function remote_ip()
+    {
+        if(php_sapi_name() == 'cli')
+        {
+            $remote_ip = '127.0.0.1';
+        }
+        else
+        {
+            $remote_ip = $_SERVER['REMOTE_ADDR'];
+        }
+        return $remote_ip;
+    }
+
     /*
      * check required arguments in $_POST
      * $params: array of field names of required arguments
@@ -58,15 +71,8 @@ class Util
         {
             $IPs = func_get_args();
         }
-        if(php_sapi_name() == 'cli')
-        {
-            $remote_ip = '127.0.0.1';
-        }
-        else
-        {
-            $remote_ip = $_SERVER['REMOTE_ADDR'];
-        }
         $ok = false;
+        $remote_ip = self::remote_ip();
         for($i = 0;$i < count($IPs);$i++)
         {
             if(self::ipCIDRCheck($remote_ip, $IPs[$i]))
@@ -293,10 +299,34 @@ class Util
         return false;
     }
 
+    public static function getCallerNameAndLine($offset = 0)
+    {
+        $backtrace = debug_backtrace();
+        $function = '__main__'; // well, a python style
+        if(count($backtrace) > $offset + 1) // +1 for this function
+        {
+            $previous_call = $backtrace[$offset + 1];
+            $function = $previous_call['function'] . ':' . $previous_call['line'];
+            if(isset($previous_call['class']))
+            {
+                $function = $previous_call['class'] . '::' . $function;
+            }
+        }
+        return $function;
+    }
+
     public static function getWebSocketPort()
     {
         self::ip_only();
         return array('port' => Config::getParam('wsPort'));
+    }
+
+    public static function printMemoryUsage()
+    {
+        if(php_sapi_name() == 'cli')
+        {
+            print('At '.self::getCallerNameAndLine().', memory usage='.memory_get_usage()."\n");
+        }
     }
 
     // $ch is a Curl instance
