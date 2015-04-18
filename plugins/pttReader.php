@@ -1,5 +1,4 @@
 <?php
-use \Curl\Curl;
 
 class PttReader extends PluginBase
 {
@@ -22,12 +21,16 @@ class PttReader extends PluginBase
 
     protected function parsePage($url)
     {
-        $conn = new Curl();
-        $conn->setOpt(CURLOPT_FOLLOWLOCATION, true);
-        $conn->setCookie('over18', '1');
-        $conn->setUserAgent(Util::FIREFOX_UA);
-        $conn->get($url);
-        $this->lastContent = $content = $conn->response;
+        $conn = curl_init();
+        curl_setopt_array($conn, array(
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_USERAGENT => Util::FIREFOX_UA,
+            CURLOPT_URL => $url,
+            CURLOPT_COOKIE => 'over18=1'
+        ));
+        $this->lastContent = $content = curl_exec($conn);
+        curl_close($conn);
 
         $dom = new simple_html_dom();
         $dom->load($content);
@@ -40,6 +43,7 @@ class PttReader extends PluginBase
             );
         }
         $links = $dom->find('.pull-right a');
+        $dom->clear(); // to prevent memory leak
         $this->nextLnk = $this->getFullUrl($links[1]->href);
     }
 
