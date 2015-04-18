@@ -305,11 +305,12 @@ class Util
         $function = '__main__'; // well, a python style
         if(count($backtrace) > $offset + 1) // +1 for this function
         {
-            $previous_call = $backtrace[$offset + 1];
-            $function = $previous_call['function'] . ':' . $previous_call['line'];
-            if(isset($previous_call['class']))
+            $prev_call = $backtrace[$offset + 1];
+            $cur_call = $backtrace[$offset];
+            $function = $prev_call['function'] . ':' . $cur_call['line'];
+            if(isset($prev_call['class']))
             {
-                $function = $previous_call['class'] . '::' . $function;
+                $function = $prev_call['class'] . '::' . $function;
             }
         }
         return $function;
@@ -325,7 +326,7 @@ class Util
     {
         if(php_sapi_name() == 'cli')
         {
-            print('At '.self::getCallerNameAndLine().', memory usage='.memory_get_usage()."\n");
+            print('At '.self::getCallerNameAndLine(1).', memory usage='.memory_get_usage()."\n");
         }
     }
 
