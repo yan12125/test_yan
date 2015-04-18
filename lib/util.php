@@ -5,6 +5,7 @@ class Util
     const CHROME_UA =  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.146 Safari/537.36';
     public static $debug = false;
     public static $locales = array('en_US', 'zh_TW');
+    private static $jsonDecoder = null;
 
     /*
         Usage: Use Box-Muller method to get a random number with a Normal Distribution (ND)
@@ -198,6 +199,15 @@ class Util
         {
             return $str;
         }
+    }
+
+    public static function decodeJsonLoose($string)
+    {
+        if(is_null(self::$jsonDecoder))
+        {
+            self::$jsonDecoder = new Services_JSON(SERVICES_JSON_LOOSE_TYPE);
+        }
+        return self::$jsonDecoder->decode($string);
     }
 
     public static function getPageUrl($strip_fields = array())
