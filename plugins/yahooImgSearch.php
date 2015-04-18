@@ -18,10 +18,8 @@ class YahooImgSearch extends PluginBase
         $dom = new simple_html_dom();
         $dom->load($this->content);
         $items = $dom->find('.ld a');
-        $n = rand(0, count($items) - 1);
-        $url1 = $items[$n]->href;
+        parse_str(parse_url(Util::array_rand_item($items)->href, PHP_URL_QUERY), $data2);
         $dom->clear();
-        parse_str(parse_url($url1, PHP_URL_QUERY), $data2);
         return $param."\n".'http://'.$data2['imgurl'];
     }
 

@@ -44,8 +44,7 @@ class GoogleImgSearch extends PluginBase
         if(preg_match_all('/\<div[^>]+class="[^"]*rg_di[^"]*"[^>]*\>\s*\<a[^>]+href="([^"]+)"/', $this->content, $matches))
         {
             $matches = $matches[1];
-            $m = rand(0, count($matches) - 1);
-            $link = $matches[$m];
+            $link = Util::array_rand_item($matches);
             $query = html_entity_decode(parse_url($link)['query']);
             parse_str($query, $parts);
             return $parts['imgurl'];

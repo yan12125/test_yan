@@ -27,9 +27,9 @@ class RssReader extends PluginBase
         {
             if($feed->channel->item->count() > 0)
             {
-                $n = rand(0, $feed->channel->item->count()-1);
-                $url = $feed->channel->item[$n]->link;
-                $title = $feed->channel->item[$n]->title;
+                $item = Util::xmlNodesRand($feed->channel->item);
+                $url = $item->link;
+                $title = $item->title;
             }
             else
             {
@@ -40,8 +40,7 @@ class RssReader extends PluginBase
         // Atom
         else if($feed->entry->count() != 0)
         {
-            $n = rand(0, $feed->entry->count() - 1);
-            $item = $feed->entry[$n];
+            $item = Util::xmlNodesRand($feed->entry);
             $url = $item->link['href'];
             $title = $item->title;
         }

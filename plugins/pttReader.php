@@ -14,8 +14,7 @@ class PttReader extends PluginBase
         {
             $this->parsePage($this->nextLnk);
         }
-        $i = rand(0, count($this->items) - 1);
-        $item = $this->items[$i];
+        $item = Util::array_rand_item($this->items);
         return $item['title']."\n".$item['link'];
     }
 

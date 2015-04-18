@@ -285,6 +285,16 @@ class Util
         return $str;
     }
 
+    public static function xmlNodesRand($nodes)
+    {
+        return $nodes[rand(0, $nodes->count() - 1)];
+    }
+
+    public static function array_rand_item(array $arr)
+    {
+        return $arr[array_rand($arr)];
+    }
+
     public static function isSubFile($filePath, $dirPath)
     {
         $dirPath = realpath($dirPath);

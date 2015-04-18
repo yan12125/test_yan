@@ -105,7 +105,7 @@ class Groups
         }
         $IDs = explode('_', $curGroup['feed_id']);
         return array(
-            'post_id' => $gid.'_'.$IDs[array_rand($IDs)], // post id format for graph api
+            'post_id' => $gid.'_'.Util::array_rand_item($IDs), // post id format for graph api
             'name' => $curGroup['title'], 
             'gid' => $gid
         );
@@ -114,7 +114,7 @@ class Groups
     public static function getFromGroups($gid, $access_token)
     {
         $gids = explode('_', $gid);
-        return self::getFromGroup($gids[array_rand($gids)], $access_token);
+        return self::getFromGroup(Util::array_rand_item($gids), $access_token);
     }
 
     protected static function updateGroupMemberCache($gid, $access_token)

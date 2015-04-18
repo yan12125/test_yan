@@ -235,8 +235,7 @@ class Texts
     public static function getRandomTextFromTitles($titles)
     {
         $arr_titles = json_decode($titles);
-        $n = rand(0, count($arr_titles)-1);
-        return Texts::getTextFromTitle($arr_titles[$n]);
+        return Texts::getTextFromTitle(Util::array_rand_item($arr_titles));
     }
 
     public static function textsLog($page, $rows)

@@ -22,8 +22,7 @@ class BingImgSearch extends PluginBase
 
         $dom = str_get_html($ch->response);
         $links = $dom->find('.dg_u a');
-        $link = $links[array_rand($links)];
-        $imgData = $this->decoder->decode(htmlspecialchars_decode($link->m));
+        $imgData = $this->decoder->decode(htmlspecialchars_decode(Util::array_rand_item($links)->m));
         return $param."\n".$imgData['oi'];
     }
 
