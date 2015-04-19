@@ -6,7 +6,7 @@
 <?php
 require '../common_inc.php';
 External::setRelativePath('..');
-echo External::loadJsCss('codemirror', 'phpjs');
+echo External::loadJsCss('codemirror');
 ?>
 <script>
 $(document).on('ready', function(e){

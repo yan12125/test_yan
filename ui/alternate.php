@@ -5,7 +5,7 @@ $wsPort = null;
 try
 {
     External::setRelativePath('..');
-    $externalSrc = External::loadJsCss('phpjs');
+    $externalSrc = External::loadJsCss();
     $wsPort = Config::getParam('wsPort');
 }
 catch(Exception $e)

@@ -10,7 +10,7 @@ Fb::login();
 <link rel="stylesheet" href="index.css">
 <?php
 External::setRelativePath('..');
-echo External::loadJsCss('jquery-ui', 'validate', 'phpjs');
+echo External::loadJsCss('jquery-ui', 'validate');
 ?>
 <script src="jquery-group-member.js"></script>
 <base target="_blank">

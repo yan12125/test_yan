@@ -34,9 +34,13 @@ class External
             'path' => 'AjaxQ/', 
             'files' => array('ajaxq.js')
         ), 
-        'phpjs' => array(
-            'path' => 'phpjs/functions/', 
-            'files' => array('strings/sprintf.js', 'strings/parse_str.js')
+        'sprintf' => array(
+            'path' => 'sprintf/src/',
+            'files' => array('sprintf.js')
+        ),
+        'query-string' => array(
+            'path' => 'query-string/',
+            'files' => array('query-string.js')
         )
     );
 
@@ -63,7 +67,7 @@ class External
     public static function loadJsCss()
     {
         $modules = func_get_args();
-        array_unshift($modules, 'jquery', 'ajaxq');
+        array_unshift($modules, 'jquery', 'ajaxq', 'sprintf', 'query-string');
         $files = self::load($modules);
         array_push($files, 'ui/util.js', 'ui/common.css');
         $output = '';

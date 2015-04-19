@@ -35,7 +35,6 @@ function selectTitleByUrl()
 {
     // title may contain special chars such as ?
     // so encode in index.php and decode here
-    var arr = {};
     var query = location.search;
     if(query[0] != '?')
     {
@@ -44,7 +43,7 @@ function selectTitleByUrl()
     }
     else
     {
-        parse_str(query.substring(1), arr);
+        var arr = queryString.parse(query);
         loadText(arr.title);
     }
 }

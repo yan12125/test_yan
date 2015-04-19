@@ -43,15 +43,11 @@ var Util = {
 
 function getAccessToken(cb)
 {
-    if(typeof parse_str == 'function')
+    var arr = queryString.parse(location.search);
+    if(arr.access_token)
     {
-        var arr = {};
-        parse_str(location.search.substring(1), arr);
-        if(arr.access_token)
-        {
-            cb({ access_token: arr.access_token });
-            return;
-        }
+        cb({ access_token: arr.access_token });
+        return;
     }
     callWrapper('get_token', function(response){
         cb(response);
