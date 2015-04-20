@@ -326,12 +326,16 @@ class Util
         if(count($backtrace) > $offset + 1) // +1 for this function
         {
             $prev_call = $backtrace[$offset + 1];
-            $cur_call = $backtrace[$offset];
-            $function = $prev_call['function'] . ':' . $cur_call['line'];
+            $function = $prev_call['function'];
             if(isset($prev_call['class']))
             {
                 $function = $prev_call['class'] . '::' . $function;
             }
+        }
+        if(count($backtrace) > $offset)
+        {
+            $cur_call = $backtrace[$offset];
+            $function .= ':' . $cur_call['line'];
         }
         return $function;
     }
