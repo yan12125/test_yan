@@ -33,7 +33,7 @@ class PostTest extends Common
         Texts::$ignoreLocked = true;
         Users::setData($this->uid, array('goal' => 99999999, 'titles' => json_encode(array("PluginError"))));
         $ret = Post::postUids($this->uid, array());
-        $this->assertEquals('RssReader', $ret['previous']['plugin']);
+        $this->assertEquals('RssReader', $ret[$this->uid]['previous']['plugin']);
     }
 
     public function testMultipleUsers()

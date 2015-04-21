@@ -9,21 +9,13 @@ class UtilTest extends PHPUnit_Framework_TestCase
      */
     public function testErrorHandler()
     {
-        Util::errorHandler(8, 'Test exception', __FILE__, __LINE__);
+        Util::errorHandler(8, 'Test exception', __FILE__, __LINE__, array());
     }
 
     public function testGetSeverityStr()
     {
         $this->assertEquals('E_ERROR', Util::getSeverityStr(1));
         $this->assertNull(Util::getSeverityStr(100));
-    }
-
-    public function testAddIncludePath()
-    {
-        $old_path = set_include_path('/');
-        Util::addIncludePath('/lib');
-        $this->assertEquals('/:/lib', get_include_path());
-        set_include_path($old_path);
     }
 
     public function testReplaceTab()

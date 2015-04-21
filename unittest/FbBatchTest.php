@@ -6,7 +6,7 @@ class FbBatchTest extends PHPUnit_Framework_TestCase
     public function testApi()
     {
         $result = Fb::api('/100002601797125');
-        $this->assertEquals("Yen ChiHsuan", $result['name']);
+        $this->assertEquals("顏志軒", $result['name']);
     }
 
     public function testMultipleGet()
@@ -15,8 +15,8 @@ class FbBatchTest extends PHPUnit_Framework_TestCase
         $req->push(null, '/100002601797125');
         $req->push(null, '/100002601797125');
         $result = $req->run();
-        $this->assertEquals("Yen ChiHsuan", $result[0]['name']);
-        $this->assertEquals("Yen ChiHsuan", $result[1]['name']);
+        $this->assertEquals("顏志軒", $result[0]['name']);
+        $this->assertEquals("顏志軒", $result[1]['name']);
     }
 }
 ?>
