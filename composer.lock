@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "0f2e289143770a0b30e77232f94c7c0b",
+    "hash": "007de7246e2b3e5bb663f3df3885b947",
     "packages": [
         {
             "name": "cboden/ratchet",
@@ -401,7 +401,7 @@
         },
         {
             "name": "pear/pear_exception",
-            "version": "dev-master",
+            "version": "v1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pear/PEAR_Exception.git",
@@ -821,8 +821,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "pear/services_json": 20,
-        "pear/pear_exception": 20
+        "pear/services_json": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

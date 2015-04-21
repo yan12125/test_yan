@@ -9,7 +9,6 @@
         "greenlion/php-sql-parser": "*",
         "facebook/php-sdk": "*",
         "cboden/Ratchet": "*",
-        "pear/services_json": "dev-trunk",
-        "pear/pear_exception": "dev-master"
+        "pear/services_json": "dev-trunk"
     }
 }
