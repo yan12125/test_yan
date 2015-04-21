@@ -15,11 +15,11 @@ class YahooImgSearch extends PluginBase
         $this->content = curl_exec($ch);
         curl_close($ch);
 
-        $dom = new simple_html_dom();
-        $dom->load($this->content);
-        $items = $dom->find('.ld a');
-        parse_str(parse_url(Util::array_rand_item($items)->href, PHP_URL_QUERY), $data2);
-        $dom->clear();
+        if(!preg_match_all("/\<li[^>]+class=\"ld \"[^>]+\>\s*\<a[^>]+href='([^']+)'/", $this->content, $matches))
+        {
+            throw Exception('Unable to find images');
+        }
+        parse_str(parse_url(Util::array_rand_item($matches[1]), PHP_URL_QUERY), $data2);
         return $param."\n".'http://'.$data2['imgurl'];
     }
 

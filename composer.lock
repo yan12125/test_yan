@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "88372229b960d004f2304d49f83cbc50",
+    "hash": "d3ed041ccd4c76b120b930df0a69abb6",
     "packages": [
         {
             "name": "cboden/ratchet",
@@ -730,49 +730,6 @@
             "time": "2014-09-10 03:32:31"
         },
         {
-            "name": "shark/simple_html_dom",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/samacs/simple_html_dom.git",
-                "reference": "842b3fc1f9f0c70b8c1b2e93fc451834c42e384d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/samacs/simple_html_dom/zipball/842b3fc1f9f0c70b8c1b2e93fc451834c42e384d",
-                "reference": "842b3fc1f9f0c70b8c1b2e93fc451834c42e384d",
-                "shasum": ""
-            },
-            "require": {
-                "ext-mbstring": "*",
-                "php": ">=5.2.4"
-            },
-            "type": "library",
-            "autoload": {
-                "classmap": [
-                    "simple_html_dom.php"
-                ],
-                "files": [
-                    "simple_html_dom.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "authors": [
-                {
-                    "name": "S.C. Chen",
-                    "email": "me578022@gmail.com",
-                    "homepage": "http://simplehtmldom.sourceforge.net/"
-                }
-            ],
-            "description": "Simple HTML DOM package.",
-            "homepage": "http://simplehtmldom.sourceforge.net/",
-            "keywords": [
-                "dom",
-                "php dom"
-            ],
-            "time": "2014-10-17 00:16:28"
-        },
-        {
             "name": "symfony/event-dispatcher",
             "version": "v2.6.6",
             "target-dir": "Symfony/Component/EventDispatcher",
@@ -959,7 +916,6 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "shark/simple_html_dom": 20,
         "phpdocumentor/reflection-docblock": 20,
         "pear/services_json": 20,
         "pear/pear_exception": 20

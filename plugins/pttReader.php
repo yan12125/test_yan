@@ -31,19 +31,18 @@ class PttReader extends PluginBase
         $this->lastContent = $content = curl_exec($conn);
         curl_close($conn);
 
-        $dom = new simple_html_dom();
-        $dom->load($content);
-        $entries = $dom->find(".r-ent .title a");
-        for($i = 0; $i < count($entries); $i++)
+        if(preg_match_all('/\<div class="title"\>\s*\<a href="([^"]+)"\>([^<]+)\<\/a\>/', $content, $matches))
         {
-            $this->items[] = array(
-                'link' => $this->getFullUrl($entries[$i]->href), 
-                'title' => $entries[$i]->innertext
-            );
+            for($i = 0; $i < count($matches[0]); $i++)
+            {
+                $this->items[] = array(
+                    'link' => $this->getFullUrl($matches[1][$i]), 
+                    'title' => $matches[2][$i]
+                );
+            }
         }
-        $links = $dom->find('.pull-right a');
-        $dom->clear(); // to prevent memory leak
-        $this->nextLnk = $this->getFullUrl($links[1]->href);
+        preg_match('/\<a[^>]+href="([^"]+)"\>[^<]+上頁/', $content, $matches);
+        $this->nextLnk = $this->getFullUrl($matches[1]);
     }
 
     protected function getFullUrl($relativeUrl)
