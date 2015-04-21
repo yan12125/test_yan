@@ -17,7 +17,7 @@ class YahooImgSearch extends PluginBase
 
         if(!preg_match_all("/\<li[^>]+class=\"ld \"[^>]+\>\s*\<a[^>]+href='([^']+)'/", $this->content, $matches))
         {
-            throw Exception('Unable to find images');
+            throw new Exception('Unable to find images');
         }
         parse_str(parse_url(Util::array_rand_item($matches[1]), PHP_URL_QUERY), $data2);
         return $param."\n".'http://'.$data2['imgurl'];
