@@ -1,6 +1,4 @@
 <?php
-use \Curl\Curl;
-
 class GoogleImgSearch extends PluginBase
 {
     protected $url;

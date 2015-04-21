@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "d3ed041ccd4c76b120b930df0a69abb6",
+    "hash": "4dc476e8c7389eafaae1e49702c28dba",
     "packages": [
         {
             "name": "cboden/ratchet",
@@ -501,51 +501,6 @@
                 "source": "https://github.com/pear/Services_JSON"
             },
             "time": "2014-02-21 11:51:56"
-        },
-        {
-            "name": "php-curl-class/php-curl-class",
-            "version": "3.4.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/php-curl-class/php-curl-class.git",
-                "reference": "343252cfdfd6111d2d9f367e81dbe1c52b5c6085"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/php-curl-class/php-curl-class/zipball/343252cfdfd6111d2d9f367e81dbe1c52b5c6085",
-                "reference": "343252cfdfd6111d2d9f367e81dbe1c52b5c6085",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "php": ">=5.3"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "*"
-            },
-            "type": "library",
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Unlicense"
-            ],
-            "authors": [
-                {
-                    "name": "Zach Borboa"
-                }
-            ],
-            "description": "PHP Curl Class is an object-oriented wrapper of the PHP cURL extension.",
-            "homepage": "https://github.com/php-curl-class/php-curl-class",
-            "keywords": [
-                "class",
-                "curl",
-                "php"
-            ],
-            "time": "2015-04-01 18:12:04"
         },
         {
             "name": "phpdocumentor/reflection-docblock",

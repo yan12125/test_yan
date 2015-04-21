@@ -1,6 +1,4 @@
 <?php
-use \Curl\Curl;
-
 class BingImgSearch extends PluginBase
 {
     protected $url = null;
@@ -8,16 +6,20 @@ class BingImgSearch extends PluginBase
 
     public function run($param)
     {
-        $ch = new Curl();
+        $ch = curl_init();
         $this->url = "http://www.bing.com/images/search?q=".urlencode($param);
 
-        $ch->get($this->url);
-        $this->content = $ch->response;
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => $this->url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_USERAGENT => Util::FIREFOX_UA,
+        ));
+        $this->content = curl_exec($ch);
+        curl_close($ch);
 
-        $dom = str_get_html($ch->response);
-        $links = $dom->find('.dg_u a');
-        $imgData = Util::decodeJsonLoose(htmlspecialchars_decode(Util::array_rand_item($links)->m));
-        return $param."\n".$imgData['oi'];
+        preg_match_all('/\<div class="dg_u"[^>]+\>\<a[^>]+m="([^"]+)"/', $this->content, $matches);
+        $imgData = Util::decodeJsonLoose(htmlspecialchars_decode(Util::array_rand_item($matches[1])));
+        return $param."\n".$imgData['imgurl'];
     }
 
     public function handleException($e)
