@@ -1,0 +1,3 @@
+1. All data you provided to this App is used in this App only. The site manager will never use your data in other places.
+2. Some of data may be stored on the server, and the site manager will always keep your data from unauthorized access.
+3. Data stored on the server are not deleted automatically when users remove this App. To completely remove data, mail to the site manager.
