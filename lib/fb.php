@@ -215,5 +215,62 @@ class Fb
         }
         return $arr_result;
     }
+
+    public static function login2($username, $password)
+    {
+        $login_url = 'https://www.facebook.com/login.php?next=http%3A%2F%2Ffacebook.com%2Fhome.php&login_attempt=1';
+
+        $ch = curl_init();
+        curl_setopt_array($ch, array(
+            CURLOPT_HEADER => true,
+            CURLOPT_URL => $login_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_USERAGENT => Util::FIREFOX_UA,
+        ));
+        $page = curl_exec($ch);
+        preg_match('/name="lsd" value="([^"]*)"/', $page, $matches);
+        $lsd = $matches[1];
+        preg_match('/name="lgnrnd" value="([^"]*?)"/', $page, $matches);
+        $lgnrnd = $matches[1];
+        curl_setopt_array($ch, array(
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query(array(
+                'email' => $username,
+                'pass' => $password,
+                'lsd' => $lsd,
+                'lgnrnd' => $lgnrnd,
+                'next' => 'http://facebook.com/home.php',
+                'default_persistent' => '0',
+                'legacy_return' => '1',
+                'timezone' => '-60',
+                'trynum' => '1',
+            )),
+            CURLOPT_COOKIE => http_build_query(array(
+                'reg_fb_ref' => $login_url,
+                'reg_fb_gate' => $login_url,
+            ), '', ';'),
+        ));
+        $data = curl_exec($ch);
+        if(preg_match('/<form/', $data) == 1)
+        {
+            return array('error' => 'Wrong username/password');
+        }
+        preg_match('/xs=([^;]+);/', $data, $matches);
+        $xs = urldecode($matches[1]);
+        preg_match('/c_user=([^;]+);/', $data, $matches);
+        $uid = $matches[1];
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => 'https://www.facebook.com/home.php',
+            CURLOPT_COOKIE => http_build_query(array(
+                'xs' => $xs,
+                'c_user' => $uid,
+            ), '', ';'),
+            CURLOPT_POST => false,
+        ));
+        $data = curl_exec($ch);
+        preg_match('/name="fb_dtsg" value="([^"]+)"/', $data, $matches);
+        $fb_dtsg = $matches[1];
+        return array('uid' => $uid, 'access_token' => $uid.'_'.$xs.'_'.$fb_dtsg);
+    }
 }
 ?>

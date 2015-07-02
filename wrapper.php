@@ -148,6 +148,10 @@ try
         case 'get_token':
             $output = Fb::getTokenFromSession();
             break;
+        case 'login2':
+            Util::checkPOST(array('username', 'password'));
+            $output = Fb::login2($_POST['username'], $_POST['password']);
+            break;
         /*
          * util.php
          */
